@@ -20,14 +20,6 @@ body {
   padding:20px;
 }
 
-.sidebar h2 {
-  text-align:center;
-}
-
-.menu {
-  margin-top:30px;
-}
-
 .menu button {
   width:100%;
   padding:12px;
@@ -37,12 +29,9 @@ body {
   background:rgba(255,255,255,0.1);
   color:white;
   cursor:pointer;
-  text-align:left;
 }
 
-.menu button:hover {
-  background:#3498db;
-}
+.menu button:hover { background:#3498db; }
 
 /* MAIN */
 .main {
@@ -50,86 +39,64 @@ body {
   padding:20px;
 }
 
-/* GRID (2 LINES) */
+/* GRID */
 .grid {
   display:grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4,1fr);
   gap:12px;
 }
 
-/* CARD */
 .card {
   background: linear-gradient(135deg,#36d1dc,#5b86e5);
   color:white;
   padding:15px;
   border-radius:12px;
   text-align:center;
-  font-size:14px;
-}
-
-.card b {
-  font-size:20px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-<button onclick="go('index.html')">📊 Dashboard</button>
-<button onclick="go('rooms.html')">🏠 Rooms</button>
+<button onclick="location.href='index.html'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html'">🏠 Rooms</button>
+<button onclick="location.href='clients.html'">👥 Clients</button>
 </div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
 <h2 style="color:white;">Dashboard</h2>
 
 <div class="grid">
-
 <div class="card">Rooms<br><b id="rooms">0</b></div>
 <div class="card">Tenants<br><b id="tenants">0</b></div>
 <div class="card">Available Rooms<br><b id="availableRooms">0</b></div>
 <div class="card">Empty Slots<br><b id="emptySlots">0</b></div>
-
 <div class="card">Bed Space<br><b id="bed">0</b></div>
 <div class="card">Freelancer<br><b id="free">0</b></div>
 <div class="card">Company Staff<br><b id="company">0</b></div>
-
 </div>
 
 </div>
 
 <script>
 
-// NAVIGATION
-function go(page){
-window.location.href = page;
-}
-
-// DATA
 let roomsData = JSON.parse(localStorage.getItem("rooms")) || [];
 let tenantsData = JSON.parse(localStorage.getItem("tenants")) || [];
 
-// DASHBOARD
 function loadDashboard(){
 
 rooms.innerText = roomsData.length;
 tenants.innerText = tenantsData.length;
 
-// TOTAL CAPACITY
-let totalCap = roomsData.reduce((sum,r)=>sum+(r.capacity||0),0);
+let totalCap = roomsData.reduce((s,r)=>s+(r.capacity||0),0);
+emptySlots.innerText = totalCap - tenantsData.length;
 
-// EMPTY SLOTS
-let empty = totalCap - tenantsData.length;
-emptySlots.innerText = empty;
-
-// AVAILABLE ROOMS
 let availableRoomsCount = roomsData.filter(r=>{
 let occ = tenantsData.filter(t=>t.room===r.number).length;
 return occ < r.capacity;
@@ -137,14 +104,12 @@ return occ < r.capacity;
 
 availableRooms.innerText = availableRoomsCount;
 
-// CATEGORY COUNTS
 bed.innerText = tenantsData.filter(t=>t.category==="Bed Space").length;
 free.innerText = tenantsData.filter(t=>t.category==="Freelancer").length;
 company.innerText = tenantsData.filter(t=>t.category==="Company Staff").length;
 
 }
 
-// INIT
 loadDashboard();
 
 </script>
