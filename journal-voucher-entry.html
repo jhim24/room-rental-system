@@ -1,18 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Journal Voucher Entry</title>
+<title>Chart of Accounts</title>
 
 <style>
 body {
   margin:0;
   font-family: Arial;
   display:flex;
-  height:100vh;
   background: linear-gradient(135deg,#1d2b64,#f8cdda);
 }
 
-/* SIDEBAR */
 .sidebar {
   width:230px;
   background: rgba(0,0,0,0.75);
@@ -31,13 +29,11 @@ body {
   cursor:pointer;
 }
 
-/* MAIN */
 .main {
   flex:1;
   padding:20px;
 }
 
-/* BOX */
 .box {
   background:white;
   padding:20px;
@@ -45,24 +41,13 @@ body {
   margin-bottom:20px;
 }
 
-/* 🔥 FIXED GRID */
-.formGrid {
-  display:grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap:15px;
-}
-
-/* INPUT FIX */
 input, select {
-  padding:12px;
+  padding:10px;
+  margin:5px;
   border-radius:8px;
   border:1px solid #ccc;
-  width:100%;
-  height:42px;
-  box-sizing:border-box;
 }
 
-/* BUTTON */
 button {
   padding:10px;
   border:none;
@@ -72,7 +57,6 @@ button {
 
 .saveBtn { background:#2ecc71;color:white; }
 
-/* TABLE */
 table {
   width:100%;
   border-collapse:collapse;
@@ -85,11 +69,6 @@ th, td {
 }
 
 th { background:#3498db;color:white; }
-
-.totalBox {
-  margin-top:10px;
-  font-weight:bold;
-}
 </style>
 </head>
 
@@ -99,82 +78,48 @@ th { background:#3498db;color:white; }
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-
-<button onclick="location.href='index.html?v=3'">
-📊 Dashboard
-</button>
-
-<button onclick="location.href='rooms.html?v=3'">
-🏠 Rooms
-</button>
-
-<button onclick="location.href='clients.html?v=3'">
-👥 Clients
-</button>
-
-<button onclick="location.href='journal-voucher-entry.html?v=3'">
-📒 Journal Voucher
-</button>
-
-<button onclick="location.href='coa.html?v=5'">
-📚 Chart of Accounts
-</button>
+<button onclick="location.href='index.html?v=6'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=6'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=6'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=6'">📒 Journal</button>
+<button onclick="location.href='coa.html?v=6'">📚 Chart of Accounts</button>
 </div>
 </div>
 
 <div class="main">
 
 <div class="box">
-<h3>Journal Voucher Entry</h3>
+<h3>Add Account</h3>
 
-<div class="formGrid">
-
-<input type="date" id="date">
-
-<!-- 🔥 CONNECTED CLIENT DROPDOWN -->
-<select id="clientSelect">
-<option value="">Select Client</option>
+<select id="type">
+<option>Asset</option>
+<option>Income</option>
+<option>Expense</option>
 </select>
 
-<input id="account" placeholder="Account Title">
+<input id="accountName" placeholder="Account Name">
 
-<input id="description" placeholder="Description">
-
-<input type="number" id="debit" placeholder="Debit">
-
-<input type="number" id="credit" placeholder="Credit">
-
-</div>
-
-<button class="saveBtn" onclick="addEntry()">Add Entry</button>
+<button class="saveBtn" onclick="addAccount()">Save</button>
 
 </div>
 
 <div class="box">
-<h3>Journal Records</h3>
+<h3>Account List</h3>
 
 <table>
 <thead>
 <tr>
 <th>#</th>
-<th>Date</th>
-<th>Client</th>
-<th>Account</th>
-<th>Description</th>
-<th>Debit</th>
-<th>Credit</th>
+<th>Code</th>
+<th>Type</th>
+<th>Account Name</th>
 <th>Action</th>
 </tr>
 </thead>
 
-<tbody id="jvTable"></tbody>
+<tbody id="coaTable"></tbody>
 
 </table>
-
-<div class="totalBox">
-Total Debit: <span id="totalDebit">0</span> |
-Total Credit: <span id="totalCredit">0</span>
-</div>
 
 </div>
 
@@ -182,106 +127,64 @@ Total Credit: <span id="totalCredit">0</span>
 
 <script>
 
-// LOAD DATA
-let entries = JSON.parse(localStorage.getItem("jv")) || [];
-let clients = JSON.parse(localStorage.getItem("tenants")) || [];
+let accounts = JSON.parse(localStorage.getItem("coa")) || [];
 
-// 🔥 LOAD CLIENTS DROPDOWN
-function loadClients(){
+// ADD ACCOUNT
+function addAccount(){
 
-let select = document.getElementById("clientSelect");
-select.innerHTML = "<option value=''>Select Client</option>";
+let name = document.getElementById("accountName").value.trim();
+let type = document.getElementById("type").value;
 
-clients.forEach(c=>{
-select.innerHTML += `<option value="${c.name}">${c.name}</option>`;
-});
-}
-
-// ADD ENTRY
-function addEntry(){
-
-let d = document.getElementById("date").value;
-let client = document.getElementById("clientSelect").value;
-let acc = document.getElementById("account").value;
-let desc = document.getElementById("description").value;
-let debit = Number(document.getElementById("debit").value) || 0;
-let credit = Number(document.getElementById("credit").value) || 0;
-
-if(!d || !acc){
-alert("Fill required fields");
+if(name === ""){
+alert("Enter account name");
 return;
 }
 
-entries.push({
-date:d,
-client:client,
-account:acc,
-description:desc,
-debit:debit,
-credit:credit
+// AUTO CODE
+let code = Date.now().toString().slice(-4);
+
+accounts.push({
+code: code,
+type: type,
+name: name
 });
 
-localStorage.setItem("jv", JSON.stringify(entries));
+localStorage.setItem("coa", JSON.stringify(accounts));
 
-clearForm();
 loadTable();
+document.getElementById("accountName").value="";
 }
 
-// LOAD TABLE (OPTIMIZED)
+// LOAD TABLE
 function loadTable(){
 
-let table = document.getElementById("jvTable");
-
 let html = "";
-let totalD = 0;
-let totalC = 0;
 
-entries.forEach((e,i)=>{
-
-totalD += e.debit;
-totalC += e.credit;
-
+accounts.forEach((a,i)=>{
 html += `
 <tr>
 <td>${i+1}</td>
-<td>${e.date}</td>
-<td>${e.client || ""}</td>
-<td>${e.account}</td>
-<td>${e.description}</td>
-<td>${e.debit}</td>
-<td>${e.credit}</td>
+<td>${a.code}</td>
+<td>${a.type}</td>
+<td>${a.name}</td>
 <td>
-<button onclick="deleteEntry(${i})">Delete</button>
+<button onclick="deleteAcc(${i})">Delete</button>
 </td>
 </tr>
 `;
 });
 
-table.innerHTML = html;
-
-totalDebit.innerText = totalD;
-totalCredit.innerText = totalC;
+document.getElementById("coaTable").innerHTML = html;
 }
 
 // DELETE
-function deleteEntry(i){
-entries.splice(i,1);
-localStorage.setItem("jv", JSON.stringify(entries));
+function deleteAcc(i){
+accounts.splice(i,1);
+localStorage.setItem("coa", JSON.stringify(accounts));
 loadTable();
 }
 
-// CLEAR
-function clearForm(){
-date.value="";
-clientSelect.value="";
-account.value="";
-description.value="";
-debit.value="";
-credit.value="";
-}
-
 // INIT
-loadClients();
 loadTable();
 
 </script>
