@@ -11,6 +11,7 @@ body {
   background: linear-gradient(135deg,#1d2b64,#f8cdda);
 }
 
+/* SIDEBAR */
 .sidebar {
   width:230px;
   background: rgba(0,0,0,0.75);
@@ -31,11 +32,13 @@ body {
   cursor:pointer;
 }
 
+/* MAIN */
 .main {
   flex:1;
   padding:20px;
 }
 
+/* BOX */
 .box {
   background:white;
   padding:20px;
@@ -43,6 +46,7 @@ body {
   margin-bottom:20px;
 }
 
+/* GRID */
 .formGrid {
   display:grid;
   grid-template-columns: repeat(3,1fr);
@@ -55,6 +59,7 @@ input, select {
   border:1px solid #ccc;
 }
 
+/* BUTTON */
 button {
   padding:8px 10px;
   border:none;
@@ -67,6 +72,7 @@ button {
 .editBtn { background:orange;color:white; }
 .deleteBtn { background:red;color:white; }
 
+/* TABLE */
 table {
   width:100%;
   border-collapse:collapse;
@@ -88,19 +94,19 @@ th { background:#3498db;color:white; }
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-<button onclick="location.href='index.html?v=13'">📊 Dashboard</button>
-<button onclick="location.href='rooms.html?v=13'">🏠 Rooms</button>
-<button onclick="location.href='clients.html?v=13'">👥 Clients</button>
-<button onclick="location.href='journal-voucher-entry.html?v=13'">📒 Journal</button>
-<button onclick="location.href='coa.html?v=13'">📚 Chart of Accounts</button>
-<button onclick="location.href='ledger.html?v=13'">📘 Client Ledger</button>
+<button onclick="location.href='index.html?v=14'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=14'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=14'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=14'">📒 Journal</button>
+<button onclick="location.href='coa.html?v=14'">📚 Chart of Accounts</button>
+<button onclick="location.href='ledger.html?v=14'">📘 Client Ledger</button>
 </div>
 </div>
 
 <div class="main">
 
 <div class="box">
-<h3>Journal Entry</h3>
+<h3>Journal Entry (Auto Double Entry)</h3>
 
 <div class="formGrid">
 
@@ -108,19 +114,14 @@ th { background:#3498db;color:white; }
 
 <select id="client"></select>
 
-<select id="account"></select>
-
 <input id="description" placeholder="Description">
 
-<input type="number" id="debit" placeholder="Debit">
-
-<input type="number" id="credit" placeholder="Credit">
+<input type="number" id="amount" placeholder="Amount">
 
 </div>
 
 <br>
 <button class="saveBtn" onclick="addEntry()">Save</button>
-<button class="updateBtn" onclick="updateEntry()">Update</button>
 
 </div>
 
@@ -151,8 +152,8 @@ th { background:#3498db;color:white; }
 
 <script>
 
+// DATA
 let entries = JSON.parse(localStorage.getItem("jv")) || [];
-let coa = JSON.parse(localStorage.getItem("coa")) || [];
 let clients = JSON.parse(localStorage.getItem("tenants")) || [];
 
 let editIndex = -1;
@@ -166,55 +167,44 @@ html += `<option value="${c.name}">${c.name}</option>`;
 client.innerHTML = html;
 }
 
-// LOAD COA
-function loadCOA(){
-let html = "<option value=''>Select Account</option>";
-coa.forEach(a=>{
-html += `<option value="${a.code} - ${a.name}">
-${a.code} - ${a.name}
-</option>`;
-});
-account.innerHTML = html;
-}
-
-// ADD
+// ADD DOUBLE ENTRY
 function addEntry(){
 
-if(account.value === ""){
-alert("Select account");
+let d = date.value;
+let clientVal = client.value;
+let desc = description.value;
+let amount = Number(document.getElementById("amount").value);
+
+if(clientVal === ""){
+alert("Select client");
 return;
 }
 
+if(amount <= 0){
+alert("Enter amount");
+return;
+}
+
+// 🔥 ENTRY 1 (DEBIT AR)
 entries.push({
-date: date.value,
-client: client.value,
-account: account.value,
-description: description.value,
-debit: Number(debit.value) || 0,
-credit: Number(credit.value) || 0
+date:d,
+client:clientVal,
+account:"Accounts Receivable",
+description:desc,
+debit:amount,
+credit:0
 });
 
-saveData();
-}
+// 🔥 ENTRY 2 (CREDIT RENT)
+entries.push({
+date:d,
+client:clientVal,
+account:"Rent Income",
+description:desc,
+debit:0,
+credit:amount
+});
 
-// UPDATE
-function updateEntry(){
-
-if(editIndex === -1){
-alert("Select record to edit");
-return;
-}
-
-entries[editIndex] = {
-date: date.value,
-client: client.value,
-account: account.value,
-description: description.value,
-debit: Number(debit.value) || 0,
-credit: Number(credit.value) || 0
-};
-
-editIndex = -1;
 saveData();
 }
 
@@ -225,24 +215,21 @@ let e = entries[i];
 
 date.value = e.date;
 client.value = e.client;
-account.value = e.account;
 description.value = e.description;
-debit.value = e.debit;
-credit.value = e.credit;
+amount.value = e.debit || e.credit;
 
 editIndex = i;
 }
 
 // DELETE
 function deleteEntry(i){
-
-if(confirm("Delete this entry?")){
+if(confirm("Delete entry?")){
 entries.splice(i,1);
 saveData();
 }
 }
 
-// SAVE + RELOAD
+// SAVE
 function saveData(){
 localStorage.setItem("jv", JSON.stringify(entries));
 loadTable();
@@ -259,7 +246,7 @@ html += `
 <tr>
 <td>${i+1}</td>
 <td>${e.date}</td>
-<td>${e.client || ""}</td>
+<td>${e.client}</td>
 <td>${e.account}</td>
 <td>${e.description}</td>
 <td>${e.debit}</td>
@@ -278,13 +265,11 @@ jvTable.innerHTML = html;
 // CLEAR
 function clearForm(){
 description.value="";
-debit.value="";
-credit.value="";
+amount.value="";
 }
 
 // INIT
 loadClients();
-loadCOA();
 loadTable();
 
 </script>
