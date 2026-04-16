@@ -73,6 +73,15 @@ th { background:#3498db; color:white; }
 
 <h2 style="color:white;">🏨 Accommodation System V3</h2>
 
+<!-- 🔥 ADDED TAB BUTTONS -->
+<div class="box">
+<button class="saveBtn" onclick="showTab('main')">Main</button>
+<button class="editBtn" onclick="showTab('room')">Room Status</button>
+</div>
+
+<!-- 🔥 MAIN TAB -->
+<div id="mainTab">
+
 <!-- DASHBOARD -->
 <div class="box">
 <h3>Dashboard</h3>
@@ -114,26 +123,7 @@ th { background:#3498db; color:white; }
 <button class="saveBtn" onclick="addTenant()">Save Tenant</button>
 </div>
 
-<!-- ROOM STATUS -->
-<div class="box">
-<h3>Room Status</h3>
-
-<table>
-<thead>
-<tr>
-<th>Room</th>
-<th>Capacity</th>
-<th>Occupied</th>
-<th>Available</th>
-<th>Action</th>
-</tr>
-</thead>
-
-<tbody id="roomTable"></tbody>
-</table>
-</div>
-
-<!-- ================= ADDED TENANT LIST ================= -->
+<!-- TENANT LIST -->
 <div class="box">
 <h3>Tenant List</h3>
 <table>
@@ -150,7 +140,7 @@ th { background:#3498db; color:white; }
 </table>
 </div>
 
-<!-- ================= ADDED BILLING ================= -->
+<!-- BILLING -->
 <div class="box">
 <h3>Billing</h3>
 <select id="tenantSelect"></select>
@@ -160,7 +150,7 @@ th { background:#3498db; color:white; }
 <button class="saveBtn" onclick="saveBilling()">Save Billing</button>
 </div>
 
-<!-- ================= ADDED LEDGER ================= -->
+<!-- LEDGER -->
 <div class="box">
 <h3>Ledger (Yearly)</h3>
 <select id="yearFilter"></select>
@@ -175,9 +165,34 @@ th { background:#3498db; color:white; }
 <th>Total</th>
 </tr>
 </thead>
-
 <tbody id="ledgerTable"></tbody>
 </table>
+</div>
+
+</div> <!-- END MAIN TAB -->
+
+<!-- 🔥 ROOM TAB -->
+<div id="roomTab" style="display:none;">
+
+<div class="box">
+<h3>Room Status</h3>
+
+<table>
+<thead>
+<tr>
+<th>Room</th>
+<th>Capacity</th>
+<th>Occupied</th>
+<th>Available</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="roomTable"></tbody>
+</table>
+
+</div>
+
 </div>
 
 <script>
@@ -192,6 +207,15 @@ function save(){
 localStorage.setItem("rooms", JSON.stringify(rooms));
 localStorage.setItem("tenants", JSON.stringify(tenants));
 localStorage.setItem("billings", JSON.stringify(billings));
+}
+
+// 🔥 TAB FUNCTION (ADDED)
+function showTab(tab){
+document.getElementById("mainTab").style.display =
+tab==="main" ? "block" : "none";
+
+document.getElementById("roomTab").style.display =
+tab==="room" ? "block" : "none";
 }
 
 // ROOM
@@ -272,7 +296,6 @@ save(); loadAll();
 
 // DASHBOARD
 function loadDashboard(){
-
 totalRooms.innerText = rooms.length;
 totalTenants.innerText = tenants.length;
 
@@ -285,8 +308,6 @@ bedSpaceCount.innerText = tenants.filter(t=>t.category==="Bed Space").length;
 freelancerCount.innerText = tenants.filter(t=>t.category==="Freelancer").length;
 companyStaffCount.innerText = tenants.filter(t=>t.category==="Company Staff").length;
 }
-
-// ================= NEW FEATURES =================
 
 // TENANT LIST
 function loadTenantList(){
@@ -392,8 +413,6 @@ function loadAll(){
 loadRooms();
 loadRoomStatus();
 loadDashboard();
-
-// ADDED
 loadTenantList();
 loadTenantSelect();
 loadYearFilter();
