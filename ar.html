@@ -33,7 +33,7 @@ body {
 
 .menu button:hover { background:#3498db; }
 
-/* MAIN FIX */
+/* MAIN */
 .main {
   flex:1;
   padding:20px;
@@ -46,7 +46,7 @@ body {
   padding:20px;
   border-radius:12px;
   margin-bottom:20px;
-  overflow-x:auto; /* 🔥 FIX */
+  overflow-x:auto;
 }
 
 /* GRID */
@@ -74,10 +74,10 @@ button {
 
 .saveBtn { background:#2ecc71;color:white; }
 
-/* TABLE FIX */
+/* TABLE */
 table {
   width:100%;
-  min-width:700px; /* 🔥 prevents collapse */
+  min-width:800px;
   border-collapse:collapse;
 }
 
@@ -100,11 +100,11 @@ th {
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-<button onclick="location.href='index.html?v=3'">📊 Dashboard</button>
-<button onclick="location.href='rooms.html?v=3'">🏠 Rooms</button>
-<button onclick="location.href='clients.html?v=3'">👥 Clients</button>
-<button onclick="location.href='journal-voucher-entry.html?v=3'">📒 Journal</button>
-<button onclick="location.href='ar.html?v=3'">💰 Accounts Receivable</button>
+<button onclick="location.href='index.html?v=4'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=4'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=4'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=4'">📒 Journal</button>
+<button onclick="location.href='ar.html?v=4'">💰 Accounts Receivable</button>
 </div>
 </div>
 
@@ -114,6 +114,13 @@ th {
 <h3>Accounts Receivable - Rent Income</h3>
 
 <div class="formGrid">
+
+<!-- 🔥 TYPE / BRANCH -->
+<select id="type">
+<option value="Rent Income">Rent Income</option>
+<option value="Utility Income">Utility Income</option>
+<option value="Other Income">Other Income</option>
+</select>
 
 <select id="client"></select>
 
@@ -139,6 +146,7 @@ th {
 <thead>
 <tr>
 <th>#</th>
+<th>Type</th>
 <th>Client</th>
 <th>Month</th>
 <th>Rent</th>
@@ -185,6 +193,7 @@ return;
 }
 
 let data = {
+type: type.value,
 client: client.value,
 month: month.value,
 rent: Number(rent.value),
@@ -199,7 +208,7 @@ loadTable();
 clearForm();
 }
 
-// LOAD TABLE (OPTIMIZED)
+// LOAD TABLE
 function loadTable(){
 
 let html = "";
@@ -208,6 +217,7 @@ arData.forEach((a,i)=>{
 html += `
 <tr>
 <td>${i+1}</td>
+<td>${a.type}</td>
 <td>${a.client}</td>
 <td>${a.month}</td>
 <td>${a.rent}</td>
