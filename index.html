@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Accommodation System V3</title>
+<title>Accommodation System FINAL</title>
 
 <style>
 body {
@@ -66,7 +66,7 @@ th { background:#3498db; color:white; }
 
 <body>
 
-<h2 style="color:white;">🏨 Accommodation System V3</h2>
+<h2 style="color:white;">🏨 Accommodation System FINAL</h2>
 
 <!-- TAB -->
 <div class="box">
@@ -77,6 +77,7 @@ th { background:#3498db; color:white; }
 <!-- MAIN -->
 <div id="mainTab">
 
+<!-- DASHBOARD -->
 <div class="box">
 <h3>Dashboard</h3>
 <div class="flex">
@@ -89,6 +90,7 @@ th { background:#3498db; color:white; }
 </div>
 </div>
 
+<!-- ROOM -->
 <div class="box">
 <h3>Add / Edit Room</h3>
 <input id="roomNo" placeholder="Room #">
@@ -96,6 +98,7 @@ th { background:#3498db; color:white; }
 <button class="saveBtn" onclick="saveRoom()">Save</button>
 </div>
 
+<!-- TENANT -->
 <div class="box">
 <h3>Add Tenant</h3>
 <input id="tenantName" placeholder="Tenant Name">
@@ -113,6 +116,7 @@ th { background:#3498db; color:white; }
 <button class="saveBtn" onclick="addTenant()">Save Tenant</button>
 </div>
 
+<!-- TENANT LIST -->
 <div class="box">
 <h3>Tenant List</h3>
 <table>
@@ -125,6 +129,7 @@ th { background:#3498db; color:white; }
 </table>
 </div>
 
+<!-- BILLING -->
 <div class="box">
 <h3>Billing</h3>
 <select id="tenantSelect"></select>
@@ -134,6 +139,7 @@ th { background:#3498db; color:white; }
 <button class="saveBtn" onclick="saveBilling()">Save Billing</button>
 </div>
 
+<!-- LEDGER -->
 <div class="box">
 <h3>Ledger (Yearly)</h3>
 <select id="yearFilter"></select>
@@ -146,25 +152,10 @@ th { background:#3498db; color:white; }
 <th>May</th><th>Jun</th><th>Jul</th><th>Aug</th>
 <th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
 <th>Total</th>
+<th>Action</th>
 </tr>
 </thead>
 <tbody id="ledgerTable"></tbody>
-</table>
-</div>
-
-<div class="box">
-<h3>Ledger (Date Range)</h3>
-From: <input type="month" id="fromDate">
-To: <input type="month" id="toDate">
-
-<table>
-<thead>
-<tr>
-<th>Name</th>
-<th>Total Balance</th>
-</tr>
-</thead>
-<tbody id="rangeTable"></tbody>
 </table>
 </div>
 
@@ -228,6 +219,7 @@ roomSelect.innerHTML += `<option value="${i}">${r.number}</option>`;
 });
 }
 
+// TENANT
 function addTenant(){
 let r = rooms[roomSelect.value];
 let occupied = tenants.filter(t=>t.room===r.number).length;
@@ -244,6 +236,7 @@ save(); loadAll();
 tenantName.value="";
 }
 
+// ROOM STATUS
 function loadRoomStatus(){
 roomTable.innerHTML="";
 
@@ -321,7 +314,7 @@ tenantSelect.innerHTML += `<option value="${i}">${t.name}</option>`;
 });
 }
 
-// BILLING (ORIGINAL)
+// BILLING
 function saveBilling(){
 
 let t = tenants[tenantSelect.value];
@@ -338,43 +331,23 @@ billings[index].rent += rentVal;
 billings[index].payment += payVal;
 billings[index].balance =
 billings[index].rent - billings[index].payment;
+
+billings[index].monthly = (billings[index].monthly||0)+rentVal;
+
 }else{
 billings.push({
 name:t.name,
 month:month.value,
 rent:rentVal,
 payment:payVal,
-balance:rentVal - payVal
+balance:rentVal - payVal,
+monthly: rentVal
 });
 }
 
 save();
 loadLedger();
-loadRangeLedger();
 }
-
-// 🔥 ADD ONLY PATCH (MONTHLY FIX)
-let oldSaveBilling = saveBilling;
-
-saveBilling = function(){
-
-oldSaveBilling();
-
-let t = tenants[tenantSelect.value];
-let rentVal = Number(rent.value)||0;
-
-let index = billings.findIndex(b =>
-b.name===t.name && b.month===month.value
-);
-
-if(index !== -1){
-billings[index].monthly = (billings[index].monthly || 0) + rentVal;
-}else{
-billings[billings.length-1].monthly = rentVal;
-}
-
-save();
-};
 
 // YEAR FILTER
 function loadYearFilter(){
@@ -385,41 +358,14 @@ yearFilter.innerHTML += `<option value="${y}">${y}</option>`;
 }
 yearFilter.onchange = loadLedger;
 
-// ORIGINAL LEDGER (UNCHANGED)
+// LEDGER
 function loadLedger(){
-let year = yearFilter.value;
-ledgerTable.innerHTML="";
-
-tenants.forEach(t=>{
-let months = Array(12).fill(0);
-
-billings.forEach(b=>{
-let d = new Date(b.month);
-if(b.name===t.name && d.getFullYear()==year){
-months[d.getMonth()] += b.balance;
-}
-});
-
-let total = months.reduce((a,b)=>a+b,0);
-
-ledgerTable.innerHTML += `
-<tr>
-<td>${t.name}</td>
-${months.map(m=>`<td>${m}</td>`).join("")}
-<td>${total}</td>
-</tr>`;
-});
-}
-
-// 🔥 ADD ONLY OVERRIDE DISPLAY
-let oldLoadLedger = loadLedger;
-
-loadLedger = function(){
 
 let year = yearFilter.value;
 ledgerTable.innerHTML="";
 
 tenants.forEach(t=>{
+
 let months = Array(12).fill(0);
 
 billings.forEach(b=>{
@@ -436,40 +382,41 @@ ledgerTable.innerHTML += `
 <td>${t.name}</td>
 ${months.map(m=>`<td>${m}</td>`).join("")}
 <td>${total}</td>
+<td>
+<button class="editBtn" onclick="editLedger('${t.name}')">Edit</button>
+</td>
 </tr>`;
 });
-};
+}
 
-// RANGE LEDGER
-function loadRangeLedger(){
+// EDIT
+function editLedger(name){
 
-if(!fromDate.value || !toDate.value) return;
-
-let from = new Date(fromDate.value);
-let to = new Date(toDate.value);
-
-rangeTable.innerHTML="";
-
-tenants.forEach(t=>{
-let total = 0;
+let year = yearFilter.value;
 
 billings.forEach(b=>{
 let d = new Date(b.month);
-if(b.name===t.name && d>=from && d<=to){
-total += b.balance;
+
+if(b.name===name && d.getFullYear()==year){
+
+let newVal = prompt(
+`Edit ${name} - ${b.month}`,
+b.monthly || b.rent
+);
+
+if(newVal !== null){
+let val = Number(newVal)||0;
+b.monthly = val;
+b.rent = val;
+b.balance = b.rent - b.payment;
+}
+
 }
 });
 
-rangeTable.innerHTML += `
-<tr>
-<td>${t.name}</td>
-<td>${total}</td>
-</tr>`;
-});
+save();
+loadLedger();
 }
-
-fromDate.onchange = loadRangeLedger;
-toDate.onchange = loadRangeLedger;
 
 // LOAD ALL
 function loadAll(){
@@ -480,7 +427,6 @@ loadTenantList();
 loadTenantSelect();
 loadYearFilter();
 loadLedger();
-loadRangeLedger();
 }
 
 loadAll();
