@@ -1,379 +1,174 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Accommodation System FINAL</title>
+<title>Accommodation System</title>
 
 <style>
 body {
-  font-family: Arial;
-  background: linear-gradient(135deg,#667eea,#764ba2);
-  padding:20px;
   margin:0;
+  font-family: Arial;
+  display:flex;
+  height:100vh;
+  background: linear-gradient(135deg,#1d2b64,#f8cdda);
 }
 
-h2 {color:white;}
+/* SIDEBAR */
+.sidebar {
+  width:230px;
+  background: rgba(0,0,0,0.7);
+  color:white;
+  padding:20px;
+  backdrop-filter: blur(10px);
+}
 
+.sidebar h2 {
+  text-align:center;
+}
+
+.menu {
+  margin-top:30px;
+}
+
+.menu button {
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:none;
+  border-radius:8px;
+  background:rgba(255,255,255,0.1);
+  color:white;
+  cursor:pointer;
+  text-align:left;
+}
+
+.menu button:hover {
+  background:#3498db;
+}
+
+/* MAIN CONTENT */
+.main {
+  flex:1;
+  padding:20px;
+  overflow:auto;
+}
+
+/* GLASS BOX */
 .box {
-  background:white;
-  padding:15px;
-  border-radius:10px;
-  margin-bottom:15px;
+  background: rgba(255,255,255,0.85);
+  padding:20px;
+  border-radius:15px;
+  margin-bottom:20px;
+  backdrop-filter: blur(5px);
 }
 
-.flex {display:flex;gap:10px;flex-wrap:wrap;}
+/* DASHBOARD CARDS */
+.flex {
+  display:flex;
+  gap:15px;
+  flex-wrap:wrap;
+}
 
 .card {
   flex:1;
   min-width:150px;
-  background:#3498db;
+  background: linear-gradient(135deg,#36d1dc,#5b86e5);
   color:white;
-  padding:15px;
-  border-radius:10px;
+  padding:20px;
+  border-radius:12px;
   text-align:center;
 }
 
-input,select{
-  padding:8px;
-  margin:5px;
+.card b {
+  font-size:24px;
 }
 
-button{
-  padding:8px 12px;
-  margin:5px;
-  border:none;
-  border-radius:5px;
-  cursor:pointer;
-  color:white;
-}
-
-.saveBtn{background:#2ecc71;}
-.editBtn{background:#f39c12;}
-.deleteBtn{background:#e74c3c;}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-}
-
-th,td{
-  border:1px solid #ccc;
-  padding:8px;
-  text-align:center;
-}
-
-th{background:#3498db;color:white;}
 </style>
 </head>
 
 <body>
 
-<h2>🏨 Accommodation System</h2>
+<!-- SIDEBAR -->
+<div class="sidebar">
+<h2>🏨 SYSTEM</h2>
 
-<div class="box">
-<button class="saveBtn" onclick="showTab('main')">Main</button>
-<button class="editBtn" onclick="showTab('room')">Room</button>
-<button class="deleteBtn" onclick="showTab('tenant')">Tenant</button>
+<div class="menu">
+<button onclick="showTab('dashboard')">📊 Dashboard</button>
+<button onclick="showTab('room')">🏠 Rooms</button>
+<button onclick="showTab('tenant')">👥 Tenants</button>
+<button onclick="showTab('billing')">💰 Billing</button>
+<button onclick="showTab('report')">📄 Reports</button>
+</div>
 </div>
 
-<div id="mainTab">
+<!-- MAIN -->
+<div class="main">
 
-<div class="box">
+<!-- DASHBOARD -->
+<div id="dashboardTab" class="box">
 <h3>Dashboard</h3>
+
 <div class="flex">
-<div class="card">Rooms<br><b id="totalRooms">0</b></div>
-<div class="card">Tenants<br><b id="totalTenants">0</b></div>
-<div class="card">Available<br><b id="availableSlots">0</b></div>
-<div class="card">Bed Space<br><b id="bedSpace">0</b></div>
-<div class="card">Freelancer<br><b id="freelancer">0</b></div>
+<div class="card">Rooms<br><b id="rooms">0</b></div>
+<div class="card">Tenants<br><b id="tenants">0</b></div>
+<div class="card">Available<br><b id="available">0</b></div>
+<div class="card">Bed Space<br><b id="bed">0</b></div>
+<div class="card">Freelancer<br><b id="free">0</b></div>
 <div class="card">Company Staff<br><b id="company">0</b></div>
 </div>
-</div>
-
-<div class="box">
-<h3>Add Room</h3>
-<input id="roomNo" placeholder="Room #">
-<input id="capacity" type="number" placeholder="Capacity">
-<button class="saveBtn" onclick="saveRoom()">Save</button>
-</div>
-
-<div class="box">
-<h3>Add Tenant</h3>
-<input id="tenantName">
-<select id="roomSelect"></select>
-<select id="category">
-<option>Bed Space</option>
-<option>Tenant</option>
-<option>Freelancer</option>
-<option>Company Staff</option>
-<option>Office Staff</option>
-<option>Store Keeper</option>
-</select>
-<button class="saveBtn" onclick="addTenant()">Save</button>
-</div>
-
-<div class="box">
-<h3>Billing</h3>
-<select id="tenantSelect"></select>
-
-<input id="rent" type="number" placeholder="Rent">
-<input id="payment" type="number" placeholder="Payment">
-
-<button class="saveBtn" onclick="addRent()">Add Rent</button>
-<button class="editBtn" onclick="addPayment()">Add Payment</button>
-</div>
-
-<div class="box">
-<h3>Payment History</h3>
-<table>
-<thead>
-<tr>
-<th>Date</th><th>Name</th><th>Amount</th><th>Action</th>
-</tr>
-</thead>
-<tbody id="paymentTable"></tbody>
-</table>
-</div>
-
-<div class="box">
-<h3>Ledger (Date Range)</h3>
-
-From <input type="date" id="ledgerFrom">
-To <input type="date" id="ledgerTo">
-
-<br>
-<b id="ledgerDisplay"></b>
-
-<table>
-<thead>
-<tr>
-<th>Name</th><th>Rent</th><th>Payment</th><th>Balance</th>
-</tr>
-</thead>
-<tbody id="ledgerTable"></tbody>
-</table>
 
 </div>
 
+<!-- EMPTY TABS -->
+<div id="roomTab" class="box" style="display:none;">
+<h3>Rooms (Next Step)</h3>
 </div>
 
-<div id="roomTab" style="display:none;">
-<div class="box">
-<h3>Room Status</h3>
-<table>
-<thead>
-<tr>
-<th>Room</th><th>Capacity</th><th>Occupied</th><th>Available</th>
-</tr>
-</thead>
-<tbody id="roomTable"></tbody>
-</table>
-</div>
+<div id="tenantTab" class="box" style="display:none;">
+<h3>Tenants (Next Step)</h3>
 </div>
 
-<div id="tenantTab" style="display:none;">
-<div class="box">
-<h3>Tenant List</h3>
-<table>
-<tbody id="tenantTable"></tbody>
-</table>
+<div id="billingTab" class="box" style="display:none;">
+<h3>Billing (Next Step)</h3>
 </div>
+
+<div id="reportTab" class="box" style="display:none;">
+<h3>Reports (Next Step)</h3>
+</div>
+
 </div>
 
 <script>
 
-let rooms=[], tenants=[], billings=[], payments=[];
+// SAMPLE DATA
+let roomsData = [];
+let tenantsData = [];
 
-function save(){
-localStorage.setItem("rooms",JSON.stringify(rooms));
-localStorage.setItem("tenants",JSON.stringify(tenants));
-localStorage.setItem("billings",JSON.stringify(billings));
-localStorage.setItem("payments",JSON.stringify(payments));
-}
-
-function load(){
-rooms=JSON.parse(localStorage.getItem("rooms"))||[];
-tenants=JSON.parse(localStorage.getItem("tenants"))||[];
-billings=JSON.parse(localStorage.getItem("billings"))||[];
-payments=JSON.parse(localStorage.getItem("payments"))||[];
-}
-
+// TAB SWITCH
 function showTab(tab){
-mainTab.style.display=tab==="main"?"block":"none";
-roomTab.style.display=tab==="room"?"block":"none";
-tenantTab.style.display=tab==="tenant"?"block":"none";
+document.getElementById("dashboardTab").style.display="none";
+document.getElementById("roomTab").style.display="none";
+document.getElementById("tenantTab").style.display="none";
+document.getElementById("billingTab").style.display="none";
+document.getElementById("reportTab").style.display="none";
+
+document.getElementById(tab+"Tab").style.display="block";
 }
 
-function today(){
-return new Date().toLocaleDateString('en-GB'); // dd/mm/yyyy
-}
+// DASHBOARD LOAD
+function loadDashboard(){
 
-// ROOM
-function saveRoom(){
-rooms.push({number:roomNo.value,capacity:+capacity.value});
-save();loadAll();
-}
+rooms.innerText = roomsData.length;
+tenants.innerText = tenantsData.length;
 
-// TENANT
-function addTenant(){
-let r=rooms[roomSelect.value];
-tenants.push({name:tenantName.value,room:r.number,category:category.value});
-save();loadAll();
-}
-
-// 🔥 RENT (AUTO DATE + AUTO REFRESH)
-function addRent(){
-let t=tenants[tenantSelect.value];
-let r=+rent.value||0;
-
-billings.push({
-name:t.name,
-date:today(),
-rent:r,
-payment:0
-});
-
-save();
-loadAll();
-rent.value="";
-}
-
-// 🔥 PAYMENT (AUTO DATE + HISTORY + REFRESH)
-function addPayment(){
-let t=tenants[tenantSelect.value];
-let p=+payment.value||0;
-
-billings.push({
-name:t.name,
-date:today(),
-rent:0,
-payment:p
-});
-
-payments.push({
-name:t.name,
-amount:p,
-date:today()
-});
-
-save();
-loadAll();
-payment.value="";
-}
-
-// LOAD ALL
-function loadAll(){
-
-totalRooms.innerText=rooms.length;
-totalTenants.innerText=tenants.length;
-
-let totalCap=rooms.reduce((a,b)=>a+b.capacity,0);
-availableSlots.innerText=totalCap-tenants.length;
-
-bedSpace.innerText=tenants.filter(t=>t.category==="Bed Space").length;
-freelancer.innerText=tenants.filter(t=>t.category==="Freelancer").length;
-company.innerText=tenants.filter(t=>t.category==="Company Staff").length;
-
-roomSelect.innerHTML="";
-tenantSelect.innerHTML="";
-
-rooms.forEach((r,i)=>roomSelect.innerHTML+=`<option value=${i}>${r.number}</option>`);
-tenants.forEach((t,i)=>tenantSelect.innerHTML+=`<option value=${i}>${t.name}</option>`);
-
-// ROOM
-roomTable.innerHTML="";
-rooms.forEach(r=>{
-let occ=tenants.filter(t=>t.room===r.number).length;
-roomTable.innerHTML+=`<tr>
-<td>${r.number}</td>
-<td>${r.capacity}</td>
-<td>${occ}</td>
-<td>${r.capacity-occ}</td>
-</tr>`;
-});
-
-// TENANT
-tenantTable.innerHTML="";
-tenants.forEach((t,i)=>{
-tenantTable.innerHTML+=`<tr>
-<td>${t.name}</td>
-<td>${t.room}</td>
-<td>${t.category}</td>
-<td><button onclick="deleteTenant(${i})">Delete</button></td>
-</tr>`;
-});
-
-// PAYMENT HISTORY
-paymentTable.innerHTML="";
-payments.forEach((p,i)=>{
-paymentTable.innerHTML+=`
-<tr>
-<td>${p.date}</td>
-<td>${p.name}</td>
-<td>${p.amount}</td>
-<td>
-<button onclick="editPayment(${i})">Edit</button>
-<button onclick="deletePayment(${i})">Delete</button>
-</td>
-</tr>`;
-});
-
-// LEDGER
-let from=new Date(ledgerFrom.value);
-let to=new Date(ledgerTo.value);
-
-ledgerDisplay.innerText =
-(ledgerFrom.value?from.toLocaleDateString('en-GB'):"")+" - "+
-(ledgerTo.value?to.toLocaleDateString('en-GB'):"");
-
-ledgerTable.innerHTML="";
-
-tenants.forEach(t=>{
-let r=0,p=0;
-
-billings.forEach(b=>{
-let d=new Date(b.date.split('/').reverse().join('-'));
-if((!ledgerFrom.value||d>=from)&&(!ledgerTo.value||d<=to)){
-if(b.name===t.name){
-r+=b.rent;
-p+=b.payment;
-}
-}
-});
-
-let bal=r-p;
-
-ledgerTable.innerHTML+=`
-<tr>
-<td>${t.name}</td>
-<td>${r}</td>
-<td>${p}</td>
-<td>${bal}</td>
-</tr>`;
-});
+// sample logic (ready for next step)
+available.innerText = 0;
+bed.innerText = 0;
+free.innerText = 0;
+company.innerText = 0;
 
 }
 
-function deleteTenant(i){
-tenants.splice(i,1);
-save();loadAll();
-}
-
-function editPayment(i){
-let val=prompt("Edit amount",payments[i].amount);
-if(val!=null){
-payments[i].amount=+val;
-save();loadAll();
-}
-}
-
-function deletePayment(i){
-payments.splice(i,1);
-save();loadAll();
-}
-
-// INIT
-load();
-loadAll();
+loadDashboard();
 
 </script>
 
