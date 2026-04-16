@@ -8,7 +8,6 @@ body {
   margin:0;
   font-family: Arial;
   background: linear-gradient(135deg,#1d2b64,#f8cdda);
-  color:#333;
 }
 
 .container {
@@ -42,6 +41,7 @@ button {
 }
 
 .saveBtn { background:#2ecc71;color:white; }
+.deleteBtn { background:red;color:white; }
 
 table {
   width:100%;
@@ -72,8 +72,9 @@ th { background:#3498db;color:white; }
 <option value="C">Credit</option>
 </select>
 
-<input id="code" placeholder="Code (1100)">
-<input id="accountName" placeholder="Account Name">
+<select id="code" onchange="autoFillAccount()"></select>
+
+<input id="accountName" placeholder="Account Name" readonly>
 
 <select id="subDesc">
 <option value="">None</option>
@@ -121,6 +122,32 @@ th { background:#3498db;color:white; }
 
 let entries = JSON.parse(localStorage.getItem("jv")) || [];
 let clients = JSON.parse(localStorage.getItem("tenants")) || [];
+let coa = JSON.parse(localStorage.getItem("coa")) || [];
+
+// LOAD COA
+function loadCOA(){
+
+let html = "<option value=''>Select Code</option>";
+
+coa.forEach(a=>{
+html += `<option value="${a.code}" data-name="${a.name}">
+${a.code}
+</option>`;
+});
+
+document.getElementById("code").innerHTML = html;
+}
+
+// AUTO FILL ACCOUNT NAME
+function autoFillAccount(){
+
+let select = document.getElementById("code");
+let selected = select.options[select.selectedIndex];
+
+let accName = selected.getAttribute("data-name");
+
+document.getElementById("accountName").value = accName || "";
+}
 
 // LOAD CLIENTS
 function loadClients(){
@@ -128,36 +155,49 @@ let html = "<option value=''>Select</option>";
 clients.forEach(c=>{
 html += `<option value="${c.name}">${c.name}</option>`;
 });
-subName.innerHTML = html;
+document.getElementById("subName").innerHTML = html;
 }
 
 // ADD ENTRY
 function addEntry(){
 
-let dc = dc.value;
-let code = document.getElementById("code").value;
-let acc = accountName.value;
-let subDescVal = subDesc.value;
-let amountVal = Number(amount.value);
-let sub = subName.value;
+let dcVal = document.getElementById("dc").value;
+let codeVal = document.getElementById("code").value;
+let accName = document.getElementById("accountName").value;
+let subDescVal = document.getElementById("subDesc").value;
+let amountVal = Number(document.getElementById("amount").value);
+let subVal = document.getElementById("subName").value;
 
-// 🔥 RULE: only AR can have sub
-if(code !== "1100"){
-sub = "";
+if(!codeVal || !accName){
+alert("Select account");
+return;
+}
+
+if(amountVal <= 0){
+alert("Enter amount");
+return;
+}
+
+// 🔥 ONLY AR CAN HAVE CLIENT
+if(codeVal !== "1100"){
+subVal = "";
 subDescVal = "";
 }
 
+// SAVE
 entries.push({
-dc:dc,
-code:code,
-account:acc,
+dc:dcVal,
+code:codeVal,
+account:accName,
 subDesc:subDescVal,
 amount:amountVal,
-subName:sub
+subName:subVal
 });
 
 localStorage.setItem("jv", JSON.stringify(entries));
+
 loadTable();
+clearForm();
 }
 
 // LOAD TABLE
@@ -176,24 +216,32 @@ html += `
 <td>${e.amount}</td>
 <td>${e.subName}</td>
 <td>
-<button onclick="deleteEntry(${i})">Delete</button>
+<button class="deleteBtn" onclick="deleteEntry(${i})">Delete</button>
 </td>
 </tr>
 `;
 
 });
 
-table.innerHTML = html;
+document.getElementById("table").innerHTML = html;
 }
 
 // DELETE
 function deleteEntry(i){
+if(confirm("Delete entry?")){
 entries.splice(i,1);
 localStorage.setItem("jv", JSON.stringify(entries));
 loadTable();
 }
+}
+
+// CLEAR
+function clearForm(){
+document.getElementById("amount").value="";
+}
 
 // INIT
+loadCOA();
 loadClients();
 loadTable();
 
