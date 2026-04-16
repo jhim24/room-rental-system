@@ -20,14 +20,6 @@ body {
   padding:20px;
 }
 
-.sidebar h2 {
-  text-align:center;
-}
-
-.menu {
-  margin-top:30px;
-}
-
 .menu button {
   width:100%;
   padding:12px;
@@ -37,12 +29,9 @@ body {
   background:rgba(255,255,255,0.1);
   color:white;
   cursor:pointer;
-  text-align:left;
 }
 
-.menu button:hover {
-  background:#3498db;
-}
+.menu button:hover { background:#3498db; }
 
 /* MAIN */
 .main {
@@ -50,25 +39,34 @@ body {
   padding:20px;
 }
 
-/* BOX */
+/* GLASS BOX */
 .box {
-  background:white;
-  padding:15px;
-  border-radius:10px;
-  margin-bottom:15px;
+  background: rgba(255,255,255,0.9);
+  padding:20px;
+  border-radius:15px;
+  margin-bottom:20px;
 }
 
-/* INPUT */
+/* FORM GRID */
+.formGrid {
+  display:grid;
+  grid-template-columns: repeat(3,1fr);
+  gap:10px;
+}
+
+/* INPUT STYLE */
 input, select {
-  padding:8px;
-  margin:5px;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  width:100%;
 }
 
 /* BUTTON */
 button {
-  padding:6px 10px;
+  padding:10px;
   border:none;
-  border-radius:6px;
+  border-radius:8px;
   cursor:pointer;
 }
 
@@ -79,16 +77,19 @@ button {
 table {
   width:100%;
   border-collapse:collapse;
+  margin-top:10px;
 }
 
 th, td {
-  border:1px solid #ccc;
-  padding:8px;
+  border:1px solid #ddd;
+  padding:10px;
   text-align:center;
 }
 
-th { background:#3498db; color:white; }
-
+th {
+  background:#3498db;
+  color:white;
+}
 </style>
 </head>
 
@@ -108,10 +109,18 @@ th { background:#3498db; color:white; }
 <!-- MAIN -->
 <div class="main">
 
+<!-- FORM -->
 <div class="box">
-<h3>Add Client</h3>
+<h3>Add Client Information</h3>
 
-<input id="name" placeholder="Client Name">
+<div class="formGrid">
+
+<input id="name" placeholder="Full Name">
+<input id="nationality" placeholder="Nationality">
+<input id="qid" placeholder="QID">
+
+<input type="date" id="entryDate">
+<input type="date" id="exitDate">
 
 <select id="roomSelect"></select>
 
@@ -124,18 +133,25 @@ th { background:#3498db; color:white; }
 <option>Store Keeper</option>
 </select>
 
-<button class="saveBtn" onclick="addClient()">Save</button>
+</div>
+
+<button class="saveBtn" onclick="addClient()">Save Client</button>
 
 </div>
 
+<!-- TABLE -->
 <div class="box">
-<h3>Client List</h3>
+<h3>Client Records</h3>
 
 <table>
 <thead>
 <tr>
 <th>#</th>
 <th>Name</th>
+<th>Nationality</th>
+<th>QID</th>
+<th>Entry</th>
+<th>Exit</th>
 <th>Room</th>
 <th>Category</th>
 <th>Action</th>
@@ -152,7 +168,7 @@ th { background:#3498db; color:white; }
 
 <script>
 
-// NAVIGATION
+// NAV
 function go(page){
 window.location.href = page;
 }
@@ -166,7 +182,7 @@ function loadRooms(){
 roomSelect.innerHTML="";
 
 if(rooms.length === 0){
-roomSelect.innerHTML = "<option>No rooms yet</option>";
+roomSelect.innerHTML="<option>No rooms</option>";
 return;
 }
 
@@ -178,24 +194,34 @@ roomSelect.innerHTML += `<option value="${r.number}">${r.number}</option>`;
 // ADD CLIENT
 function addClient(){
 
-if(!name.value){
-alert("Enter client name");
+if(!name.value || !qid.value){
+alert("Fill required fields");
 return;
 }
 
 tenants.push({
 name:name.value,
+nationality:nationality.value,
+qid:qid.value,
+entry:entryDate.value,
+exit:exitDate.value,
 room:roomSelect.value,
 category:category.value
 });
 
 localStorage.setItem("tenants", JSON.stringify(tenants));
 
+// CLEAR
 name.value="";
+nationality.value="";
+qid.value="";
+entryDate.value="";
+exitDate.value="";
+
 loadClients();
 }
 
-// LOAD CLIENTS
+// LOAD TABLE
 function loadClients(){
 
 clientTable.innerHTML="";
@@ -205,6 +231,10 @@ clientTable.innerHTML += `
 <tr>
 <td>${i+1}</td>
 <td>${t.name}</td>
+<td>${t.nationality||""}</td>
+<td>${t.qid||""}</td>
+<td>${t.entry||""}</td>
+<td>${t.exit||""}</td>
 <td>${t.room}</td>
 <td>${t.category}</td>
 <td>
