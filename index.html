@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Accommodation System</title>
+<title>Dashboard</title>
 
 <style>
 body {
@@ -18,7 +18,6 @@ body {
   background: rgba(0,0,0,0.7);
   color:white;
   padding:20px;
-  backdrop-filter: blur(10px);
 }
 
 .sidebar h2 {
@@ -45,23 +44,13 @@ body {
   background:#3498db;
 }
 
-/* MAIN CONTENT */
+/* MAIN */
 .main {
   flex:1;
   padding:20px;
-  overflow:auto;
 }
 
-/* GLASS BOX */
-.box {
-  background: rgba(255,255,255,0.85);
-  padding:20px;
-  border-radius:15px;
-  margin-bottom:20px;
-  backdrop-filter: blur(5px);
-}
-
-/* DASHBOARD CARDS */
+/* CARDS */
 .flex {
   display:flex;
   gap:15px;
@@ -81,7 +70,6 @@ body {
 .card b {
   font-size:24px;
 }
-
 </style>
 </head>
 
@@ -92,79 +80,44 @@ body {
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-<button onclick="showTab('dashboard')">📊 Dashboard</button>
-<button onclick="showTab('room')">🏠 Rooms</button>
-<button onclick="showTab('tenant')">👥 Tenants</button>
-<button onclick="showTab('billing')">💰 Billing</button>
-<button onclick="showTab('report')">📄 Reports</button>
+<button onclick="go('index.html')">📊 Dashboard</button>
+<button onclick="go('rooms.html')">🏠 Rooms</button>
 </div>
 </div>
 
 <!-- MAIN -->
 <div class="main">
 
-<!-- DASHBOARD -->
-<div id="dashboardTab" class="box">
-<h3>Dashboard</h3>
+<h2>Dashboard</h2>
 
 <div class="flex">
 <div class="card">Rooms<br><b id="rooms">0</b></div>
 <div class="card">Tenants<br><b id="tenants">0</b></div>
 <div class="card">Available<br><b id="available">0</b></div>
-<div class="card">Bed Space<br><b id="bed">0</b></div>
-<div class="card">Freelancer<br><b id="free">0</b></div>
-<div class="card">Company Staff<br><b id="company">0</b></div>
-</div>
-
-</div>
-
-<!-- EMPTY TABS -->
-<div id="roomTab" class="box" style="display:none;">
-<h3>Rooms (Next Step)</h3>
-</div>
-
-<div id="tenantTab" class="box" style="display:none;">
-<h3>Tenants (Next Step)</h3>
-</div>
-
-<div id="billingTab" class="box" style="display:none;">
-<h3>Billing (Next Step)</h3>
-</div>
-
-<div id="reportTab" class="box" style="display:none;">
-<h3>Reports (Next Step)</h3>
 </div>
 
 </div>
 
 <script>
 
-// SAMPLE DATA
-let roomsData = [];
-let tenantsData = [];
-
-// TAB SWITCH
-function showTab(tab){
-document.getElementById("dashboardTab").style.display="none";
-document.getElementById("roomTab").style.display="none";
-document.getElementById("tenantTab").style.display="none";
-document.getElementById("billingTab").style.display="none";
-document.getElementById("reportTab").style.display="none";
-
-document.getElementById(tab+"Tab").style.display="block";
+// NAVIGATION
+function go(page){
+window.location.href = page;
 }
 
-// DASHBOARD LOAD
+// LOAD DATA
+let roomsData = JSON.parse(localStorage.getItem("rooms")) || [];
+let tenantsData = JSON.parse(localStorage.getItem("tenants")) || [];
+
+// DASHBOARD
 function loadDashboard(){
 
 rooms.innerText = roomsData.length;
 tenants.innerText = tenantsData.length;
 
-// sample logic (ready for next step)
-available.innerText = 0;
-bed.innerText = 0;
-free.innerText = 0;
-company.innerText = 0;
+// capacity logic
+let totalCap = roomsData.reduce((sum,r)=>sum+(r.capacity||0),0);
+available.innerText = totalCap - tenantsData.length;
 
 }
 
