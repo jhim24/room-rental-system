@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Accommodation System FINAL</title>
+<title>Accommodation System FINAL PRO</title>
 
 <style>
 body {
@@ -61,12 +61,17 @@ th, td {
 }
 
 th { background:#3498db; color:white; }
+
+/* REPORT GRID (EXCEL STYLE) */
+#reportTable td, #reportTable th {
+  border:1px solid #000;
+}
 </style>
 </head>
 
 <body>
 
-<h2 style="color:white;">🏨 Accommodation System FINAL</h2>
+<h2 style="color:white;">🏨 Accommodation System FINAL PRO</h2>
 
 <!-- TAB -->
 <div class="box">
@@ -143,7 +148,7 @@ th { background:#3498db; color:white; }
 
 </div>
 
-<!-- ROOM TAB -->
+<!-- ROOM -->
 <div id="roomTab" style="display:none;">
 <div class="box">
 <h3>Room Status</h3>
@@ -158,7 +163,7 @@ th { background:#3498db; color:white; }
 </div>
 </div>
 
-<!-- TENANT TAB -->
+<!-- TENANT -->
 <div id="tenantTab" style="display:none;">
 <div class="box">
 <h3>Tenant List</h3>
@@ -173,7 +178,7 @@ th { background:#3498db; color:white; }
 </div>
 </div>
 
-<!-- REPORT TAB -->
+<!-- REPORT -->
 <div id="reportTab" style="display:none;">
 <div class="box">
 <h3>Report (Date Range)</h3>
@@ -181,9 +186,25 @@ th { background:#3498db; color:white; }
 From: <input type="month" id="reportFrom" min="2000-01" max="2050-12">
 To: <input type="month" id="reportTo" min="2000-01" max="2050-12">
 
+<br><br>
+
+Category:
+<select id="reportCategory">
+<option value="">All</option>
+<option>Bed Space</option>
+<option>Tenant</option>
+<option>Freelancer</option>
+<option>Company Staff</option>
+<option>Office Staff</option>
+<option>Store Keeper</option>
+</select>
+
+<button class="editBtn" onclick="printReport()">Print</button>
+
 <table>
 <thead>
 <tr>
+<th>Category</th>
 <th>Name</th>
 <th>Total Rent</th>
 <th>Total Payment</th>
@@ -235,7 +256,7 @@ tenants.push({name:tenantName.value,room:r.number,category:category.value});
 save(); loadAll();
 }
 
-// FIX MULTI TABLE
+// TENANT TABLE FIX
 function renderAllTenantTables(){
 let tables=document.querySelectorAll("#tenantTable");
 tables.forEach(table=>{
@@ -285,7 +306,6 @@ monthly:rentVal
 save(); loadLedger();
 }
 
-// DROPDOWN
 function loadTenantSelect(){
 tenantSelect.innerHTML="";
 tenants.forEach((t,i)=>{
@@ -374,10 +394,13 @@ if(!reportFrom.value || !reportTo.value) return;
 
 let from=new Date(reportFrom.value);
 let to=new Date(reportTo.value);
+let cat=reportCategory.value;
 
 reportTable.innerHTML="";
 
 tenants.forEach(t=>{
+
+if(cat && t.category!==cat) return;
 
 let totalRent=0;
 let totalPay=0;
@@ -394,6 +417,7 @@ let balance=totalRent-totalPay;
 
 reportTable.innerHTML+=`
 <tr>
+<td>${t.category}</td>
 <td>${t.name}</td>
 <td>${totalRent}</td>
 <td>${totalPay}</td>
@@ -404,6 +428,18 @@ reportTable.innerHTML+=`
 
 reportFrom.onchange=loadReport;
 reportTo.onchange=loadReport;
+reportCategory.onchange=loadReport;
+
+// PRINT
+function printReport(){
+let content=reportTab.innerHTML;
+let win=window.open("");
+win.document.write(`
+<html><head><title>Report</title></head>
+<body>${content}</body></html>
+`);
+win.print();
+}
 
 // LOAD ALL
 function loadAll(){
