@@ -71,6 +71,7 @@ th { background:#3498db; color:white; }
 <input type="month" id="month" min="2000-01">
 
 <input type="number" id="rent" placeholder="Rent Amount">
+<input type="number" id="payment" placeholder="Payment">
 <input type="number" id="price" placeholder="Price per head">
 <input type="number" id="capacity" placeholder="Capacity">
 
@@ -96,6 +97,8 @@ th { background:#3498db; color:white; }
 <th>Category</th>
 <th>Month</th>
 <th>Rent</th>
+<th>Payment</th>
+<th>Balance</th>
 <th>Price</th>
 <th>Capacity</th>
 <th>Action</th>
@@ -118,12 +121,17 @@ function saveData(){
 
 if(!name.value) return alert("Enter tenant name");
 
+let rentVal = Number(rent.value) || 0;
+let paymentVal = Number(payment.value) || 0;
+
 let record = {
 name: name.value,
 room: room.value,
 category: category.value,
 month: month.value,
-rent: Number(rent.value) || 0,
+rent: rentVal,
+payment: paymentVal,
+balance: rentVal - paymentVal,
 price: Number(price.value) || 0,
 capacity: Number(capacity.value) || 0
 };
@@ -140,12 +148,17 @@ function updateData(){
 
 if(editIndex === -1) return alert("Select record first");
 
+let rentVal = Number(rent.value) || 0;
+let paymentVal = Number(payment.value) || 0;
+
 data[editIndex] = {
 name: name.value,
 room: room.value,
 category: category.value,
 month: month.value,
-rent: Number(rent.value) || 0,
+rent: rentVal,
+payment: paymentVal,
+balance: rentVal - paymentVal,
 price: Number(price.value) || 0,
 capacity: Number(capacity.value) || 0
 };
@@ -181,6 +194,7 @@ room.value = d.room || "";
 category.value = d.category || "Tenant";
 month.value = d.month || "";
 rent.value = d.rent || 0;
+payment.value = d.payment || 0;
 price.value = d.price || 0;
 capacity.value = d.capacity || 0;
 
@@ -197,7 +211,7 @@ loadTable();
 }
 }
 
-// LOAD TABLE (FIXED NO UNDEFINED)
+// LOAD TABLE
 function loadTable(){
 
 table.innerHTML = "";
@@ -212,6 +226,8 @@ table.innerHTML += `
 <td>${d.category || ""}</td>
 <td>${d.month || ""}</td>
 <td>${d.rent || 0}</td>
+<td>${d.payment || 0}</td>
+<td style="color:${d.balance>0?'red':'green'}">${d.balance}</td>
 <td>${d.price || 0}</td>
 <td>${d.capacity || 0}</td>
 <td>
@@ -229,13 +245,14 @@ function save(){
 localStorage.setItem("data", JSON.stringify(data));
 }
 
-// CLEAR FORM (FIXED RESET)
+// CLEAR FORM
 function clearForm(){
 name.value = "";
 room.value = "";
 category.value = "Tenant";
 month.value = "";
 rent.value = "";
+payment.value = "";
 price.value = "";
 capacity.value = "";
 editIndex = -1;
