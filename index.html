@@ -76,10 +76,17 @@ th { background:#3498db; color:white; }
 <!-- DASHBOARD -->
 <div class="box">
 <h3>Dashboard</h3>
+
 <div class="flex">
 <div class="card">Rooms<br><b id="totalRooms">0</b></div>
 <div class="card">Tenants<br><b id="totalTenants">0</b></div>
 <div class="card">Available<br><b id="availableSlots">0</b></div>
+
+<!-- ✅ ADDED -->
+<div class="card">Bed Space<br><b id="bedSpaceCount">0</b></div>
+<div class="card">Freelancer<br><b id="freelancerCount">0</b></div>
+<div class="card">Company Staff<br><b id="companyStaffCount">0</b></div>
+
 </div>
 </div>
 
@@ -147,19 +154,15 @@ function saveRoom(){
 if(!roomNo.value || !capacity.value) return alert("Fill all");
 
 if(editRoomIndex === -1){
-
   rooms.push({
     number: roomNo.value,
     capacity: Number(capacity.value)
   });
-
 }else{
-
   rooms[editRoomIndex] = {
     number: roomNo.value,
     capacity: Number(capacity.value)
   };
-
   editRoomIndex = -1;
 }
 
@@ -182,7 +185,6 @@ roomSelect.innerHTML += `<option value="${i}">${r.number}</option>`;
 function addTenant(){
 
 let r = rooms[roomSelect.value];
-
 let occupied = tenants.filter(t=>t.room===r.number).length;
 
 if(occupied >= r.capacity){
@@ -229,10 +231,8 @@ roomTable.innerHTML += `
 // EDIT ROOM
 function editRoom(i){
 let r = rooms[i];
-
 roomNo.value = r.number;
 capacity.value = r.capacity;
-
 editRoomIndex = i;
 }
 
@@ -243,7 +243,7 @@ if(!confirm("Delete this room?")) return;
 
 let roomName = rooms[i].number;
 
-// REMOVE TENANTS IN ROOM
+// REMOVE TENANTS
 tenants = tenants.filter(t => t.room !== roomName);
 
 rooms.splice(i,1);
@@ -262,6 +262,16 @@ let totalCapacity = rooms.reduce((s,r)=>s+r.capacity,0);
 let occupied = tenants.length;
 
 availableSlots.innerText = totalCapacity - occupied;
+
+// ✅ ADDED CATEGORY COUNTS
+let bed = tenants.filter(t=>t.category==="Bed Space").length;
+let free = tenants.filter(t=>t.category==="Freelancer").length;
+let comp = tenants.filter(t=>t.category==="Company Staff").length;
+
+bedSpaceCount.innerText = bed;
+freelancerCount.innerText = free;
+companyStaffCount.innerText = comp;
+
 }
 
 // LOAD ALL
