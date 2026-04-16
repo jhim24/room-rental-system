@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Client Ledger</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial;
+  display:flex;
+  background: linear-gradient(135deg,#1d2b64,#f8cdda);
+}
+
+/* SIDEBAR */
+.sidebar {
+  width:230px;
+  background: rgba(0,0,0,0.75);
+  color:white;
+  padding:20px;
+}
+
+.menu button {
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:none;
+  border-radius:8px;
+  background:rgba(255,255,255,0.1);
+  color:white;
+  cursor:pointer;
+}
+
+/* MAIN */
+.main {
+  flex:1;
+  padding:20px;
+}
+
+/* BOX */
+.box {
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+}
+
+/* INPUT */
+select, input {
+  padding:10px;
+  margin:5px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+/* BUTTON */
+button {
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.printBtn {
+  background:#27ae60;
+  color:white;
+}
+
+/* TABLE */
+table {
+  width:100%;
+  border-collapse:collapse;
+}
+
+th, td {
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
+}
+
+th {
+  background:#3498db;
+  color:white;
+}
+
+/* BALANCE */
+.balanceBox {
+  margin-top:10px;
+  font-size:18px;
+  font-weight:bold;
+}
+
+/* OVERDUE */
+.overdue {
+  background:#ffcccc;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+<h2>🏨 SYSTEM</h2>
+
+<div class="menu">
+<button onclick="location.href='index.html?v=11'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=11'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=11'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=11'">📒 Journal</button>
+<button onclick="location.href='coa.html?v=11'">📚 Chart of Accounts</button>
+<button onclick="location.href='ledger.html?v=11'">📘 Client Ledger</button>
+</div>
+</div>
+
+<div class="main">
+
+<div class="box">
+<h3>Client Ledger</h3>
+
+<select id="clientSelect" onchange="loadLedger()"></select>
+
+<br>
+
+<!-- 🔥 DATE FILTER -->
+From: <input type="date" id="fromDate" onchange="loadLedger()">
+To: <input type="date" id="toDate" onchange="loadLedger()">
+
+<br><br>
+
+<button class="printBtn" onclick="printLedger()">🖨 Print Ledger</button>
+
+</div>
+
+<div class="box">
+<h3>Ledger Records</h3>
+
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Date</th>
+<th>Description</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Running Balance</th>
+</tr>
+</thead>
+
+<tbody id="ledgerTable"></tbody>
+
+</table>
+
+<div class="balanceBox">
+Total Balance: <span id="totalBalance">0</span>
+</div>
+
+<div class="balanceBox">
+Unpaid Months: <span id="unpaidMonths">0</span>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+// DATA
+let entries = JSON.parse(localStorage.getItem("jv")) || [];
+let clients = JSON.parse(localStorage.getItem("tenants")) || [];
+
+// LOAD CLIENTS
+function loadClients(){
+let html = "<option value=''>Select Client</option>";
+clients.forEach(c=>{
+html += `<option value="${c.name}">${c.name}</option>`;
+});
+clientSelect.innerHTML = html;
+}
+
+// LOAD LEDGER
+function loadLedger(){
+
+let selected = clientSelect.value;
+let from = fromDate.value;
+let to = toDate.value;
+
+let html = "";
+let balance = 0;
+let unpaidCount = 0;
+
+let filtered = entries.filter(e => e.client === selected);
+
+// FILTER DATE
+if(from){
+filtered = filtered.filter(e => e.date >= from);
+}
+if(to){
+filtered = filtered.filter(e => e.date <= to);
+}
+
+// SORT
+filtered.sort((a,b)=> new Date(a.date) - new Date(b.date));
+
+filtered.forEach((e,i)=>{
+
+balance += e.debit;
+balance -= e.credit;
+
+// 🔥 OVERDUE LOGIC
+let isOverdue = balance > 0;
+
+if(isOverdue){
+unpaidCount++;
+}
+
+html += `
+<tr class="${isOverdue ? 'overdue' : ''}">
+<td>${i+1}</td>
+<td>${e.date || ""}</td>
+<td>${e.description || ""}</td>
+<td>${e.debit}</td>
+<td>${e.credit}</td>
+<td>${balance}</td>
+</tr>
+`;
+});
+
+ledgerTable.innerHTML = html;
+totalBalance.innerText = balance;
+unpaidMonths.innerText = unpaidCount;
+}
+
+// PRINT
+function printLedger(){
+window.print();
+}
+
+// INIT
+loadClients();
+
+</script>
+
+</body>
+</html>
