@@ -1,112 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Accommodation System FINAL PRO</title>
+<title>Accommodation System FINAL COMPLETE</title>
 
 <style>
 body {
   font-family: Arial;
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg,#667eea,#764ba2);
   padding:20px;
-  color:#2c3e50;
 }
 
 .box {
-  background: rgba(255,255,255,0.95);
+  background:white;
   padding:15px;
-  border-radius:12px;
+  border-radius:10px;
   margin-bottom:15px;
-}
-
-.flex { display:flex; gap:10px; flex-wrap:wrap; }
-
-.card {
-  flex:1;
-  min-width:150px;
-  background: linear-gradient(135deg,#3498db,#6dd5fa);
-  color:white;
-  padding:15px;
-  border-radius:12px;
-  text-align:center;
-}
-
-input, select {
-  padding:10px;
-  margin:5px;
-  border-radius:8px;
-  border:1px solid #ccc;
 }
 
 button {
   padding:8px 12px;
+  margin:5px;
   border:none;
-  border-radius:8px;
-  color:white;
+  border-radius:6px;
   cursor:pointer;
+  background:#3498db;
+  color:white;
 }
 
-.saveBtn { background:#2ecc71; }
-.editBtn { background:#f39c12; }
-.deleteBtn { background:#e74c3c; }
+.deleteBtn{background:red;}
+.editBtn{background:orange;}
 
-table {
+table{
   width:100%;
   border-collapse:collapse;
 }
 
-th, td {
-  border:1px solid #ddd;
-  padding:10px;
+th,td{
+  border:1px solid #ccc;
+  padding:8px;
   text-align:center;
 }
 
-th { background:#3498db; color:white; }
-
-/* REPORT GRID */
-#reportTable td, #reportTable th {
-  border:1px solid #000;
-}
+th{background:#3498db;color:white;}
 </style>
 </head>
 
 <body>
 
-<h2 style="color:white;">🏨 Accommodation System FINAL PRO</h2>
+<h2 style="color:white;">🏨 Accommodation System</h2>
 
 <div class="box">
-<button class="saveBtn" onclick="showTab('main')">Main</button>
-<button class="editBtn" onclick="showTab('room')">Room Status</button>
-<button class="deleteBtn" onclick="showTab('tenant')">Tenant List</button>
-<button class="saveBtn" onclick="showTab('report')">Report</button>
+<button onclick="showTab('main')">Main</button>
+<button onclick="showTab('room')">Room</button>
+<button onclick="showTab('tenant')">Tenant</button>
+<button onclick="showTab('report')">Report</button>
 </div>
 
 <!-- MAIN -->
 <div id="mainTab">
 
 <div class="box">
-<h3>Dashboard</h3>
-<div class="flex">
-<div class="card">Rooms<br><b id="totalRooms">0</b></div>
-<div class="card">Tenants<br><b id="totalTenants">0</b></div>
-<div class="card">Available<br><b id="availableSlots">0</b></div>
-<div class="card">Bed Space<br><b id="bedSpaceCount">0</b></div>
-<div class="card">Freelancer<br><b id="freelancerCount">0</b></div>
-<div class="card">Company Staff<br><b id="companyStaffCount">0</b></div>
-</div>
-</div>
-
-<div class="box">
 <h3>Add Room</h3>
 <input id="roomNo" placeholder="Room #">
 <input id="capacity" type="number" placeholder="Capacity">
-<button class="saveBtn" onclick="saveRoom()">Save</button>
+<button onclick="saveRoom()">Save</button>
 </div>
 
 <div class="box">
 <h3>Add Tenant</h3>
 <input id="tenantName" placeholder="Tenant Name">
 <select id="roomSelect"></select>
-
 <select id="category">
 <option>Bed Space</option>
 <option>Tenant</option>
@@ -115,17 +78,29 @@ th { background:#3498db; color:white; }
 <option>Office Staff</option>
 <option>Store Keeper</option>
 </select>
-
-<button class="saveBtn" onclick="addTenant()">Save Tenant</button>
+<button onclick="addTenant()">Save</button>
 </div>
 
 <div class="box">
 <h3>Billing</h3>
 <select id="tenantSelect"></select>
 <input type="month" id="month">
-<input type="number" id="rent" placeholder="Rent (optional)">
-<input type="number" id="payment" placeholder="Payment (optional)">
-<button class="saveBtn" onclick="addBillingFlexible()">Save</button>
+<input id="rent" type="number" placeholder="Rent">
+<input id="payment" type="number" placeholder="Payment">
+<button onclick="addBilling()">Save</button>
+</div>
+
+<div class="box">
+<h3>Payment History</h3>
+<select id="historyTenant"></select>
+<table>
+<thead>
+<tr>
+<th>Date</th><th>Name</th><th>Amount</th><th>Action</th>
+</tr>
+</thead>
+<tbody id="paymentTable"></tbody>
+</table>
 </div>
 
 <div class="box">
@@ -134,11 +109,12 @@ th { background:#3498db; color:white; }
 <table>
 <thead>
 <tr>
-<th>Name</th><th>Jan</th><th>Feb</th><th>Mar</th>
+<th>Name</th>
+<th>Jan</th><th>Feb</th><th>Mar</th>
 <th>Apr</th><th>May</th><th>Jun</th>
 <th>Jul</th><th>Aug</th><th>Sep</th>
 <th>Oct</th><th>Nov</th><th>Dec</th>
-<th>Total</th><th>Action</th>
+<th>Total</th>
 </tr>
 </thead>
 <tbody id="ledgerTable"></tbody>
@@ -167,11 +143,6 @@ th { background:#3498db; color:white; }
 <div class="box">
 <h3>Tenant List</h3>
 <table>
-<thead>
-<tr>
-<th>#</th><th>Name</th><th>Room</th><th>Category</th><th>Action</th>
-</tr>
-</thead>
 <tbody id="tenantTable"></tbody>
 </table>
 </div>
@@ -182,11 +153,8 @@ th { background:#3498db; color:white; }
 <div class="box">
 <h3>Report</h3>
 
-From <input type="date" id="reportFrom">
-To <input type="date" id="reportTo">
-
-<br>
-<span id="fromDisplay"></span> - <span id="toDisplay"></span>
+From <input type="date" id="from">
+To <input type="date" id="to">
 
 <select id="reportCategory">
 <option value="">All</option>
@@ -198,13 +166,11 @@ To <input type="date" id="reportTo">
 <option>Store Keeper</option>
 </select>
 
-<button onclick="printReport()">Print</button>
+<button onclick="loadReport()">Generate</button>
 
-<div class="flex">
-<div class="card">Revenue<br><b id="totalRevenue">0</b></div>
-<div class="card">Cash<br><b id="totalCash">0</b></div>
-<div class="card">Receivable<br><b id="totalReceivable">0</b></div>
-</div>
+<h4>Total Revenue: <span id="rev">0</span></h4>
+<h4>Total Cash: <span id="cash">0</span></h4>
+<h4>Total Receivable: <span id="rec">0</span></h4>
 
 <table>
 <thead>
@@ -220,250 +186,206 @@ To <input type="date" id="reportTo">
 
 <script>
 
-let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
-let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
-let billings = JSON.parse(localStorage.getItem("billings")) || [];
+let rooms=[], tenants=[], billings=[], payments=[];
 
 function save(){
-localStorage.setItem("rooms", JSON.stringify(rooms));
-localStorage.setItem("tenants", JSON.stringify(tenants));
-localStorage.setItem("billings", JSON.stringify(billings));
+localStorage.setItem("rooms",JSON.stringify(rooms));
+localStorage.setItem("tenants",JSON.stringify(tenants));
+localStorage.setItem("billings",JSON.stringify(billings));
+localStorage.setItem("payments",JSON.stringify(payments));
+}
+
+function load(){
+rooms=JSON.parse(localStorage.getItem("rooms"))||[];
+tenants=JSON.parse(localStorage.getItem("tenants"))||[];
+billings=JSON.parse(localStorage.getItem("billings"))||[];
+payments=JSON.parse(localStorage.getItem("payments"))||[];
 }
 
 function showTab(tab){
-mainTab.style.display = tab==="main"?"block":"none";
-roomTab.style.display = tab==="room"?"block":"none";
-tenantTab.style.display = tab==="tenant"?"block":"none";
-reportTab.style.display = tab==="report"?"block":"none";
+mainTab.style.display=tab==="main"?"block":"none";
+roomTab.style.display=tab==="room"?"block":"none";
+tenantTab.style.display=tab==="tenant"?"block":"none";
+reportTab.style.display=tab==="report"?"block":"none";
 }
 
 // ROOM
 function saveRoom(){
-rooms.push({number:roomNo.value,capacity:Number(capacity.value)});
-save(); loadAll();
-}
-
-function loadRooms(){
-roomSelect.innerHTML="";
-rooms.forEach((r,i)=>{
-roomSelect.innerHTML+=`<option value="${i}">${r.number}</option>`;
-});
+rooms.push({number:roomNo.value,capacity:+capacity.value});
+save();loadAll();
 }
 
 // TENANT
 function addTenant(){
 let r=rooms[roomSelect.value];
 tenants.push({name:tenantName.value,room:r.number,category:category.value});
-save(); loadAll();
-renderAllTenantTables();
-tenantName.value="";
+save();loadAll();
 }
 
-// TENANT TABLE
-function renderAllTenantTables(){
-tenantTable.innerHTML="";
-tenants.forEach((t,i)=>{
-tenantTable.innerHTML+=`
+// BILLING
+function addBilling(){
+let t=tenants[tenantSelect.value];
+
+let r=+rent.value||0;
+let p=+payment.value||0;
+
+let i=billings.findIndex(b=>b.name===t.name&&b.month===month.value);
+
+if(i!=-1){
+billings[i].rent+=r;
+billings[i].payment+=p;
+}else{
+billings.push({name:t.name,month:month.value,rent:r,payment:p});
+}
+
+// payment history
+if(p>0){
+payments.push({name:t.name,amount:p,date:new Date().toLocaleDateString()});
+}
+
+save();
+loadAll();
+}
+
+// PAYMENT HISTORY
+function loadPayments(){
+paymentTable.innerHTML="";
+payments.forEach((p,i)=>{
+paymentTable.innerHTML+=`
 <tr>
-<td>${i+1}</td>
-<td>${t.name}</td>
-<td>${t.room}</td>
-<td>${t.category}</td>
-<td><button onclick="deleteTenant(${i})">Delete</button></td>
+<td>${p.date}</td>
+<td>${p.name}</td>
+<td>${p.amount}</td>
+<td>
+<button onclick="editPayment(${i})">Edit</button>
+<button onclick="deletePayment(${i})">Delete</button>
+</td>
 </tr>`;
 });
 }
 
-function deleteTenant(i){
-tenants.splice(i,1);
-save(); loadAll();
-}
-
-// BILLING
-function addBillingFlexible(){
-let t=tenants[tenantSelect.value];
-let rentVal=Number(rent.value)||0;
-let payVal=Number(payment.value)||0;
-
-if(rentVal===0 && payVal===0) return alert("Enter rent or payment");
-
-let index=billings.findIndex(b=>b.name===t.name && b.month===month.value);
-
-if(index!==-1){
-billings[index].rent+=rentVal;
-billings[index].payment+=payVal;
-billings[index].monthly=(billings[index].monthly||0)+rentVal;
-billings[index].balance=billings[index].rent-billings[index].payment;
-}else{
-billings.push({
-name:t.name,
-month:month.value,
-rent:rentVal,
-payment:payVal,
-balance:rentVal-payVal,
-monthly:rentVal
-});
-}
-
-save(); loadLedger();
-rent.value=""; payment.value="";
-}
-
-function loadTenantSelect(){
-tenantSelect.innerHTML="";
-tenants.forEach((t,i)=>{
-tenantSelect.innerHTML+=`<option value="${i}">${t.name}</option>`;
-});
-}
-
-// DASHBOARD
-function loadDashboard(){
-totalRooms.innerText=rooms.length;
-totalTenants.innerText=tenants.length;
-let totalCap=rooms.reduce((s,r)=>s+r.capacity,0);
-availableSlots.innerText=totalCap-tenants.length;
-bedSpaceCount.innerText=tenants.filter(t=>t.category==="Bed Space").length;
-freelancerCount.innerText=tenants.filter(t=>t.category==="Freelancer").length;
-companyStaffCount.innerText=tenants.filter(t=>t.category==="Company Staff").length;
-}
-
-// ROOM STATUS
-function loadRoomStatus(){
-roomTable.innerHTML="";
-rooms.forEach(r=>{
-let occ=tenants.filter(t=>t.room===r.number).length;
-let avail=r.capacity-occ;
-roomTable.innerHTML+=`<tr><td>${r.number}</td><td>${r.capacity}</td><td>${occ}</td><td>${avail}</td></tr>`;
-});
-}
-
-// YEAR
-function loadYearFilter(){
-yearFilter.innerHTML="";
-for(let y=2000;y<=2050;y++){
-yearFilter.innerHTML+=`<option value="${y}">${y}</option>`;
+function editPayment(i){
+let val=prompt("Edit",payments[i].amount);
+if(val!=null){
+payments[i].amount=+val;
+save();loadPayments();
 }
 }
-yearFilter.onchange=loadLedger;
+
+function deletePayment(i){
+payments.splice(i,1);
+save();loadPayments();
+}
 
 // LEDGER
 function loadLedger(){
-let year=yearFilter.value;
 ledgerTable.innerHTML="";
 tenants.forEach(t=>{
-let months=Array(12).fill(0);
+let m=Array(12).fill(0);
 
 billings.forEach(b=>{
 let d=new Date(b.month);
-if(b.name===t.name && d.getFullYear()==year){
-months[d.getMonth()]+=(b.monthly||b.rent);
-}
+if(b.name===t.name)m[d.getMonth()]+=b.rent;
 });
 
-let total=months.reduce((a,b)=>a+b,0);
+let total=m.reduce((a,b)=>a+b,0);
 
 ledgerTable.innerHTML+=`
 <tr>
 <td>${t.name}</td>
-${months.map(m=>`<td>${m}</td>`).join("")}
+${m.map(x=>`<td>${x}</td>`).join("")}
 <td>${total}</td>
-<td><button onclick="editLedger('${t.name}')">Edit</button></td>
 </tr>`;
 });
-}
-
-// EDIT LEDGER
-function editLedger(name){
-let year=yearFilter.value;
-billings.forEach(b=>{
-let d=new Date(b.month);
-if(b.name===name && d.getFullYear()==year){
-let val=prompt(`Edit ${name} ${b.month}`,b.monthly||b.rent);
-if(val!==null){
-let v=Number(val)||0;
-b.monthly=v; b.rent=v; b.balance=b.rent-b.payment;
-}
-}
-});
-save(); loadLedger();
 }
 
 // REPORT
 function loadReport(){
-
-if(!reportFrom.value || !reportTo.value) return;
-
-let from=new Date(reportFrom.value);
-let to=new Date(reportTo.value);
-
-from.setHours(0,0,0,0);
-to.setHours(23,59,59,999);
-
-fromDisplay.innerText=from.toLocaleDateString('en-GB');
-toDisplay.innerText=to.toLocaleDateString('en-GB');
-
+let f=new Date(from.value);
+let t=new Date(to.value);
 let cat=reportCategory.value;
 
-let totalRevenue=0,totalCash=0,totalReceivable=0;
-
+let rev=0,cashT=0,recT=0;
 reportTable.innerHTML="";
 
-tenants.forEach(t=>{
+tenants.forEach(tt=>{
+if(cat && tt.category!==cat)return;
 
-if(cat && t.category!==cat) return;
-
-let totalRent=0,totalPay=0;
+let r=0,p=0;
 
 billings.forEach(b=>{
 let d=new Date(b.month);
-if(b.name===t.name && d>=from && d<=to){
-totalRent+=(b.monthly||b.rent);
-totalPay+=b.payment||0;
+if(b.name===tt.name && d>=f && d<=t){
+r+=b.rent;
+p+=b.payment;
 }
 });
 
-let balance=totalRent-totalPay;
-
-totalRevenue+=totalRent;
-totalCash+=totalPay;
-totalReceivable+=balance;
+let bal=r-p;
+rev+=r; cashT+=p; recT+=bal;
 
 reportTable.innerHTML+=`
 <tr>
-<td>${t.category}</td>
-<td>${t.name}</td>
-<td>${totalRent}</td>
-<td>${totalPay}</td>
-<td>${balance}</td>
+<td>${tt.category}</td>
+<td>${tt.name}</td>
+<td>${r}</td>
+<td>${p}</td>
+<td>${bal}</td>
 </tr>`;
 });
 
-totalRevenue.innerText=totalRevenue;
-totalCash.innerText=totalCash;
-totalReceivable.innerText=totalReceivable;
-}
-
-reportFrom.onchange=loadReport;
-reportTo.onchange=loadReport;
-reportCategory.onchange=loadReport;
-
-function printReport(){
-let win=window.open();
-win.document.write(reportTab.innerHTML);
-win.print();
+revEl.innerText=rev;
+cash.innerText=cashT;
+rec.innerText=recT;
 }
 
 // LOAD ALL
 function loadAll(){
-loadRooms();
-loadTenantSelect();
-loadDashboard();
-loadRoomStatus();
-loadYearFilter();
+
+// dropdowns
+roomSelect.innerHTML="";
+tenantSelect.innerHTML="";
+historyTenant.innerHTML="<option>All</option>";
+
+rooms.forEach((r,i)=>{
+roomSelect.innerHTML+=`<option value=${i}>${r.number}</option>`;
+});
+
+tenants.forEach((t,i)=>{
+tenantSelect.innerHTML+=`<option value=${i}>${t.name}</option>`;
+historyTenant.innerHTML+=`<option>${t.name}</option>`;
+});
+
+// tables
+tenantTable.innerHTML="";
+tenants.forEach((t,i)=>{
+tenantTable.innerHTML+=`<tr>
+<td>${t.name}</td><td>${t.room}</td><td>${t.category}</td>
+<td><button onclick="deleteTenant(${i})">Delete</button></td>
+</tr>`;
+});
+
+roomTable.innerHTML="";
+rooms.forEach(r=>{
+let occ=tenants.filter(t=>t.room===r.number).length;
+roomTable.innerHTML+=`<tr>
+<td>${r.number}</td>
+<td>${r.capacity}</td>
+<td>${occ}</td>
+<td>${r.capacity-occ}</td>
+</tr>`;
+});
+
 loadLedger();
-renderAllTenantTables();
+loadPayments();
 }
 
+function deleteTenant(i){
+tenants.splice(i,1);
+save();loadAll();
+}
+
+load();
 loadAll();
 
 </script>
