@@ -62,6 +62,7 @@ th, td {
 
 th { background:#3498db; color:white; }
 
+/* REPORT GRID */
 #reportTable td, #reportTable th {
   border:1px solid #000;
 }
@@ -181,8 +182,11 @@ th { background:#3498db; color:white; }
 <div class="box">
 <h3>Report</h3>
 
-From <input type="month" id="reportFrom" min="2000-01" max="2050-12">
-To <input type="month" id="reportTo">
+From <input type="date" id="reportFrom">
+To <input type="date" id="reportTo">
+
+<br>
+<span id="fromDisplay"></span> - <span id="toDisplay"></span>
 
 <select id="reportCategory">
 <option value="">All</option>
@@ -246,12 +250,12 @@ roomSelect.innerHTML+=`<option value="${i}">${r.number}</option>`;
 });
 }
 
-// TENANT (FIXED AUTO REFRESH)
+// TENANT
 function addTenant(){
 let r=rooms[roomSelect.value];
 tenants.push({name:tenantName.value,room:r.number,category:category.value});
 save(); loadAll();
-renderAllTenantTables(); // 🔥 FIX
+renderAllTenantTables();
 tenantName.value="";
 }
 
@@ -275,46 +279,34 @@ tenants.splice(i,1);
 save(); loadAll();
 }
 
-// FLEXIBLE BILLING (NEW)
+// BILLING
 function addBillingFlexible(){
+let t=tenants[tenantSelect.value];
+let rentVal=Number(rent.value)||0;
+let payVal=Number(payment.value)||0;
 
-let t = tenants[tenantSelect.value];
+if(rentVal===0 && payVal===0) return alert("Enter rent or payment");
 
-if(!month.value) return alert("Select month");
+let index=billings.findIndex(b=>b.name===t.name && b.month===month.value);
 
-let rentVal = Number(rent.value)||0;
-let payVal = Number(payment.value)||0;
-
-if(rentVal===0 && payVal===0){
-return alert("Enter rent or payment");
-}
-
-let index = billings.findIndex(b =>
-b.name===t.name && b.month===month.value
-);
-
-if(index !== -1){
-billings[index].rent += rentVal;
-billings[index].payment += payVal;
-billings[index].monthly = (billings[index].monthly||0) + rentVal;
-billings[index].balance =
-billings[index].rent - billings[index].payment;
+if(index!==-1){
+billings[index].rent+=rentVal;
+billings[index].payment+=payVal;
+billings[index].monthly=(billings[index].monthly||0)+rentVal;
+billings[index].balance=billings[index].rent-billings[index].payment;
 }else{
 billings.push({
 name:t.name,
 month:month.value,
 rent:rentVal,
 payment:payVal,
-balance:rentVal - payVal,
-monthly: rentVal
+balance:rentVal-payVal,
+monthly:rentVal
 });
 }
 
-save();
-loadLedger();
-
-rent.value="";
-payment.value="";
+save(); loadLedger();
+rent.value=""; payment.value="";
 }
 
 function loadTenantSelect(){
@@ -380,7 +372,7 @@ ${months.map(m=>`<td>${m}</td>`).join("")}
 });
 }
 
-// EDIT
+// EDIT LEDGER
 function editLedger(name){
 let year=yearFilter.value;
 billings.forEach(b=>{
@@ -403,11 +395,16 @@ if(!reportFrom.value || !reportTo.value) return;
 
 let from=new Date(reportFrom.value);
 let to=new Date(reportTo.value);
+
+from.setHours(0,0,0,0);
+to.setHours(23,59,59,999);
+
+fromDisplay.innerText=from.toLocaleDateString('en-GB');
+toDisplay.innerText=to.toLocaleDateString('en-GB');
+
 let cat=reportCategory.value;
 
-let totalRevenue=0;
-let totalCash=0;
-let totalReceivable=0;
+let totalRevenue=0,totalCash=0,totalReceivable=0;
 
 reportTable.innerHTML="";
 
@@ -415,8 +412,7 @@ tenants.forEach(t=>{
 
 if(cat && t.category!==cat) return;
 
-let totalRent=0;
-let totalPay=0;
+let totalRent=0,totalPay=0;
 
 billings.forEach(b=>{
 let d=new Date(b.month);
@@ -442,21 +438,18 @@ reportTable.innerHTML+=`
 </tr>`;
 });
 
-totalRevenue && (totalRevenueEl = document.getElementById("totalRevenue").innerText = totalRevenue);
-totalCash && (document.getElementById("totalCash").innerText = totalCash);
-totalReceivable && (document.getElementById("totalReceivable").innerText = totalReceivable);
-
+totalRevenue.innerText=totalRevenue;
+totalCash.innerText=totalCash;
+totalReceivable.innerText=totalReceivable;
 }
 
 reportFrom.onchange=loadReport;
 reportTo.onchange=loadReport;
 reportCategory.onchange=loadReport;
 
-// PRINT
 function printReport(){
-let content=document.getElementById("reportTab").innerHTML;
-let win=window.open("");
-win.document.write("<html><body>"+content+"</body></html>");
+let win=window.open();
+win.document.write(reportTab.innerHTML);
 win.print();
 }
 
