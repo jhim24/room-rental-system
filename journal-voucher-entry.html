@@ -12,7 +12,7 @@ body {
   background: linear-gradient(135deg,#1d2b64,#f8cdda);
 }
 
-/* 🔥 SIDEBAR FIX */
+/* SIDEBAR */
 .sidebar {
   width:230px;
   background: rgba(0,0,0,0.75);
@@ -22,7 +22,6 @@ body {
   z-index:1000;
 }
 
-/* 🔥 BUTTON FIX */
 .menu button {
   width:100%;
   padding:12px;
@@ -40,12 +39,10 @@ body {
   background:#3498db;
 }
 
-/* 🔥 MAIN FIX */
+/* MAIN */
 .main {
   flex:1;
   padding:20px;
-  position:relative;
-  z-index:1;
 }
 
 /* BOX */
@@ -56,7 +53,7 @@ body {
   margin-bottom:20px;
 }
 
-/* FORM */
+/* GRID */
 .formGrid {
   display:grid;
   grid-template-columns: repeat(3,1fr);
@@ -107,11 +104,11 @@ th {
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-<button onclick="location.href='index.html?v=8'">📊 Dashboard</button>
-<button onclick="location.href='rooms.html?v=8'">🏠 Rooms</button>
-<button onclick="location.href='clients.html?v=8'">👥 Clients</button>
-<button onclick="location.href='journal-voucher-entry.html?v=8'">📒 Journal</button>
-<button onclick="location.href='coa.html?v=8'">📚 Chart of Accounts</button>
+<button onclick="location.href='index.html?v=9'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=9'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=9'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=9'">📒 Journal</button>
+<button onclick="location.href='coa.html?v=9'">📚 Chart of Accounts</button>
 </div>
 </div>
 
@@ -125,6 +122,10 @@ th {
 
 <input type="date" id="date">
 
+<!-- 🔥 CLIENT (SUB-CODE) -->
+<select id="client"></select>
+
+<!-- 🔥 ACCOUNT (COA) -->
 <select id="account"></select>
 
 <input id="description" placeholder="Description">
@@ -148,6 +149,7 @@ th {
 <tr>
 <th>#</th>
 <th>Date</th>
+<th>Client</th>
 <th>Account</th>
 <th>Description</th>
 <th>Debit</th>
@@ -165,11 +167,24 @@ th {
 
 <script>
 
-// DATA
+// 🔥 DATA
 let entries = JSON.parse(localStorage.getItem("jv")) || [];
 let coa = JSON.parse(localStorage.getItem("coa")) || [];
+let clients = JSON.parse(localStorage.getItem("tenants")) || [];
 
-// LOAD COA
+// 🔥 LOAD CLIENTS (SUB-CODE)
+function loadClients(){
+
+let html = "<option value=''>Select Client</option>";
+
+clients.forEach(c=>{
+html += `<option value="${c.name}">${c.name}</option>`;
+});
+
+document.getElementById("client").innerHTML = html;
+}
+
+// 🔥 LOAD COA
 function loadCOA(){
 
 let html = "<option value=''>Select Account</option>";
@@ -183,10 +198,11 @@ ${a.code} - ${a.name}
 document.getElementById("account").innerHTML = html;
 }
 
-// ADD ENTRY
+// 🔥 ADD ENTRY
 function addEntry(){
 
 let d = document.getElementById("date").value;
+let client = document.getElementById("client").value;
 let acc = document.getElementById("account").value;
 let desc = document.getElementById("description").value;
 let debit = Number(document.getElementById("debit").value) || 0;
@@ -199,6 +215,7 @@ return;
 
 entries.push({
 date:d,
+client:client,
 account:acc,
 description:desc,
 debit:debit,
@@ -211,7 +228,7 @@ loadTable();
 clearForm();
 }
 
-// LOAD TABLE
+// 🔥 LOAD TABLE
 function loadTable(){
 
 let html = "";
@@ -221,6 +238,7 @@ html += `
 <tr>
 <td>${i+1}</td>
 <td>${e.date || ""}</td>
+<td>${e.client || ""}</td>
 <td>${e.account}</td>
 <td>${e.description}</td>
 <td>${e.debit}</td>
@@ -232,14 +250,15 @@ html += `
 document.getElementById("jvTable").innerHTML = html;
 }
 
-// CLEAR
+// 🔥 CLEAR
 function clearForm(){
 document.getElementById("description").value="";
 document.getElementById("debit").value="";
 document.getElementById("credit").value="";
 }
 
-// INIT
+// 🔥 INIT
+loadClients();
 loadCOA();
 loadTable();
 
