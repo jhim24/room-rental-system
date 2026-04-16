@@ -1,10 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Room Rental System PRO+</title>
+<title>Room Rental System</title>
 
 <style>
-body { font-family: Arial; background:#eef3ff; padding:20px; }
+body {
+  font-family: Arial;
+  background:#eef3ff;
+  padding:20px;
+}
+
+h2 { color:#2c3e50; }
 
 .box {
   background:white;
@@ -24,10 +30,8 @@ button {
   color:white;
   border:none;
   border-radius:5px;
+  cursor:pointer;
 }
-
-.payBtn { background:green; }
-.deleteBtn { background:red; }
 
 table {
   width:100%;
@@ -40,24 +44,29 @@ th, td {
   text-align:center;
 }
 
-th { background:#3498db; color:white; }
+th {
+  background:#3498db;
+  color:white;
+}
 </style>
 </head>
 
 <body>
 
-<h2>🏨 Room Rental System (Ledger Style)</h2>
+<h2>🏨 Room Rental System</h2>
 
+<!-- ROOM -->
 <div class="box">
 <h3>Add Room</h3>
 <input type="text" id="roomNumber" placeholder="Room #">
-<input type="number" id="roomPrice" placeholder="Rent">
-<button onclick="addRoom()">Add</button>
+<input type="number" id="roomPrice" placeholder="Monthly Rent">
+<button onclick="addRoom()">Add Room</button>
 </div>
 
+<!-- TENANT -->
 <div class="box">
 <h3>Add Tenant</h3>
-<input type="text" id="tenantName" placeholder="Name">
+<input type="text" id="tenantName" placeholder="Tenant Name">
 <select id="category">
 <option>Tenant</option>
 <option>Bed Space</option>
@@ -68,16 +77,18 @@ th { background:#3498db; color:white; }
 <button onclick="addTenant()">Save Tenant</button>
 </div>
 
+<!-- BILLING -->
 <div class="box">
-<h3>Add Monthly Billing</h3>
+<h3>Monthly Billing</h3>
 <select id="tenantSelect"></select>
 <input type="month" id="month">
 <input type="number" id="payment" placeholder="Payment">
-<button onclick="addBilling()">Add Billing</button>
+<button onclick="addBilling()">Save Billing</button>
 </div>
 
+<!-- TABLE -->
 <div class="box">
-<h3>Ledger Table</h3>
+<h3>Records</h3>
 
 <table>
 <thead>
@@ -100,19 +111,22 @@ th { background:#3498db; color:white; }
 
 <script>
 
-let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
-let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
-let billings = JSON.parse(localStorage.getItem("billings")) || [];
-
-function save(){
-  localStorage.setItem("rooms", JSON.stringify(rooms));
-  localStorage.setItem("tenants", JSON.stringify(tenants));
-  localStorage.setItem("billings", JSON.stringify(billings));
-}
+let rooms = [];
+let tenants = [];
+let billings = [];
 
 function addRoom(){
-  rooms.push({ number:roomNumber.value, price:roomPrice.value, status:"Available" });
-  save(); loadRooms();
+  if(!roomNumber.value || !roomPrice.value) return alert("Fill all");
+
+  rooms.push({
+    number:roomNumber.value,
+    price:roomPrice.value,
+    status:"Available"
+  });
+
+  loadRooms();
+  roomNumber.value="";
+  roomPrice.value="";
 }
 
 function loadRooms(){
@@ -125,6 +139,8 @@ function loadRooms(){
 }
 
 function addTenant(){
+  if(!tenantName.value) return alert("Enter name");
+
   let room = rooms[roomSelect.value];
 
   tenants.push({
@@ -136,9 +152,10 @@ function addTenant(){
 
   room.status="Occupied";
 
-  save();
   loadTenants();
   loadRooms();
+
+  tenantName.value="";
 }
 
 function loadTenants(){
@@ -169,8 +186,8 @@ function addBilling(){
     balance
   });
 
-  save();
   loadTable();
+  payment.value="";
 }
 
 function loadTable(){
@@ -186,17 +203,13 @@ function loadTable(){
         <td>${b.room}</td>
         <td>${b.category}</td>
         <td>${m}</td>
-        <td>${m} Rental: ${b.rental}</td>
-        <td>${m} Payment: ${b.payment}</td>
-        <td>${m} Balance: ${b.balance}</td>
+        <td>${b.rental}</td>
+        <td>${b.payment}</td>
+        <td style="color:${b.balance>0?'red':'green'}">${b.balance}</td>
       </tr>
     `;
   });
 }
-
-loadRooms();
-loadTenants();
-loadTable();
 
 </script>
 
