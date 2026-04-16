@@ -148,7 +148,7 @@ th { background:#3498db;color:white; }
 
 </div>
 
-<button class="saveBtn" onclick="addClient()">Save</button>
+<button id="saveBtn" class="saveBtn">Save</button>
 
 </div>
 
@@ -199,8 +199,10 @@ roomSelect.innerHTML += `<option value="${r.number}">${r.number}</option>`;
 });
 }
 
-// ADD CLIENT (FIXED)
+// ADD CLIENT FUNCTION
 function addClient(){
+
+console.log("SAVE CLICKED"); // debug
 
 let nameVal = document.getElementById("name").value.trim();
 let nationalityVal = document.getElementById("nationality").value;
@@ -214,6 +216,9 @@ if(nameVal === ""){
 alert("Enter name");
 return;
 }
+
+// GET LATEST STORAGE
+let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
 
 tenants.push({
 name: nameVal,
@@ -235,15 +240,16 @@ document.getElementById("qid").value="";
 document.getElementById("entry").value="";
 document.getElementById("exit").value="";
 
-// RELOAD TABLE
+// RELOAD
 loadClients();
 }
 
-// LOAD TABLE (FIXED)
+// LOAD TABLE
 function loadClients(){
-
 let table = document.getElementById("clientTable");
 table.innerHTML="";
+
+let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
 
 tenants.forEach((t,i)=>{
 table.innerHTML += `
@@ -266,12 +272,14 @@ table.innerHTML += `
 
 // DELETE
 function deleteClient(i){
-if(confirm("Delete client?")){
+let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
 tenants.splice(i,1);
 localStorage.setItem("tenants", JSON.stringify(tenants));
 loadClients();
 }
-}
+
+// 🔥 EVENT LISTENER (NO FAIL BUTTON)
+document.getElementById("saveBtn").addEventListener("click", addClient);
 
 // INIT
 loadRooms();
