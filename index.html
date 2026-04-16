@@ -116,17 +116,20 @@ let editIndex = -1;
 // SAVE
 function saveData(){
 
+if(!name.value) return alert("Enter tenant name");
+
 let record = {
-name:name.value,
-room:room.value,
-category:category.value,
-month:month.value,
-rent:Number(rent.value),
-price:Number(price.value),
-capacity:Number(capacity.value)
+name: name.value,
+room: room.value,
+category: category.value,
+month: month.value,
+rent: Number(rent.value) || 0,
+price: Number(price.value) || 0,
+capacity: Number(capacity.value) || 0
 };
 
 data.push(record);
+
 save();
 loadTable();
 clearForm();
@@ -138,13 +141,13 @@ function updateData(){
 if(editIndex === -1) return alert("Select record first");
 
 data[editIndex] = {
-name:name.value,
-room:room.value,
-category:category.value,
-month:month.value,
-rent:Number(rent.value),
-price:Number(price.value),
-capacity:Number(capacity.value)
+name: name.value,
+room: room.value,
+category: category.value,
+month: month.value,
+rent: Number(rent.value) || 0,
+price: Number(price.value) || 0,
+capacity: Number(capacity.value) || 0
 };
 
 editIndex = -1;
@@ -160,6 +163,7 @@ function deleteData(){
 if(editIndex === -1) return alert("Select record first");
 
 data.splice(editIndex,1);
+
 editIndex = -1;
 
 save();
@@ -172,13 +176,13 @@ function editRow(i){
 
 let d = data[i];
 
-name.value = d.name;
-room.value = d.room;
-category.value = d.category;
-month.value = d.month;
-rent.value = d.rent;
-price.value = d.price;
-capacity.value = d.capacity;
+name.value = d.name || "";
+room.value = d.room || "";
+category.value = d.category || "Tenant";
+month.value = d.month || "";
+rent.value = d.rent || 0;
+price.value = d.price || 0;
+capacity.value = d.capacity || 0;
 
 editIndex = i;
 }
@@ -193,7 +197,7 @@ loadTable();
 }
 }
 
-// LOAD TABLE
+// LOAD TABLE (FIXED NO UNDEFINED)
 function loadTable(){
 
 table.innerHTML = "";
@@ -203,13 +207,13 @@ data.forEach((d,i)=>{
 table.innerHTML += `
 <tr>
 <td>${i+1}</td>
-<td>${d.name}</td>
-<td>${d.room}</td>
-<td>${d.category}</td>
-<td>${d.month}</td>
-<td>${d.rent}</td>
-<td>${d.price}</td>
-<td>${d.capacity}</td>
+<td>${d.name || ""}</td>
+<td>${d.room || ""}</td>
+<td>${d.category || ""}</td>
+<td>${d.month || ""}</td>
+<td>${d.rent || 0}</td>
+<td>${d.price || 0}</td>
+<td>${d.capacity || 0}</td>
 <td>
 <button onclick="editRow(${i})">Edit</button>
 <button class="deleteBtn" onclick="deleteRow(${i})">Delete</button>
@@ -225,14 +229,16 @@ function save(){
 localStorage.setItem("data", JSON.stringify(data));
 }
 
-// CLEAR FORM
+// CLEAR FORM (FIXED RESET)
 function clearForm(){
-name.value="";
-room.value="";
-rent.value="";
-price.value="";
-capacity.value="";
-month.value="";
+name.value = "";
+room.value = "";
+category.value = "Tenant";
+month.value = "";
+rent.value = "";
+price.value = "";
+capacity.value = "";
+editIndex = -1;
 }
 
 // INIT
