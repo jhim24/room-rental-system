@@ -1,63 +1,125 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Accommodation System PRO</title>
+<title>Accommodation System V3</title>
 
 <style>
-body { font-family: Arial; background:#eef3ff; padding:20px; }
-
-.box {
-  background:white;
-  padding:15px;
-  border-radius:10px;
-  margin-bottom:15px;
+body {
+  font-family: Arial;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  padding:20px;
+  color:#2c3e50;
 }
 
-input, select { padding:8px; margin:5px; }
+/* CONTAINER */
+.box {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(10px);
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:15px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
 
-button {
-  padding:8px 12px;
+/* FLEX */
+.flex {
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+/* DASHBOARD CARD */
+.card {
+  flex:1;
+  min-width:150px;
+  background: linear-gradient(135deg,#3498db,#6dd5fa);
+  color:white;
+  padding:15px;
+  border-radius:12px;
+  text-align:center;
+  font-size:18px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* INPUT */
+input, select {
+  padding:10px;
   margin:5px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+/* BUTTON */
+button {
+  padding:10px 15px;
   border:none;
-  border-radius:5px;
+  border-radius:8px;
   color:white;
   cursor:pointer;
+  transition:0.3s;
 }
 
-.saveBtn { background:green; }
-.deleteBtn { background:red; }
+button:hover {
+  opacity:0.85;
+  transform:scale(1.05);
+}
 
+.saveBtn { background:#2ecc71; }
+.deleteBtn { background:#e74c3c; }
+
+/* TABLE */
 table {
   width:100%;
   border-collapse:collapse;
+  margin-top:10px;
 }
 
 th, td {
-  border:1px solid #ccc;
-  padding:8px;
+  border:1px solid #ddd;
+  padding:10px;
   text-align:center;
 }
 
-th { background:#3498db; color:white; }
+th {
+  background:#3498db;
+  color:white;
+}
+
+tr:nth-child(even){
+  background:#f9f9f9;
+}
 </style>
 
 </head>
 
 <body>
 
-<h2>🏨 Accommodation System PRO</h2>
+<h2 style="color:white;">🏨 Accommodation System V3</h2>
+
+<!-- DASHBOARD -->
+<div class="box">
+<h3>Dashboard</h3>
+
+<div class="flex">
+<div class="card">Rooms<br><b id="totalRooms">0</b></div>
+<div class="card">Tenants<br><b id="totalTenants">0</b></div>
+<div class="card">Available<br><b id="availableSlots">0</b></div>
+</div>
+
+</div>
 
 <!-- ROOM -->
 <div class="box">
 <h3>Add Room</h3>
-<input id="roomNo" placeholder="Room Number">
+<input id="roomNo" placeholder="Room #">
 <input id="capacity" type="number" placeholder="Capacity">
-<button onclick="addRoom()">Add Room</button>
+<button class="saveBtn" onclick="addRoom()">Add Room</button>
 </div>
 
 <!-- TENANT -->
 <div class="box">
 <h3>Add Tenant</h3>
+
 <input id="tenantName" placeholder="Tenant Name">
 
 <select id="roomSelect"></select>
@@ -71,22 +133,14 @@ th { background:#3498db; color:white; }
 <option>Store Keeper</option>
 </select>
 
-<button onclick="addTenant()">Save Tenant</button>
-</div>
+<button class="saveBtn" onclick="addTenant()">Save Tenant</button>
 
-<!-- BILLING -->
-<div class="box">
-<h3>Billing</h3>
-<select id="tenantSelect"></select>
-<input type="month" id="month">
-<input type="number" id="rent" placeholder="Rent">
-<input type="number" id="payment" placeholder="Payment">
-<button onclick="saveBilling()">Save</button>
 </div>
 
 <!-- ROOM STATUS -->
 <div class="box">
 <h3>Room Status</h3>
+
 <table>
 <thead>
 <tr>
@@ -96,69 +150,57 @@ th { background:#3498db; color:white; }
 <th>Available</th>
 </tr>
 </thead>
+
 <tbody id="roomTable"></tbody>
 </table>
-</div>
 
-<!-- RECORDS -->
-<div class="box">
-<h3>Records</h3>
-<table>
-<thead>
-<tr>
-<th>#</th>
-<th>Name</th>
-<th>Room</th>
-<th>Category</th>
-<th>Month</th>
-<th>Rent</th>
-<th>Payment</th>
-<th>Balance</th>
-<th>Action</th>
-</tr>
-</thead>
-<tbody id="table"></tbody>
-</table>
 </div>
 
 <script>
 
 let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
 let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
-let billings = JSON.parse(localStorage.getItem("billings")) || [];
 
 // SAVE
 function save(){
 localStorage.setItem("rooms", JSON.stringify(rooms));
 localStorage.setItem("tenants", JSON.stringify(tenants));
-localStorage.setItem("billings", JSON.stringify(billings));
 }
 
-// ROOM
+// ADD ROOM
 function addRoom(){
+
+if(!roomNo.value || !capacity.value) return alert("Fill all");
+
 rooms.push({
 number: roomNo.value,
-capacity: Number(capacity.value),
-occupied: 0
+capacity: Number(capacity.value)
 });
+
 save();
 loadAll();
+
+roomNo.value="";
+capacity.value="";
 }
 
 // LOAD ROOMS
 function loadRooms(){
 roomSelect.innerHTML="";
+
 rooms.forEach((r,i)=>{
 roomSelect.innerHTML += `<option value="${i}">${r.number}</option>`;
 });
 }
 
-// TENANT
+// ADD TENANT
 function addTenant(){
 
 let r = rooms[roomSelect.value];
 
-if(r.occupied >= r.capacity){
+let occupied = tenants.filter(t=>t.room===r.number).length;
+
+if(occupied >= r.capacity){
 return alert("Room full");
 }
 
@@ -168,82 +210,10 @@ room: r.number,
 category: category.value
 });
 
-r.occupied++;
-
 save();
 loadAll();
-}
 
-// LOAD TENANTS
-function loadTenants(){
-tenantSelect.innerHTML="";
-tenants.forEach((t,i)=>{
-tenantSelect.innerHTML += `<option value="${i}">
-${t.name} (${t.room})
-</option>`;
-});
-}
-
-// BILLING
-function saveBilling(){
-
-let t = tenants[tenantSelect.value];
-
-let rentVal = Number(rent.value) || 0;
-let payVal = Number(payment.value) || 0;
-
-// CHECK EXISTING
-let index = billings.findIndex(b =>
-b.name === t.name && b.month === month.value
-);
-
-if(index !== -1){
-billings[index].rent += rentVal;
-billings[index].payment += payVal;
-billings[index].balance =
-billings[index].rent - billings[index].payment;
-}else{
-billings.push({
-name: t.name,
-room: t.room,
-category: t.category,
-month: month.value,
-rent: rentVal,
-payment: payVal,
-balance: rentVal - payVal
-});
-}
-
-save();
-loadAll();
-}
-
-// RECORDS
-function loadTable(){
-table.innerHTML="";
-
-billings.forEach((b,i)=>{
-table.innerHTML += `
-<tr>
-<td>${i+1}</td>
-<td>${b.name}</td>
-<td>${b.room}</td>
-<td>${b.category}</td>
-<td>${b.month}</td>
-<td>${b.rent}</td>
-<td>${b.payment}</td>
-<td style="color:${b.balance>0?'red':'green'}">${b.balance}</td>
-<td><button onclick="deleteBilling(${i})">Delete</button></td>
-</tr>
-`;
-});
-}
-
-// DELETE
-function deleteBilling(i){
-billings.splice(i,1);
-save();
-loadAll();
+tenantName.value="";
 }
 
 // ROOM STATUS
@@ -267,12 +237,23 @@ roomTable.innerHTML += `
 });
 }
 
+// DASHBOARD
+function loadDashboard(){
+
+totalRooms.innerText = rooms.length;
+totalTenants.innerText = tenants.length;
+
+let totalCapacity = rooms.reduce((s,r)=>s+r.capacity,0);
+let occupied = tenants.length;
+
+availableSlots.innerText = totalCapacity - occupied;
+}
+
 // LOAD ALL
 function loadAll(){
 loadRooms();
-loadTenants();
-loadTable();
 loadRoomStatus();
+loadDashboard();
 }
 
 // INIT
