@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Room Rental System PRO+</title>
+<title>Room Rental System PRO MAX</title>
 
 <style>
 body { font-family: Arial; background:#eef3ff; padding:20px; }
@@ -58,7 +58,7 @@ th { background:#3498db; color:white; }
 
 <body>
 
-<h2>🏨 Room Rental System PRO+</h2>
+<h2>🏨 Room Rental System PRO MAX</h2>
 
 <!-- DASHBOARD -->
 <div class="dashboard">
@@ -72,7 +72,8 @@ th { background:#3498db; color:white; }
 <div class="box">
 <h3>Add Room</h3>
 <input type="text" id="roomNumber" placeholder="Room #">
-<input type="number" id="roomPrice" placeholder="Monthly Rent">
+<input type="number" id="roomPrice" placeholder="Price per head / room">
+<input type="number" id="roomCapacity" placeholder="Capacity">
 <button onclick="addRoom()">Add Room</button>
 </div>
 
@@ -90,6 +91,23 @@ th { background:#3498db; color:white; }
 <button onclick="addTenant()">Save Tenant</button>
 </div>
 
+<!-- TENANT LIST -->
+<div class="box">
+<h3>Tenant List</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Name</th>
+<th>Room</th>
+<th>Category</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="tenantList"></tbody>
+</table>
+</div>
+
 <!-- BILLING -->
 <div class="box">
 <h3>Monthly Billing</h3>
@@ -100,10 +118,9 @@ th { background:#3498db; color:white; }
 <button onclick="autoNextMonth()">Auto Next Month</button>
 </div>
 
-<!-- TABLE -->
+<!-- RECORDS -->
 <div class="box">
 <h3>Records</h3>
-
 <table>
 <thead>
 <tr>
@@ -118,10 +135,8 @@ th { background:#3498db; color:white; }
 <th>Action</th>
 </tr>
 </thead>
-
 <tbody id="table"></tbody>
 </table>
-
 </div>
 
 <script>
@@ -142,22 +157,26 @@ function save(){
 function loadDashboard(){
   totalRooms.innerText = rooms.length;
 
-  let occupied = rooms.filter(r=>r.status==="Occupied").length;
+  let occupied = tenants.length;
   occupiedRooms.innerText = occupied;
-  availableRooms.innerText = rooms.length - occupied;
 
-  let income = billings.reduce((sum,b)=> sum + b.payment, 0);
+  let capacity = rooms.reduce((sum,r)=> sum + r.capacity,0);
+  availableRooms.innerText = capacity - occupied;
+
+  let income = billings.reduce((sum,b)=> sum + b.payment,0);
   totalIncome.innerText = income;
 }
 
 // ROOM
 function addRoom(){
-  if(!roomNumber.value || !roomPrice.value) return alert("Fill all");
+  if(!roomNumber.value || !roomPrice.value || !roomCapacity.value)
+    return alert("Fill all");
 
   rooms.push({
     number:roomNumber.value,
-    price:roomPrice.value,
-    status:"Available"
+    price:parseFloat(roomPrice.value),
+    capacity:parseInt(roomCapacity.value),
+    occupied:0
   });
 
   save();
@@ -166,22 +185,28 @@ function addRoom(){
 
   roomNumber.value="";
   roomPrice.value="";
+  roomCapacity.value="";
 }
 
 function loadRooms(){
   roomSelect.innerHTML="";
   rooms.forEach((r,i)=>{
-    if(r.status==="Available"){
-      roomSelect.innerHTML += `<option value="${i}">${r.number}</option>`;
+    if(r.occupied < r.capacity){
+      roomSelect.innerHTML += `
+        <option value="${i}">
+        ${r.number} (${r.occupied}/${r.capacity})
+        </option>`;
     }
   });
 }
 
 // TENANT
 function addTenant(){
-  if(!tenantName.value) return alert("Enter name");
-
   let room = rooms[roomSelect.value];
+
+  if(room.occupied >= room.capacity){
+    return alert("Room full!");
+  }
 
   tenants.push({
     name:tenantName.value,
@@ -190,11 +215,12 @@ function addTenant(){
     rent:room.price
   });
 
-  room.status="Occupied";
+  room.occupied++;
 
   save();
   loadTenants();
   loadRooms();
+  loadTenantList();
   loadDashboard();
 
   tenantName.value="";
@@ -203,137 +229,138 @@ function addTenant(){
 function loadTenants(){
   tenantSelect.innerHTML="";
   tenants.forEach((t,i)=>{
-    tenantSelect.innerHTML += `<option value="${i}">${t.name} - Room ${t.room}</option>`;
+    tenantSelect.innerHTML += `<option value="${i}">
+      ${t.name} - Room ${t.room}
+    </option>`;
   });
+}
+
+function loadTenantList(){
+  tenantList.innerHTML="";
+  tenants.forEach((t,i)=>{
+    tenantList.innerHTML += `
+    <tr>
+      <td>${i+1}</td>
+      <td>${t.name}</td>
+      <td>${t.room}</td>
+      <td>${t.category}</td>
+      <td>
+        <button class="deleteBtn" onclick="deleteTenant(${i})">Delete</button>
+      </td>
+    </tr>`;
+  });
+}
+
+// DELETE TENANT
+function deleteTenant(i){
+  let t = tenants[i];
+
+  let room = rooms.find(r=>r.number===t.room);
+  if(room) room.occupied--;
+
+  billings = billings.filter(b=>b.name!==t.name);
+  tenants.splice(i,1);
+
+  save();
+  loadAll();
 }
 
 // FORMAT
 function formatMonth(m){
   let d = new Date(m);
-  return d.toLocaleString('default',{month:'long', year:'numeric'});
+  return d.toLocaleString('default',{month:'long',year:'numeric'});
 }
 
 // BILLING
 function addBilling(){
   let t = tenants[tenantSelect.value];
   let pay = parseFloat(payment.value) || 0;
-  let rental = parseFloat(t.rent);
+  let rental = t.rent;
   let balance = rental - pay;
 
   if(!month.value) return alert("Select month");
 
-  let exist = billings.find((b,i)=>
-    b.name===t.name && b.month===month.value && i!==editIndex
-  );
-
-  if(exist) return alert("Already exists!");
-
   if(editIndex === -1){
-    billings.push({
-      name:t.name,
-      room:t.room,
-      category:t.category,
-      month:month.value,
-      rental,
-      payment:pay,
-      balance
-    });
+    billings.push({...t, month:month.value, rental, payment:pay, balance});
   } else {
-    billings[editIndex] = {
-      name:t.name,
-      room:t.room,
-      category:t.category,
-      month:month.value,
-      rental,
-      payment:pay,
-      balance
-    };
+    billings[editIndex] = {...t, month:month.value, rental, payment:pay, balance};
     editIndex = -1;
   }
 
   save();
-  loadTable();
-  loadDashboard();
-
-  payment.value="";
+  loadAll();
 }
 
 // AUTO NEXT MONTH
 function autoNextMonth(){
-  if(billings.length === 0) return alert("No records");
+  if(billings.length===0) return;
 
-  let last = billings[billings.length -1];
-
-  let date = new Date(last.month);
-  date.setMonth(date.getMonth()+1);
-
-  let nextMonth = date.toISOString().slice(0,7);
+  let last = billings[billings.length-1];
+  let d = new Date(last.month);
+  d.setMonth(d.getMonth()+1);
 
   billings.push({
-    name:last.name,
-    room:last.room,
-    category:last.category,
-    month:nextMonth,
-    rental:last.rental,
+    ...last,
+    month:d.toISOString().slice(0,7),
     payment:0,
     balance:last.rental
   });
 
   save();
-  loadTable();
-  loadDashboard();
+  loadAll();
 }
 
 // TABLE
 function loadTable(){
   table.innerHTML="";
-
   billings.forEach((b,i)=>{
     let m = formatMonth(b.month);
 
     table.innerHTML += `
-      <tr>
-        <td>${i+1}</td>
-        <td>${b.name}</td>
-        <td>${b.room}</td>
-        <td>${b.category}</td>
-        <td>${m}</td>
-        <td>${b.rental}</td>
-        <td>${b.payment}</td>
-        <td style="color:${b.balance>0?'red':'green'}">${b.balance}</td>
-        <td>
-          <button class="editBtn" onclick="editBilling(${i})">Edit</button>
-          <button class="deleteBtn" onclick="deleteBilling(${i})">Delete</button>
-        </td>
-      </tr>
-    `;
+    <tr>
+      <td>${i+1}</td>
+      <td>${b.name}</td>
+      <td>${b.room}</td>
+      <td>${b.category}</td>
+      <td>${m}</td>
+      <td>${b.rental}</td>
+      <td>${b.payment}</td>
+      <td style="color:${b.balance>0?'red':'green'}">${b.balance}</td>
+      <td>
+        <button class="editBtn" onclick="editBilling(${i})">Edit</button>
+        <button class="deleteBtn" onclick="deleteBilling(${i})">Delete</button>
+      </td>
+    </tr>`;
   });
 }
 
 // EDIT
 function editBilling(i){
   let b = billings[i];
-  tenantSelect.value = tenants.findIndex(t => t.name===b.name);
+  tenantSelect.value = tenants.findIndex(t=>t.name===b.name);
   month.value = b.month;
   payment.value = b.payment;
   editIndex = i;
 }
 
-// DELETE
+// DELETE BILLING
 function deleteBilling(i){
-  if(confirm("Delete?")){
-    billings.splice(i,1);
-    save();
-    loadTable();
-    loadDashboard();
-  }
+  billings.splice(i,1);
+  save();
+  loadAll();
+}
+
+// LOAD ALL
+function loadAll(){
+  loadRooms();
+  loadTenants();
+  loadTenantList();
+  loadTable();
+  loadDashboard();
 }
 
 // INIT
-loadRooms();
-loadTenants();
-loadTable();
-loadDashboard();
+loadAll();
 
 </script>
 
