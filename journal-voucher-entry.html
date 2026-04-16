@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Client Ledger</title>
+<title>Journal Voucher</title>
 
 <style>
 body {
@@ -41,21 +41,30 @@ body {
   margin-bottom:20px;
 }
 
+.formGrid {
+  display:grid;
+  grid-template-columns: repeat(3,1fr);
+  gap:10px;
+}
+
 input, select {
   padding:10px;
-  margin:5px;
-  border-radius:6px;
+  border-radius:8px;
   border:1px solid #ccc;
+  width:100%;
 }
 
 button {
-  padding:8px 12px;
+  padding:8px 10px;
   border:none;
   border-radius:6px;
   cursor:pointer;
 }
 
-.printBtn { background:#2ecc71;color:white; }
+.saveBtn { background:#2ecc71;color:white; }
+.updateBtn { background:#3498db;color:white; }
+.editBtn { background:orange;color:white; }
+.deleteBtn { background:red;color:white; }
 
 table {
   width:100%;
@@ -68,15 +77,7 @@ th, td {
   text-align:center;
 }
 
-th {
-  background:#3498db;
-  color:white;
-}
-
-.totalBox {
-  margin-top:10px;
-  font-weight:bold;
-}
+th { background:#3498db;color:white; }
 </style>
 </head>
 
@@ -86,57 +87,61 @@ th {
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-<button onclick="location.href='index.html?v=20'">📊 Dashboard</button>
-<button onclick="location.href='rooms.html?v=20'">🏠 Rooms</button>
-<button onclick="location.href='clients.html?v=20'">👥 Clients</button>
-<button onclick="location.href='journal-voucher-entry.html?v=20'">📒 Journal</button>
-<button onclick="location.href='coa.html?v=20'">📚 Chart of Accounts</button>
-<button onclick="location.href='ledger.html?v=20'">📘 Client Ledger</button>
+<button onclick="location.href='index.html?v=21'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=21'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=21'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=21'">📒 Journal</button>
+<button onclick="location.href='coa.html?v=21'">📚 Chart of Accounts</button>
+<button onclick="location.href='ledger.html?v=21'">📘 Client Ledger</button>
 </div>
 </div>
 
 <div class="main">
 
 <div class="box">
-<h2>Client Ledger</h2>
+<h3>Journal Entry</h3>
 
+<div class="formGrid">
+<input type="date" id="date">
 <select id="client"></select>
+<select id="account"></select>
+
+<input id="description" placeholder="Description">
+<input type="number" id="debit" placeholder="Debit">
+<input type="number" id="credit" placeholder="Credit">
+</div>
 
 <br>
-
-From: <input type="date" id="from">
-To: <input type="date" id="to">
-
-<br><br>
-
-<button class="printBtn" onclick="printLedger()">🖨 Print Ledger</button>
+<button class="saveBtn" onclick="addEntry()">Save</button>
+<button class="updateBtn" onclick="updateEntry()">Update</button>
 
 </div>
 
 <div class="box">
+<h3>Filter</h3>
+<select id="filterClient" onchange="loadTable()"></select>
+</div>
 
-<h3>Ledger Records</h3>
+<div class="box">
+<h3>Journal Records</h3>
 
 <table>
 <thead>
 <tr>
 <th>#</th>
 <th>Date</th>
+<th>Client</th>
+<th>Account</th>
 <th>Description</th>
 <th>Debit</th>
 <th>Credit</th>
-<th>Running Balance</th>
+<th>Action</th>
 </tr>
 </thead>
 
-<tbody id="ledgerTable"></tbody>
+<tbody id="jvTable"></tbody>
 
 </table>
-
-<div class="totalBox">
-Total Balance: <span id="totalBalance">0</span><br>
-Unpaid Months: <span id="unpaidMonths">0</span>
-</div>
 
 </div>
 
@@ -144,8 +149,11 @@ Unpaid Months: <span id="unpaidMonths">0</span>
 
 <script>
 
-let clients = JSON.parse(localStorage.getItem("tenants")) || [];
 let entries = JSON.parse(localStorage.getItem("jv")) || [];
+let coa = JSON.parse(localStorage.getItem("coa")) || [];
+let clients = JSON.parse(localStorage.getItem("tenants")) || [];
+
+let editIndex = -1;
 
 // LOAD CLIENTS
 function loadClients(){
@@ -153,71 +161,168 @@ let html = "<option value=''>Select Client</option>";
 clients.forEach(c=>{
 html += `<option value="${c.name}">${c.name}</option>`;
 });
-document.getElementById("client").innerHTML = html;
+client.innerHTML = html;
+filterClient.innerHTML = "<option value=''>All Clients</option>" + html;
 }
 
-// LOAD LEDGER (FIXED)
-function loadLedger(){
+// LOAD COA
+function loadCOA(){
+let html = "<option value=''>Select Account</option>";
+coa.forEach(a=>{
+html += `<option value="${a.code} - ${a.name}">
+${a.code} - ${a.name}
+</option>`;
+});
+account.innerHTML = html;
+}
 
-let selectedClient = document.getElementById("client").value;
-let from = document.getElementById("from").value;
-let to = document.getElementById("to").value;
+// ADD ENTRY (🔥 FIXED)
+function addEntry(){
 
+let d = date.value;
+let c = client.value;
+let a = account.value;
+let desc = description.value;
+let debitVal = Number(debit.value) || 0;
+let creditVal = Number(credit.value) || 0;
+
+if(!a){
+alert("Select account");
+return;
+}
+
+if(debitVal === 0 && creditVal === 0){
+alert("Enter debit or credit");
+return;
+}
+
+// 🔥 FIX: CLIENT ONLY FOR AR
+let accLower = a.toLowerCase();
+
+if(
+  !accLower.includes("receivable") &&
+  !accLower.includes("a/r") &&
+  !accLower.includes("ar")
+){
+  c = ""; // REMOVE CLIENT
+}
+
+entries.push({
+date:d,
+client:c,
+account:a,
+description:desc,
+debit:debitVal,
+credit:creditVal
+});
+
+saveData();
+}
+
+// EDIT
+function editEntry(i){
+let e = entries[i];
+
+date.value = e.date;
+client.value = e.client;
+account.value = e.account;
+description.value = e.description;
+debit.value = e.debit;
+credit.value = e.credit;
+
+editIndex = i;
+}
+
+// UPDATE
+function updateEntry(){
+if(editIndex === -1){
+alert("Select entry first");
+return;
+}
+
+let a = account.value;
+let c = client.value;
+
+// 🔥 FIX AGAIN
+let accLower = a.toLowerCase();
+
+if(
+  !accLower.includes("receivable") &&
+  !accLower.includes("a/r") &&
+  !accLower.includes("ar")
+){
+  c = "";
+}
+
+entries[editIndex] = {
+date: date.value,
+client: c,
+account: a,
+description: description.value,
+debit: Number(debit.value) || 0,
+credit: Number(credit.value) || 0
+};
+
+editIndex = -1;
+saveData();
+}
+
+// DELETE
+function deleteEntry(i){
+if(confirm("Delete this entry?")){
+entries.splice(i,1);
+saveData();
+}
+}
+
+// SAVE
+function saveData(){
+localStorage.setItem("jv", JSON.stringify(entries));
+loadTable();
+clearForm();
+}
+
+// LOAD TABLE
+function loadTable(){
+
+let filter = filterClient.value;
 let html = "";
-let balance = 0;
-let unpaidMonths = 0;
 
-// SORT BY DATE
-let sorted = entries.sort((a,b)=> new Date(a.date) - new Date(b.date));
+entries.forEach((e,i)=>{
 
-sorted.forEach((e,i)=>{
-
-if(e.client !== selectedClient) return;
-
-if(from && e.date < from) return;
-if(to && e.date > to) return;
-
-// 🔥 ONLY ACCOUNTS RECEIVABLE
-if(!e.account.includes("Accounts Receivable")) return;
-
-// COMPUTE BALANCE
-balance += e.debit;
-balance -= e.credit;
-
-// COUNT UNPAID (DEBIT ONLY)
-if(e.debit > 0) unpaidMonths++;
+if(filter && e.client !== filter) return;
 
 html += `
 <tr>
 <td>${i+1}</td>
 <td>${e.date}</td>
+<td>${e.client || ""}</td>
+<td>${e.account}</td>
 <td>${e.description}</td>
 <td>${e.debit}</td>
 <td>${e.credit}</td>
-<td style="color:${balance>0?'red':'green'}">${balance}</td>
+<td>
+<button class="editBtn" onclick="editEntry(${i})">Edit</button>
+<button class="deleteBtn" onclick="deleteEntry(${i})">Delete</button>
+</td>
 </tr>
 `;
-
 });
 
-document.getElementById("ledgerTable").innerHTML = html;
-document.getElementById("totalBalance").innerText = balance;
-document.getElementById("unpaidMonths").innerText = unpaidMonths;
-
+jvTable.innerHTML = html;
 }
 
-// PRINT
-function printLedger(){
-window.print();
+// CLEAR
+function clearForm(){
+description.value="";
+debit.value="";
+credit.value="";
 }
-
-// EVENTS
-document.getElementById("client").addEventListener("change", loadLedger);
-document.getElementById("from").addEventListener("change", loadLedger);
-document.getElementById("to").addEventListener("change", loadLedger);
 
 // INIT
 loadClients();
+loadCOA();
+loadTable();
 
 </script>
 
