@@ -73,6 +73,7 @@ th { background:#3498db; color:white; }
 <button class="saveBtn" onclick="showTab('main')">Main</button>
 <button class="editBtn" onclick="showTab('room')">Room Status</button>
 <button class="deleteBtn" onclick="showTab('tenant')">Tenant List</button>
+<button class="saveBtn" onclick="showTab('report')">Report</button>
 </div>
 
 <!-- MAIN -->
@@ -172,6 +173,29 @@ th { background:#3498db; color:white; }
 </div>
 </div>
 
+<!-- REPORT TAB -->
+<div id="reportTab" style="display:none;">
+<div class="box">
+<h3>Report (Date Range)</h3>
+
+From: <input type="month" id="reportFrom" min="2000-01" max="2050-12">
+To: <input type="month" id="reportTo" min="2000-01" max="2050-12">
+
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Total Rent</th>
+<th>Total Payment</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody id="reportTable"></tbody>
+</table>
+
+</div>
+</div>
+
 <script>
 
 let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
@@ -188,6 +212,7 @@ function showTab(tab){
 mainTab.style.display = tab==="main"?"block":"none";
 roomTab.style.display = tab==="room"?"block":"none";
 tenantTab.style.display = tab==="tenant"?"block":"none";
+reportTab.style.display = tab==="report"?"block":"none";
 }
 
 // ROOM
@@ -196,7 +221,6 @@ rooms.push({number:roomNo.value,capacity:Number(capacity.value)});
 save(); loadAll();
 }
 
-// LOAD ROOMS
 function loadRooms(){
 roomSelect.innerHTML="";
 rooms.forEach((r,i)=>{
@@ -211,7 +235,7 @@ tenants.push({name:tenantName.value,room:r.number,category:category.value});
 save(); loadAll();
 }
 
-// 🔥 FIX: MULTI TABLE UPDATE
+// FIX MULTI TABLE
 function renderAllTenantTables(){
 let tables=document.querySelectorAll("#tenantTable");
 tables.forEach(table=>{
@@ -293,7 +317,7 @@ roomTable.innerHTML+=`<tr><td>${r.number}</td><td>${r.capacity}</td><td>${occ}</
 // YEAR
 function loadYearFilter(){
 yearFilter.innerHTML="";
-for(let y=2020;y<=2030;y++){
+for(let y=2000;y<=2050;y++){
 yearFilter.innerHTML+=`<option value="${y}">${y}</option>`;
 }
 }
@@ -325,7 +349,7 @@ ${months.map(m=>`<td>${m}</td>`).join("")}
 });
 }
 
-// EDIT LEDGER
+// EDIT
 function editLedger(name){
 let year=yearFilter.value;
 
@@ -343,6 +367,44 @@ b.monthly=v; b.rent=v; b.balance=b.rent-b.payment;
 save(); loadLedger();
 }
 
+// REPORT
+function loadReport(){
+
+if(!reportFrom.value || !reportTo.value) return;
+
+let from=new Date(reportFrom.value);
+let to=new Date(reportTo.value);
+
+reportTable.innerHTML="";
+
+tenants.forEach(t=>{
+
+let totalRent=0;
+let totalPay=0;
+
+billings.forEach(b=>{
+let d=new Date(b.month);
+if(b.name===t.name && d>=from && d<=to){
+totalRent+=(b.monthly||b.rent);
+totalPay+=b.payment||0;
+}
+});
+
+let balance=totalRent-totalPay;
+
+reportTable.innerHTML+=`
+<tr>
+<td>${t.name}</td>
+<td>${totalRent}</td>
+<td>${totalPay}</td>
+<td style="color:${balance>0?'red':'green'}">${balance}</td>
+</tr>`;
+});
+}
+
+reportFrom.onchange=loadReport;
+reportTo.onchange=loadReport;
+
 // LOAD ALL
 function loadAll(){
 loadRooms();
@@ -351,7 +413,7 @@ loadDashboard();
 loadRoomStatus();
 loadYearFilter();
 loadLedger();
-renderAllTenantTables(); // 🔥 FIXED
+renderAllTenantTables();
 }
 
 loadAll();
