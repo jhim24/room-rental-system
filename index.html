@@ -62,7 +62,6 @@ th, td {
 
 th { background:#3498db; color:white; }
 
-/* REPORT GRID */
 #reportTable td, #reportTable th {
   border:1px solid #000;
 }
@@ -73,7 +72,6 @@ th { background:#3498db; color:white; }
 
 <h2 style="color:white;">🏨 Accommodation System FINAL PRO</h2>
 
-<!-- TABS -->
 <div class="box">
 <button class="saveBtn" onclick="showTab('main')">Main</button>
 <button class="editBtn" onclick="showTab('room')">Room Status</button>
@@ -124,9 +122,9 @@ th { background:#3498db; color:white; }
 <h3>Billing</h3>
 <select id="tenantSelect"></select>
 <input type="month" id="month">
-<input type="number" id="rent" placeholder="Rent">
-<input type="number" id="payment" placeholder="Payment">
-<button class="saveBtn" onclick="saveBilling()">Save</button>
+<input type="number" id="rent" placeholder="Rent (optional)">
+<input type="number" id="payment" placeholder="Payment (optional)">
+<button class="saveBtn" onclick="addBillingFlexible()">Save</button>
 </div>
 
 <div class="box">
@@ -148,7 +146,7 @@ th { background:#3498db; color:white; }
 
 </div>
 
-<!-- ROOM TAB -->
+<!-- ROOM -->
 <div id="roomTab" style="display:none;">
 <div class="box">
 <h3>Room Status</h3>
@@ -163,7 +161,7 @@ th { background:#3498db; color:white; }
 </div>
 </div>
 
-<!-- TENANT TAB -->
+<!-- TENANT -->
 <div id="tenantTab" style="display:none;">
 <div class="box">
 <h3>Tenant List</h3>
@@ -178,7 +176,7 @@ th { background:#3498db; color:white; }
 </div>
 </div>
 
-<!-- REPORT TAB -->
+<!-- REPORT -->
 <div id="reportTab" style="display:none;">
 <div class="box">
 <h3>Report</h3>
@@ -196,7 +194,7 @@ To <input type="month" id="reportTo">
 <option>Store Keeper</option>
 </select>
 
-<button class="editBtn" onclick="printReport()">Print</button>
+<button onclick="printReport()">Print</button>
 
 <div class="flex">
 <div class="card">Revenue<br><b id="totalRevenue">0</b></div>
@@ -248,20 +246,20 @@ roomSelect.innerHTML+=`<option value="${i}">${r.number}</option>`;
 });
 }
 
-// TENANT
+// TENANT (FIXED AUTO REFRESH)
 function addTenant(){
 let r=rooms[roomSelect.value];
 tenants.push({name:tenantName.value,room:r.number,category:category.value});
 save(); loadAll();
+renderAllTenantTables(); // 🔥 FIX
+tenantName.value="";
 }
 
-// FIX MULTI TABLE
+// TENANT TABLE
 function renderAllTenantTables(){
-let tables=document.querySelectorAll("#tenantTable");
-tables.forEach(table=>{
-table.innerHTML="";
+tenantTable.innerHTML="";
 tenants.forEach((t,i)=>{
-table.innerHTML+=`
+tenantTable.innerHTML+=`
 <tr>
 <td>${i+1}</td>
 <td>${t.name}</td>
@@ -270,7 +268,6 @@ table.innerHTML+=`
 <td><button onclick="deleteTenant(${i})">Delete</button></td>
 </tr>`;
 });
-});
 }
 
 function deleteTenant(i){
@@ -278,34 +275,48 @@ tenants.splice(i,1);
 save(); loadAll();
 }
 
-// BILLING
-function saveBilling(){
-let t=tenants[tenantSelect.value];
-let rentVal=Number(rent.value)||0;
-let payVal=Number(payment.value)||0;
+// FLEXIBLE BILLING (NEW)
+function addBillingFlexible(){
 
-let index=billings.findIndex(b=>b.name===t.name && b.month===month.value);
+let t = tenants[tenantSelect.value];
 
-if(index!==-1){
-billings[index].rent+=rentVal;
-billings[index].payment+=payVal;
-billings[index].balance=billings[index].rent-billings[index].payment;
-billings[index].monthly=(billings[index].monthly||0)+rentVal;
+if(!month.value) return alert("Select month");
+
+let rentVal = Number(rent.value)||0;
+let payVal = Number(payment.value)||0;
+
+if(rentVal===0 && payVal===0){
+return alert("Enter rent or payment");
+}
+
+let index = billings.findIndex(b =>
+b.name===t.name && b.month===month.value
+);
+
+if(index !== -1){
+billings[index].rent += rentVal;
+billings[index].payment += payVal;
+billings[index].monthly = (billings[index].monthly||0) + rentVal;
+billings[index].balance =
+billings[index].rent - billings[index].payment;
 }else{
 billings.push({
 name:t.name,
 month:month.value,
 rent:rentVal,
 payment:payVal,
-balance:rentVal-payVal,
-monthly:rentVal
+balance:rentVal - payVal,
+monthly: rentVal
 });
 }
 
-save(); loadLedger();
+save();
+loadLedger();
+
+rent.value="";
+payment.value="";
 }
 
-// DROPDOWN
 function loadTenantSelect(){
 tenantSelect.innerHTML="";
 tenants.forEach((t,i)=>{
@@ -372,7 +383,6 @@ ${months.map(m=>`<td>${m}</td>`).join("")}
 // EDIT
 function editLedger(name){
 let year=yearFilter.value;
-
 billings.forEach(b=>{
 let d=new Date(b.month);
 if(b.name===name && d.getFullYear()==year){
@@ -383,7 +393,6 @@ b.monthly=v; b.rent=v; b.balance=b.rent-b.payment;
 }
 }
 });
-
 save(); loadLedger();
 }
 
@@ -429,11 +438,11 @@ reportTable.innerHTML+=`
 <td>${t.name}</td>
 <td>${totalRent}</td>
 <td>${totalPay}</td>
-<td style="color:${balance>0?'red':'green'}">${balance}</td>
+<td>${balance}</td>
 </tr>`;
 });
 
-totalRevenue && (document.getElementById("totalRevenue").innerText = totalRevenue);
+totalRevenue && (totalRevenueEl = document.getElementById("totalRevenue").innerText = totalRevenue);
 totalCash && (document.getElementById("totalCash").innerText = totalCash);
 totalReceivable && (document.getElementById("totalReceivable").innerText = totalReceivable);
 
