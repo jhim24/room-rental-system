@@ -31,15 +31,12 @@ button {
   cursor:pointer;
 }
 
-button:hover { background:#2980b9; }
-
 .payBtn { background:green; }
 .deleteBtn { background:red; }
 
 table {
   width:100%;
   border-collapse:collapse;
-  margin-top:10px;
 }
 
 th, td {
@@ -53,16 +50,15 @@ th {
   color:white;
 }
 </style>
-
 </head>
 
 <body>
 
-<h2>🏨 Room Rental System (Monthly)</h2>
+<h2>🏨 Room Rental System PRO</h2>
 
 <div class="box">
 <h3>Add Room</h3>
-<input type="text" id="roomNumber" placeholder="Room Number">
+<input type="text" id="roomNumber" placeholder="Room #">
 <input type="number" id="roomPrice" placeholder="Monthly Rent">
 <button onclick="addRoom()">Add Room</button>
 </div>
@@ -70,27 +66,38 @@ th {
 <div class="box">
 <h3>Add Tenant</h3>
 <input type="text" id="tenantName" placeholder="Tenant Name">
-<input type="text" id="contact" placeholder="Contact">
-<input type="date" id="dueDate">
+<select id="category">
+  <option>Tenant</option>
+  <option>Bed Space</option>
+  <option>Freelancer</option>
+  <option>Staff</option>
+</select>
 <select id="roomSelect"></select>
-<button onclick="addTenant()">Assign Room</button>
+<input type="number" id="payment" placeholder="Payment">
+<button onclick="addTenant()">Save</button>
 </div>
 
 <div class="box">
-<h3>Tenant List</h3>
+<h3>Monthly Record (Jan 2026)</h3>
+
 <table>
 <thead>
 <tr>
+<th>#</th>
 <th>Name</th>
 <th>Room</th>
-<th>Rent</th>
-<th>Due Date</th>
-<th>Status</th>
+<th>Code</th>
+<th>Category</th>
+<th>Rental</th>
+<th>Payment</th>
+<th>Balance</th>
 <th>Action</th>
 </tr>
 </thead>
+
 <tbody id="tenantTable"></tbody>
 </table>
+
 </div>
 
 <script>
@@ -98,18 +105,24 @@ th {
 let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
 let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
 
-function saveData() {
+function saveData(){
   localStorage.setItem("rooms", JSON.stringify(rooms));
   localStorage.setItem("tenants", JSON.stringify(tenants));
 }
 
-function addRoom() {
-  let number = roomNumber.value;
-  let price = roomPrice.value;
+function generateCode(index){
+  return "SYS-" + String(index+1).padStart(3,'0');
+}
 
-  if(!number || !price) return alert("Fill all fields");
+function addRoom(){
+  if(!roomNumber.value || !roomPrice.value) return alert("Fill fields");
 
-  rooms.push({ number, price, status:"Available" });
+  rooms.push({
+    number:roomNumber.value,
+    price:roomPrice.value,
+    status:"Available"
+  });
+
   saveData();
   loadRooms();
 
@@ -117,34 +130,37 @@ function addRoom() {
   roomPrice.value="";
 }
 
-function loadRooms() {
+function loadRooms(){
   roomSelect.innerHTML="";
   rooms.forEach((r,i)=>{
     if(r.status==="Available"){
-      roomSelect.innerHTML += `<option value="${i}">${r.number} - ${r.price}</option>`;
+      roomSelect.innerHTML += `<option value="${i}">${r.number}</option>`;
     }
   });
 }
 
-function addTenant() {
+function addTenant(){
   let name = tenantName.value;
-  let contactVal = contact.value;
-  let due = dueDate.value;
+  let cat = category.value;
   let roomIndex = roomSelect.value;
+  let pay = parseFloat(payment.value) || 0;
 
-  if(!name || !contactVal || !due) return alert("Complete fields");
+  if(!name) return alert("Enter name");
 
   let room = rooms[roomIndex];
+  let rental = parseFloat(room.price);
+  let balance = rental - pay;
 
-  tenants.push({
+  let newTenant = {
     name,
-    contact:contactVal,
+    category:cat,
     room:room.number,
-    rent:room.price,
-    dueDate:due,
-    status:"Unpaid"
-  });
+    rental,
+    payment:pay,
+    balance
+  };
 
+  tenants.push(newTenant);
   rooms[roomIndex].status="Occupied";
 
   saveData();
@@ -152,53 +168,39 @@ function addTenant() {
   loadTenants();
 
   tenantName.value="";
-  contact.value="";
-  dueDate.value="";
+  payment.value="";
 }
 
-function checkStatus(dueDate) {
-  let today = new Date();
-  let due = new Date(dueDate);
-
-  if(today > due) return "Late";
-  return "Unpaid";
-}
-
-function payTenant(index) {
-  tenants[index].status = "Paid";
-  saveData();
-  loadTenants();
-}
-
-function deleteTenant(index) {
+function deleteTenant(index){
   let roomNum = tenants[index].room;
 
   let room = rooms.find(r=>r.number===roomNum);
   if(room) room.status="Available";
 
   tenants.splice(index,1);
+
   saveData();
   loadRooms();
   loadTenants();
 }
 
-function loadTenants() {
+function loadTenants(){
   tenantTable.innerHTML="";
 
   tenants.forEach((t,i)=>{
-    if(t.status!=="Paid"){
-      t.status = checkStatus(t.dueDate);
-    }
+    let code = generateCode(i);
 
     tenantTable.innerHTML += `
       <tr>
+        <td>${i+1}</td>
         <td>${t.name}</td>
         <td>${t.room}</td>
-        <td>${t.rent}</td>
-        <td>${t.dueDate}</td>
-        <td>${t.status}</td>
+        <td>${code}</td>
+        <td>${t.category}</td>
+        <td>${t.rental}</td>
+        <td>${t.payment}</td>
+        <td>${t.balance}</td>
         <td>
-          <button class="payBtn" onclick="payTenant(${i})">Pay</button>
           <button class="deleteBtn" onclick="deleteTenant(${i})">Delete</button>
         </td>
       </tr>
