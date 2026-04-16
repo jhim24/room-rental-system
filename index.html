@@ -82,11 +82,9 @@ th { background:#3498db; color:white; }
 <div class="card">Tenants<br><b id="totalTenants">0</b></div>
 <div class="card">Available<br><b id="availableSlots">0</b></div>
 
-<!-- ✅ ADDED -->
 <div class="card">Bed Space<br><b id="bedSpaceCount">0</b></div>
 <div class="card">Freelancer<br><b id="freelancerCount">0</b></div>
 <div class="card">Company Staff<br><b id="companyStaffCount">0</b></div>
-
 </div>
 </div>
 
@@ -133,47 +131,85 @@ th { background:#3498db; color:white; }
 
 <tbody id="roomTable"></tbody>
 </table>
+</div>
 
+<!-- ================= ADDED TENANT LIST ================= -->
+<div class="box">
+<h3>Tenant List</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Name</th>
+<th>Room</th>
+<th>Category</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="tenantTable"></tbody>
+</table>
+</div>
+
+<!-- ================= ADDED BILLING ================= -->
+<div class="box">
+<h3>Billing</h3>
+<select id="tenantSelect"></select>
+<input type="month" id="month">
+<input type="number" id="rent" placeholder="Rent">
+<input type="number" id="payment" placeholder="Payment">
+<button class="saveBtn" onclick="saveBilling()">Save Billing</button>
+</div>
+
+<!-- ================= ADDED LEDGER ================= -->
+<div class="box">
+<h3>Ledger (Yearly)</h3>
+<select id="yearFilter"></select>
+
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th>
+<th>May</th><th>Jun</th><th>Jul</th><th>Aug</th>
+<th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+<th>Total</th>
+</tr>
+</thead>
+
+<tbody id="ledgerTable"></tbody>
+</table>
 </div>
 
 <script>
 
 let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
 let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+let billings = JSON.parse(localStorage.getItem("billings")) || [];
+
 let editRoomIndex = -1;
 
-// SAVE STORAGE
 function save(){
 localStorage.setItem("rooms", JSON.stringify(rooms));
 localStorage.setItem("tenants", JSON.stringify(tenants));
+localStorage.setItem("billings", JSON.stringify(billings));
 }
 
-// SAVE / UPDATE ROOM
+// ROOM
 function saveRoom(){
-
 if(!roomNo.value || !capacity.value) return alert("Fill all");
 
 if(editRoomIndex === -1){
-  rooms.push({
-    number: roomNo.value,
-    capacity: Number(capacity.value)
-  });
+rooms.push({ number: roomNo.value, capacity: Number(capacity.value) });
 }else{
-  rooms[editRoomIndex] = {
-    number: roomNo.value,
-    capacity: Number(capacity.value)
-  };
-  editRoomIndex = -1;
+rooms[editRoomIndex] = { number: roomNo.value, capacity: Number(capacity.value) };
+editRoomIndex = -1;
 }
 
-save();
-loadAll();
-
-roomNo.value="";
-capacity.value="";
+save(); loadAll();
+roomNo.value=""; capacity.value="";
 }
 
-// LOAD ROOM DROPDOWN
+// LOAD ROOMS
 function loadRooms(){
 roomSelect.innerHTML="";
 rooms.forEach((r,i)=>{
@@ -181,15 +217,12 @@ roomSelect.innerHTML += `<option value="${i}">${r.number}</option>`;
 });
 }
 
-// ADD TENANT
+// TENANT
 function addTenant(){
-
 let r = rooms[roomSelect.value];
 let occupied = tenants.filter(t=>t.room===r.number).length;
 
-if(occupied >= r.capacity){
-return alert("Room full");
-}
+if(occupied >= r.capacity) return alert("Room full");
 
 tenants.push({
 name: tenantName.value,
@@ -197,19 +230,15 @@ room: r.number,
 category: category.value
 });
 
-save();
-loadAll();
-
+save(); loadAll();
 tenantName.value="";
 }
 
-// ROOM STATUS TABLE
+// ROOM STATUS
 function loadRoomStatus(){
-
 roomTable.innerHTML="";
 
 rooms.forEach((r,i)=>{
-
 let occupied = tenants.filter(t=>t.room===r.number).length;
 let available = r.capacity - occupied;
 
@@ -223,33 +252,22 @@ roomTable.innerHTML += `
 <button class="editBtn" onclick="editRoom(${i})">Edit</button>
 <button class="deleteBtn" onclick="deleteRoom(${i})">Delete</button>
 </td>
-</tr>
-`;
+</tr>`;
 });
 }
 
-// EDIT ROOM
 function editRoom(i){
-let r = rooms[i];
-roomNo.value = r.number;
-capacity.value = r.capacity;
+roomNo.value = rooms[i].number;
+capacity.value = rooms[i].capacity;
 editRoomIndex = i;
 }
 
-// DELETE ROOM
 function deleteRoom(i){
-
 if(!confirm("Delete this room?")) return;
-
-let roomName = rooms[i].number;
-
-// REMOVE TENANTS
-tenants = tenants.filter(t => t.room !== roomName);
-
+let name = rooms[i].number;
+tenants = tenants.filter(t=>t.room!==name);
 rooms.splice(i,1);
-
-save();
-loadAll();
+save(); loadAll();
 }
 
 // DASHBOARD
@@ -263,15 +281,110 @@ let occupied = tenants.length;
 
 availableSlots.innerText = totalCapacity - occupied;
 
-// ✅ ADDED CATEGORY COUNTS
-let bed = tenants.filter(t=>t.category==="Bed Space").length;
-let free = tenants.filter(t=>t.category==="Freelancer").length;
-let comp = tenants.filter(t=>t.category==="Company Staff").length;
+bedSpaceCount.innerText = tenants.filter(t=>t.category==="Bed Space").length;
+freelancerCount.innerText = tenants.filter(t=>t.category==="Freelancer").length;
+companyStaffCount.innerText = tenants.filter(t=>t.category==="Company Staff").length;
+}
 
-bedSpaceCount.innerText = bed;
-freelancerCount.innerText = free;
-companyStaffCount.innerText = comp;
+// ================= NEW FEATURES =================
 
+// TENANT LIST
+function loadTenantList(){
+tenantTable.innerHTML="";
+tenants.forEach((t,i)=>{
+tenantTable.innerHTML += `
+<tr>
+<td>${i+1}</td>
+<td>${t.name}</td>
+<td>${t.room}</td>
+<td>${t.category}</td>
+<td><button class="deleteBtn" onclick="deleteTenant(${i})">Delete</button></td>
+</tr>`;
+});
+}
+
+function deleteTenant(i){
+let t = tenants[i];
+tenants.splice(i,1);
+billings = billings.filter(b=>b.name!==t.name);
+save(); loadAll();
+}
+
+// TENANT SELECT
+function loadTenantSelect(){
+tenantSelect.innerHTML="";
+tenants.forEach((t,i)=>{
+tenantSelect.innerHTML += `<option value="${i}">${t.name} (${t.room})</option>`;
+});
+}
+
+// BILLING
+function saveBilling(){
+
+let t = tenants[tenantSelect.value];
+
+let rentVal = Number(rent.value)||0;
+let payVal = Number(payment.value)||0;
+
+let index = billings.findIndex(b =>
+b.name===t.name && b.month===month.value
+);
+
+if(index !== -1){
+billings[index].rent += rentVal;
+billings[index].payment += payVal;
+billings[index].balance =
+billings[index].rent - billings[index].payment;
+}else{
+billings.push({
+name:t.name,
+month:month.value,
+rent:rentVal,
+payment:payVal,
+balance:rentVal - payVal
+});
+}
+
+save();
+loadLedger();
+}
+
+// YEAR FILTER
+function loadYearFilter(){
+yearFilter.innerHTML="";
+let start=2020, end=new Date().getFullYear()+5;
+for(let y=start;y<=end;y++){
+yearFilter.innerHTML += `<option value="${y}">${y}</option>`;
+}
+}
+yearFilter.onchange = loadLedger;
+
+// LEDGER
+function loadLedger(){
+
+let year = yearFilter.value;
+ledgerTable.innerHTML="";
+
+tenants.forEach(t=>{
+
+let months = Array(12).fill(0);
+
+billings.forEach(b=>{
+let d = new Date(b.month);
+if(b.name===t.name && d.getFullYear()==year){
+months[d.getMonth()] += b.balance;
+}
+});
+
+let total = months.reduce((a,b)=>a+b,0);
+
+ledgerTable.innerHTML += `
+<tr>
+<td>${t.name}</td>
+${months.map(m=>`<td>${m}</td>`).join("")}
+<td style="color:${total>0?'red':'green'}">${total}</td>
+</tr>`;
+});
 }
 
 // LOAD ALL
@@ -279,6 +392,12 @@ function loadAll(){
 loadRooms();
 loadRoomStatus();
 loadDashboard();
+
+// ADDED
+loadTenantList();
+loadTenantSelect();
+loadYearFilter();
+loadLedger();
 }
 
 // INIT
