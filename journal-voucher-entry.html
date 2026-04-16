@@ -87,12 +87,12 @@ th { background:#3498db;color:white; }
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-<button onclick="location.href='index.html?v=21'">📊 Dashboard</button>
-<button onclick="location.href='rooms.html?v=21'">🏠 Rooms</button>
-<button onclick="location.href='clients.html?v=21'">👥 Clients</button>
-<button onclick="location.href='journal-voucher-entry.html?v=21'">📒 Journal</button>
-<button onclick="location.href='coa.html?v=21'">📚 Chart of Accounts</button>
-<button onclick="location.href='ledger.html?v=21'">📘 Client Ledger</button>
+<button onclick="location.href='index.html?v=22'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=22'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=22'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=22'">📒 Journal</button>
+<button onclick="location.href='coa.html?v=22'">📚 Chart of Accounts</button>
+<button onclick="location.href='ledger.html?v=22'">📘 Client Ledger</button>
 </div>
 </div>
 
@@ -130,8 +130,7 @@ th { background:#3498db;color:white; }
 <tr>
 <th>#</th>
 <th>Date</th>
-<th>Client</th>
-<th>Account</th>
+<th>Account (with Sub-code)</th>
 <th>Description</th>
 <th>Debit</th>
 <th>Credit</th>
@@ -176,7 +175,7 @@ ${a.code} - ${a.name}
 account.innerHTML = html;
 }
 
-// ADD ENTRY (🔥 FIXED)
+// ADD ENTRY
 function addEntry(){
 
 let d = date.value;
@@ -196,7 +195,7 @@ alert("Enter debit or credit");
 return;
 }
 
-// 🔥 FIX: CLIENT ONLY FOR AR
+// 🔥 CLIENT ONLY FOR AR
 let accLower = a.toLowerCase();
 
 if(
@@ -204,7 +203,7 @@ if(
   !accLower.includes("a/r") &&
   !accLower.includes("ar")
 ){
-  c = ""; // REMOVE CLIENT
+  c = "";
 }
 
 entries.push({
@@ -235,6 +234,7 @@ editIndex = i;
 
 // UPDATE
 function updateEntry(){
+
 if(editIndex === -1){
 alert("Select entry first");
 return;
@@ -243,7 +243,6 @@ return;
 let a = account.value;
 let c = client.value;
 
-// 🔥 FIX AGAIN
 let accLower = a.toLowerCase();
 
 if(
@@ -282,7 +281,7 @@ loadTable();
 clearForm();
 }
 
-// LOAD TABLE
+// LOAD TABLE (WITH SUB-CODE DISPLAY)
 function loadTable(){
 
 let filter = filterClient.value;
@@ -292,12 +291,17 @@ entries.forEach((e,i)=>{
 
 if(filter && e.client !== filter) return;
 
+// 🔥 DISPLAY SUB-CODE
+let accountDisplay = e.account;
+if(e.client){
+accountDisplay += " - " + e.client;
+}
+
 html += `
 <tr>
 <td>${i+1}</td>
 <td>${e.date}</td>
-<td>${e.client || ""}</td>
-<td>${e.account}</td>
+<td>${accountDisplay}</td>
 <td>${e.description}</td>
 <td>${e.debit}</td>
 <td>${e.credit}</td>
