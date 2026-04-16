@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Accommodation System</title>
+<title>Accommodation System PRO</title>
 
 <style>
 body { font-family: Arial; background:#eef3ff; padding:20px; }
@@ -13,10 +13,7 @@ body { font-family: Arial; background:#eef3ff; padding:20px; }
   margin-bottom:15px;
 }
 
-input, select {
-  padding:8px;
-  margin:5px;
-}
+input, select { padding:8px; margin:5px; }
 
 button {
   padding:8px 12px;
@@ -28,7 +25,6 @@ button {
 }
 
 .saveBtn { background:green; }
-.updateBtn { background:orange; }
 .deleteBtn { background:red; }
 
 table {
@@ -49,43 +45,64 @@ th { background:#3498db; color:white; }
 
 <body>
 
-<h2>🏨 Accommodation System</h2>
+<h2>🏨 Accommodation System PRO</h2>
 
+<!-- ROOM -->
 <div class="box">
+<h3>Add Room</h3>
+<input id="roomNo" placeholder="Room Number">
+<input id="capacity" type="number" placeholder="Capacity">
+<button onclick="addRoom()">Add Room</button>
+</div>
 
-<h3>Tenant Form</h3>
+<!-- TENANT -->
+<div class="box">
+<h3>Add Tenant</h3>
+<input id="tenantName" placeholder="Tenant Name">
 
-<input id="name" placeholder="Tenant Name">
-<input id="room" placeholder="Room Number">
+<select id="roomSelect"></select>
 
 <select id="category">
-<option>Tenant</option>
 <option>Bed Space</option>
+<option>Tenant</option>
 <option>Freelancer</option>
-<option>Staff</option>
+<option>Company Staff</option>
 <option>Office Staff</option>
 <option>Store Keeper</option>
 </select>
 
-<input type="month" id="month" min="2000-01">
-
-<input type="number" id="rent" placeholder="Rent Amount">
-<input type="number" id="payment" placeholder="Payment">
-<input type="number" id="price" placeholder="Price per head">
-<input type="number" id="capacity" placeholder="Capacity">
-
-<br>
-
-<button class="saveBtn" onclick="saveData()">Save</button>
-<button class="updateBtn" onclick="updateData()">Update</button>
-<button class="deleteBtn" onclick="deleteData()">Delete</button>
-
+<button onclick="addTenant()">Save Tenant</button>
 </div>
 
+<!-- BILLING -->
 <div class="box">
+<h3>Billing</h3>
+<select id="tenantSelect"></select>
+<input type="month" id="month">
+<input type="number" id="rent" placeholder="Rent">
+<input type="number" id="payment" placeholder="Payment">
+<button onclick="saveBilling()">Save</button>
+</div>
 
+<!-- ROOM STATUS -->
+<div class="box">
+<h3>Room Status</h3>
+<table>
+<thead>
+<tr>
+<th>Room</th>
+<th>Capacity</th>
+<th>Occupied</th>
+<th>Available</th>
+</tr>
+</thead>
+<tbody id="roomTable"></tbody>
+</table>
+</div>
+
+<!-- RECORDS -->
+<div class="box">
 <h3>Records</h3>
-
 <table>
 <thead>
 <tr>
@@ -97,179 +114,169 @@ th { background:#3498db; color:white; }
 <th>Rent</th>
 <th>Payment</th>
 <th>Balance</th>
-<th>Price</th>
-<th>Capacity</th>
 <th>Action</th>
 </tr>
 </thead>
-
 <tbody id="table"></tbody>
-
 </table>
-
 </div>
 
 <script>
 
-const nameInput = document.getElementById("name");
-const roomInput = document.getElementById("room");
-const categoryInput = document.getElementById("category");
-const monthInput = document.getElementById("month");
-const rentInput = document.getElementById("rent");
-const paymentInput = document.getElementById("payment");
-const priceInput = document.getElementById("price");
-const capacityInput = document.getElementById("capacity");
+let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
+let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+let billings = JSON.parse(localStorage.getItem("billings")) || [];
 
-let data = JSON.parse(localStorage.getItem("data")) || [];
-let editIndex = -1;
+// SAVE
+function save(){
+localStorage.setItem("rooms", JSON.stringify(rooms));
+localStorage.setItem("tenants", JSON.stringify(tenants));
+localStorage.setItem("billings", JSON.stringify(billings));
+}
 
-// ✅ UPDATED LOGIC ONLY HERE
-function saveData(){
+// ROOM
+function addRoom(){
+rooms.push({
+number: roomNo.value,
+capacity: Number(capacity.value),
+occupied: 0
+});
+save();
+loadAll();
+}
 
-if(!nameInput.value.trim()) return alert("Enter tenant name");
+// LOAD ROOMS
+function loadRooms(){
+roomSelect.innerHTML="";
+rooms.forEach((r,i)=>{
+roomSelect.innerHTML += `<option value="${i}">${r.number}</option>`;
+});
+}
 
-let rentVal = Number(rentInput.value) || 0;
-let paymentVal = Number(paymentInput.value) || 0;
+// TENANT
+function addTenant(){
 
-// 🔥 CHECK EXISTING
-let index = data.findIndex(d =>
-  d.name === nameInput.value &&
-  d.month === monthInput.value
+let r = rooms[roomSelect.value];
+
+if(r.occupied >= r.capacity){
+return alert("Room full");
+}
+
+tenants.push({
+name: tenantName.value,
+room: r.number,
+category: category.value
+});
+
+r.occupied++;
+
+save();
+loadAll();
+}
+
+// LOAD TENANTS
+function loadTenants(){
+tenantSelect.innerHTML="";
+tenants.forEach((t,i)=>{
+tenantSelect.innerHTML += `<option value="${i}">
+${t.name} (${t.room})
+</option>`;
+});
+}
+
+// BILLING
+function saveBilling(){
+
+let t = tenants[tenantSelect.value];
+
+let rentVal = Number(rent.value) || 0;
+let payVal = Number(payment.value) || 0;
+
+// CHECK EXISTING
+let index = billings.findIndex(b =>
+b.name === t.name && b.month === month.value
 );
 
 if(index !== -1){
-
-  // 👉 ADD TO EXISTING
-  data[index].rent += rentVal;
-  data[index].payment += paymentVal;
-  data[index].balance = data[index].rent - data[index].payment;
-
+billings[index].rent += rentVal;
+billings[index].payment += payVal;
+billings[index].balance =
+billings[index].rent - billings[index].payment;
 }else{
-
-  // 👉 ORIGINAL LOGIC (UNCHANGED)
-  data.push({
-    name: nameInput.value,
-    room: roomInput.value,
-    category: categoryInput.value,
-    month: monthInput.value,
-    rent: rentVal,
-    payment: paymentVal,
-    balance: rentVal - paymentVal,
-    price: Number(priceInput.value) || 0,
-    capacity: Number(capacityInput.value) || 0
-  });
-
-}
-
-save();
-loadTable();
-clearForm();
-}
-
-// ===== REST OF YOUR CODE (UNCHANGED) =====
-
-function updateData(){
-if(editIndex === -1) return alert("Select record first");
-
-let rentVal = Number(rentInput.value) || 0;
-let paymentVal = Number(paymentInput.value) || 0;
-
-data[editIndex] = {
-name: nameInput.value,
-room: roomInput.value,
-category: categoryInput.value,
-month: monthInput.value,
+billings.push({
+name: t.name,
+room: t.room,
+category: t.category,
+month: month.value,
 rent: rentVal,
-payment: paymentVal,
-balance: rentVal - paymentVal,
-price: Number(priceInput.value) || 0,
-capacity: Number(capacityInput.value) || 0
-};
-
-editIndex = -1;
+payment: payVal,
+balance: rentVal - payVal
+});
+}
 
 save();
-loadTable();
-clearForm();
+loadAll();
 }
 
-function deleteData(){
-if(editIndex === -1) return alert("Select record first");
-
-data.splice(editIndex,1);
-
-editIndex = -1;
-
-save();
-loadTable();
-clearForm();
-}
-
-function editRow(i){
-let d = data[i];
-
-nameInput.value = d.name || "";
-roomInput.value = d.room || "";
-categoryInput.value = d.category || "Tenant";
-monthInput.value = d.month || "";
-rentInput.value = d.rent || 0;
-paymentInput.value = d.payment || 0;
-priceInput.value = d.price || 0;
-capacityInput.value = d.capacity || 0;
-
-editIndex = i;
-}
-
-function deleteRow(i){
-if(confirm("Delete record?")){
-data.splice(i,1);
-save();
-loadTable();
-}
-}
-
+// RECORDS
 function loadTable(){
-table.innerHTML = "";
+table.innerHTML="";
 
-data.forEach((d,i)=>{
+billings.forEach((b,i)=>{
 table.innerHTML += `
 <tr>
 <td>${i+1}</td>
-<td>${d.name || ""}</td>
-<td>${d.room || ""}</td>
-<td>${d.category || ""}</td>
-<td>${d.month || ""}</td>
-<td>${d.rent || 0}</td>
-<td>${d.payment || 0}</td>
-<td style="color:${d.balance>0?'red':'green'}">${d.balance}</td>
-<td>${d.price || 0}</td>
-<td>${d.capacity || 0}</td>
-<td>
-<button onclick="editRow(${i})">Edit</button>
-<button class="deleteBtn" onclick="deleteRow(${i})">Delete</button>
-</td>
+<td>${b.name}</td>
+<td>${b.room}</td>
+<td>${b.category}</td>
+<td>${b.month}</td>
+<td>${b.rent}</td>
+<td>${b.payment}</td>
+<td style="color:${b.balance>0?'red':'green'}">${b.balance}</td>
+<td><button onclick="deleteBilling(${i})">Delete</button></td>
 </tr>
 `;
 });
 }
 
-function save(){
-localStorage.setItem("data", JSON.stringify(data));
+// DELETE
+function deleteBilling(i){
+billings.splice(i,1);
+save();
+loadAll();
 }
 
-function clearForm(){
-nameInput.value = "";
-roomInput.value = "";
-categoryInput.value = "Tenant";
-monthInput.value = "";
-rentInput.value = "";
-paymentInput.value = "";
-priceInput.value = "";
-capacityInput.value = "";
-editIndex = -1;
+// ROOM STATUS
+function loadRoomStatus(){
+
+roomTable.innerHTML="";
+
+rooms.forEach(r=>{
+
+let occupied = tenants.filter(t=>t.room===r.number).length;
+let available = r.capacity - occupied;
+
+roomTable.innerHTML += `
+<tr>
+<td>${r.number}</td>
+<td>${r.capacity}</td>
+<td>${occupied}</td>
+<td style="color:${available>0?'green':'red'}">${available}</td>
+</tr>
+`;
+});
 }
 
+// LOAD ALL
+function loadAll(){
+loadRooms();
+loadTenants();
 loadTable();
+loadRoomStatus();
+}
+
+// INIT
+loadAll();
 
 </script>
 
