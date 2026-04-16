@@ -113,27 +113,37 @@ th { background:#3498db; color:white; }
 
 <script>
 
+// 🔥 FIXED INPUT REFERENCES
+const nameInput = document.getElementById("name");
+const roomInput = document.getElementById("room");
+const categoryInput = document.getElementById("category");
+const monthInput = document.getElementById("month");
+const rentInput = document.getElementById("rent");
+const paymentInput = document.getElementById("payment");
+const priceInput = document.getElementById("price");
+const capacityInput = document.getElementById("capacity");
+
 let data = JSON.parse(localStorage.getItem("data")) || [];
 let editIndex = -1;
 
 // SAVE
 function saveData(){
 
-if(!name.value) return alert("Enter tenant name");
+if(!nameInput.value.trim()) return alert("Enter tenant name");
 
-let rentVal = Number(rent.value) || 0;
-let paymentVal = Number(payment.value) || 0;
+let rentVal = Number(rentInput.value) || 0;
+let paymentVal = Number(paymentInput.value) || 0;
 
 let record = {
-name: name.value,
-room: room.value,
-category: category.value,
-month: month.value,
+name: nameInput.value,
+room: roomInput.value,
+category: categoryInput.value,
+month: monthInput.value,
 rent: rentVal,
 payment: paymentVal,
 balance: rentVal - paymentVal,
-price: Number(price.value) || 0,
-capacity: Number(capacity.value) || 0
+price: Number(priceInput.value) || 0,
+capacity: Number(capacityInput.value) || 0
 };
 
 data.push(record);
@@ -148,19 +158,19 @@ function updateData(){
 
 if(editIndex === -1) return alert("Select record first");
 
-let rentVal = Number(rent.value) || 0;
-let paymentVal = Number(payment.value) || 0;
+let rentVal = Number(rentInput.value) || 0;
+let paymentVal = Number(paymentInput.value) || 0;
 
 data[editIndex] = {
-name: name.value,
-room: room.value,
-category: category.value,
-month: month.value,
+name: nameInput.value,
+room: roomInput.value,
+category: categoryInput.value,
+month: monthInput.value,
 rent: rentVal,
 payment: paymentVal,
 balance: rentVal - paymentVal,
-price: Number(price.value) || 0,
-capacity: Number(capacity.value) || 0
+price: Number(priceInput.value) || 0,
+capacity: Number(capacityInput.value) || 0
 };
 
 editIndex = -1;
@@ -189,14 +199,14 @@ function editRow(i){
 
 let d = data[i];
 
-name.value = d.name || "";
-room.value = d.room || "";
-category.value = d.category || "Tenant";
-month.value = d.month || "";
-rent.value = d.rent || 0;
-payment.value = d.payment || 0;
-price.value = d.price || 0;
-capacity.value = d.capacity || 0;
+nameInput.value = d.name || "";
+roomInput.value = d.room || "";
+categoryInput.value = d.category || "Tenant";
+monthInput.value = d.month || "";
+rentInput.value = d.rent || 0;
+paymentInput.value = d.payment || 0;
+priceInput.value = d.price || 0;
+capacityInput.value = d.capacity || 0;
 
 editIndex = i;
 }
@@ -247,14 +257,14 @@ localStorage.setItem("data", JSON.stringify(data));
 
 // CLEAR FORM
 function clearForm(){
-name.value = "";
-room.value = "";
-category.value = "Tenant";
-month.value = "";
-rent.value = "";
-payment.value = "";
-price.value = "";
-capacity.value = "";
+nameInput.value = "";
+roomInput.value = "";
+categoryInput.value = "Tenant";
+monthInput.value = "";
+rentInput.value = "";
+paymentInput.value = "";
+priceInput.value = "";
+capacityInput.value = "";
 editIndex = -1;
 }
 
