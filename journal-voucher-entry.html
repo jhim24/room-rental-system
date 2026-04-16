@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Journal Voucher Entry</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial;
+  display:flex;
+  height:100vh;
+  background: linear-gradient(135deg,#1d2b64,#f8cdda);
+}
+
+/* SIDEBAR */
+.sidebar {
+  width:230px;
+  background: rgba(0,0,0,0.75);
+  color:white;
+  padding:20px;
+}
+
+.menu button {
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:none;
+  border-radius:8px;
+  background:rgba(255,255,255,0.1);
+  color:white;
+  cursor:pointer;
+}
+
+.menu button:hover { background:#3498db; }
+
+/* MAIN */
+.main {
+  flex:1;
+  padding:20px;
+  overflow:auto;
+}
+
+/* BOX */
+.box {
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+}
+
+/* GRID */
+.formGrid {
+  display:grid;
+  grid-template-columns: repeat(3,1fr);
+  gap:10px;
+}
+
+/* INPUT */
+input, select {
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+  width:100%;
+}
+
+/* BUTTON */
+button {
+  padding:10px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.saveBtn { background:#2ecc71;color:white; }
+.deleteBtn { background:red;color:white; }
+
+/* TABLE */
+table {
+  width:100%;
+  border-collapse:collapse;
+}
+
+th, td {
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
+}
+
+th { background:#3498db;color:white; }
+
+/* TOTAL */
+.totalBox {
+  font-weight:bold;
+  margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+<h2>🏨 SYSTEM</h2>
+
+<div class="menu">
+<button onclick="location.href='index.html'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html'">🏠 Rooms</button>
+<button onclick="location.href='clients.html'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html'">📒 Journal</button>
+</div>
+</div>
+
+<div class="main">
+
+<div class="box">
+<h3>Journal Voucher Entry</h3>
+
+<div class="formGrid">
+
+<input type="date" id="date">
+
+<input id="account" placeholder="Account Title">
+
+<input id="description" placeholder="Description">
+
+<input type="number" id="debit" placeholder="Debit">
+
+<input type="number" id="credit" placeholder="Credit">
+
+</div>
+
+<button class="saveBtn" onclick="addEntry()">Add Entry</button>
+
+</div>
+
+<div class="box">
+<h3>Journal Records</h3>
+
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Date</th>
+<th>Account</th>
+<th>Description</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="jvTable"></tbody>
+
+</table>
+
+<div class="totalBox">
+Total Debit: <span id="totalDebit">0</span> |
+Total Credit: <span id="totalCredit">0</span>
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+let entries = JSON.parse(localStorage.getItem("jv")) || [];
+
+// ADD ENTRY
+function addEntry(){
+
+let d = document.getElementById("date").value;
+let acc = document.getElementById("account").value;
+let desc = document.getElementById("description").value;
+let debit = Number(document.getElementById("debit").value) || 0;
+let credit = Number(document.getElementById("credit").value) || 0;
+
+if(!d || !acc){
+alert("Fill required fields");
+return;
+}
+
+entries.push({
+date:d,
+account:acc,
+description:desc,
+debit:debit,
+credit:credit
+});
+
+localStorage.setItem("jv", JSON.stringify(entries));
+
+clearForm();
+loadTable();
+}
+
+// LOAD TABLE
+function loadTable(){
+
+let table = document.getElementById("jvTable");
+table.innerHTML="";
+
+let totalD = 0;
+let totalC = 0;
+
+entries.forEach((e,i)=>{
+
+totalD += e.debit;
+totalC += e.credit;
+
+table.innerHTML += `
+<tr>
+<td>${i+1}</td>
+<td>${e.date}</td>
+<td>${e.account}</td>
+<td>${e.description}</td>
+<td>${e.debit}</td>
+<td>${e.credit}</td>
+<td>
+<button class="deleteBtn" onclick="deleteEntry(${i})">Delete</button>
+</td>
+</tr>
+`;
+});
+
+document.getElementById("totalDebit").innerText = totalD;
+document.getElementById("totalCredit").innerText = totalC;
+}
+
+// DELETE
+function deleteEntry(i){
+entries.splice(i,1);
+localStorage.setItem("jv", JSON.stringify(entries));
+loadTable();
+}
+
+// CLEAR
+function clearForm(){
+document.getElementById("date").value="";
+document.getElementById("account").value="";
+document.getElementById("description").value="";
+document.getElementById("debit").value="";
+document.getElementById("credit").value="";
+}
+
+// INIT
+loadTable();
+
+</script>
+
+</body>
+</html>
