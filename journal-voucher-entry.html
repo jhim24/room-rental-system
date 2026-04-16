@@ -63,33 +63,50 @@ th { background:#3498db;color:white; }
 <div class="container">
 
 <div class="box">
-<h3>Journal Entry</h3>
+<h3>Journal Entry (2 Rows)</h3>
 
 <div class="grid">
 
-<select id="dc">
+<!-- ROW 1 -->
+<select id="dc1">
 <option value="D">Debit</option>
 <option value="C">Credit</option>
 </select>
 
-<select id="code" onchange="autoFillAccount()"></select>
+<select id="code1" onchange="autoFillAccount(1)"></select>
+<input id="accountName1" readonly>
 
-<input id="accountName" placeholder="Account Name" readonly>
-
-<select id="subDesc">
+<select id="subDesc1">
 <option value="">None</option>
 <option value="Tenant">Tenant</option>
-<option value="Client">Client</option>
 </select>
 
-<input type="number" id="amount" placeholder="Amount">
+<input type="number" id="amount1">
 
-<select id="subName"></select>
+<select id="subName1"></select>
+
+<!-- ROW 2 -->
+<select id="dc2">
+<option value="D">Debit</option>
+<option value="C">Credit</option>
+</select>
+
+<select id="code2" onchange="autoFillAccount(2)"></select>
+<input id="accountName2" readonly>
+
+<select id="subDesc2">
+<option value="">None</option>
+<option value="Tenant">Tenant</option>
+</select>
+
+<input type="number" id="amount2">
+
+<select id="subName2"></select>
 
 </div>
 
 <br>
-<button class="saveBtn" onclick="addEntry()">Add Entry</button>
+<button class="saveBtn" onclick="addEntry()">Save Transaction</button>
 
 </div>
 
@@ -127,71 +144,73 @@ let coa = JSON.parse(localStorage.getItem("coa")) || [];
 // LOAD COA
 function loadCOA(){
 
-let html = "<option value=''>Select Code</option>";
+let html = "<option value=''>Select</option>";
 
 coa.forEach(a=>{
 html += `<option value="${a.code}" data-name="${a.name}">
-${a.code}
+${a.code} - ${a.name}
 </option>`;
 });
 
-document.getElementById("code").innerHTML = html;
+code1.innerHTML = html;
+code2.innerHTML = html;
 }
 
-// AUTO FILL ACCOUNT NAME
-function autoFillAccount(){
+// AUTO ACCOUNT NAME
+function autoFillAccount(row){
 
-let select = document.getElementById("code");
+let select = document.getElementById("code"+row);
 let selected = select.options[select.selectedIndex];
 
-let accName = selected.getAttribute("data-name");
+let name = selected.getAttribute("data-name");
 
-document.getElementById("accountName").value = accName || "";
+document.getElementById("accountName"+row).value = name || "";
 }
 
 // LOAD CLIENTS
 function loadClients(){
+
 let html = "<option value=''>Select</option>";
+
 clients.forEach(c=>{
 html += `<option value="${c.name}">${c.name}</option>`;
 });
-document.getElementById("subName").innerHTML = html;
+
+subName1.innerHTML = html;
+subName2.innerHTML = html;
 }
 
-// ADD ENTRY
+// ADD ENTRY (2 ROWS)
 function addEntry(){
 
-let dcVal = document.getElementById("dc").value;
-let codeVal = document.getElementById("code").value;
-let accName = document.getElementById("accountName").value;
-let subDescVal = document.getElementById("subDesc").value;
-let amountVal = Number(document.getElementById("amount").value);
-let subVal = document.getElementById("subName").value;
+let rows = [1,2];
 
-if(!codeVal || !accName){
-alert("Select account");
-return;
-}
+rows.forEach(r=>{
 
-if(amountVal <= 0){
-alert("Enter amount");
-return;
-}
+let dc = document.getElementById("dc"+r).value;
+let code = document.getElementById("code"+r).value;
+let acc = document.getElementById("accountName"+r).value;
+let subDesc = document.getElementById("subDesc"+r).value;
+let amount = Number(document.getElementById("amount"+r).value);
+let sub = document.getElementById("subName"+r).value;
+
+if(!code || amount <= 0) return;
 
 // 🔥 ONLY AR CAN HAVE CLIENT
-if(codeVal !== "1100"){
-subVal = "";
-subDescVal = "";
+if(code !== "1100"){
+sub = "";
+subDesc = "";
 }
 
-// SAVE
 entries.push({
-dc:dcVal,
-code:codeVal,
-account:accName,
-subDesc:subDescVal,
-amount:amountVal,
-subName:subVal
+dc:dc,
+code:code,
+account:acc,
+subDesc:subDesc,
+amount:amount,
+subName:sub
+});
+
 });
 
 localStorage.setItem("jv", JSON.stringify(entries));
@@ -223,21 +242,20 @@ html += `
 
 });
 
-document.getElementById("table").innerHTML = html;
+table.innerHTML = html;
 }
 
 // DELETE
 function deleteEntry(i){
-if(confirm("Delete entry?")){
 entries.splice(i,1);
 localStorage.setItem("jv", JSON.stringify(entries));
 loadTable();
 }
-}
 
 // CLEAR
 function clearForm(){
-document.getElementById("amount").value="";
+amount1.value="";
+amount2.value="";
 }
 
 // INIT
