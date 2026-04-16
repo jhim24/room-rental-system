@@ -62,7 +62,7 @@ th, td {
 
 th { background:#3498db; color:white; }
 
-/* REPORT GRID (EXCEL STYLE) */
+/* REPORT GRID */
 #reportTable td, #reportTable th {
   border:1px solid #000;
 }
@@ -73,7 +73,7 @@ th { background:#3498db; color:white; }
 
 <h2 style="color:white;">🏨 Accommodation System FINAL PRO</h2>
 
-<!-- TAB -->
+<!-- TABS -->
 <div class="box">
 <button class="saveBtn" onclick="showTab('main')">Main</button>
 <button class="editBtn" onclick="showTab('room')">Room Status</button>
@@ -148,7 +148,7 @@ th { background:#3498db; color:white; }
 
 </div>
 
-<!-- ROOM -->
+<!-- ROOM TAB -->
 <div id="roomTab" style="display:none;">
 <div class="box">
 <h3>Room Status</h3>
@@ -163,7 +163,7 @@ th { background:#3498db; color:white; }
 </div>
 </div>
 
-<!-- TENANT -->
+<!-- TENANT TAB -->
 <div id="tenantTab" style="display:none;">
 <div class="box">
 <h3>Tenant List</h3>
@@ -178,17 +178,14 @@ th { background:#3498db; color:white; }
 </div>
 </div>
 
-<!-- REPORT -->
+<!-- REPORT TAB -->
 <div id="reportTab" style="display:none;">
 <div class="box">
-<h3>Report (Date Range)</h3>
+<h3>Report</h3>
 
-From: <input type="month" id="reportFrom" min="2000-01" max="2050-12">
-To: <input type="month" id="reportTo" min="2000-01" max="2050-12">
+From <input type="month" id="reportFrom" min="2000-01" max="2050-12">
+To <input type="month" id="reportTo">
 
-<br><br>
-
-Category:
 <select id="reportCategory">
 <option value="">All</option>
 <option>Bed Space</option>
@@ -201,14 +198,16 @@ Category:
 
 <button class="editBtn" onclick="printReport()">Print</button>
 
+<div class="flex">
+<div class="card">Revenue<br><b id="totalRevenue">0</b></div>
+<div class="card">Cash<br><b id="totalCash">0</b></div>
+<div class="card">Receivable<br><b id="totalReceivable">0</b></div>
+</div>
+
 <table>
 <thead>
 <tr>
-<th>Category</th>
-<th>Name</th>
-<th>Total Rent</th>
-<th>Total Payment</th>
-<th>Balance</th>
+<th>Category</th><th>Name</th><th>Rent</th><th>Payment</th><th>Balance</th>
 </tr>
 </thead>
 <tbody id="reportTable"></tbody>
@@ -256,7 +255,7 @@ tenants.push({name:tenantName.value,room:r.number,category:category.value});
 save(); loadAll();
 }
 
-// TENANT TABLE FIX
+// FIX MULTI TABLE
 function renderAllTenantTables(){
 let tables=document.querySelectorAll("#tenantTable");
 tables.forEach(table=>{
@@ -306,6 +305,7 @@ monthly:rentVal
 save(); loadLedger();
 }
 
+// DROPDOWN
 function loadTenantSelect(){
 tenantSelect.innerHTML="";
 tenants.forEach((t,i)=>{
@@ -396,6 +396,10 @@ let from=new Date(reportFrom.value);
 let to=new Date(reportTo.value);
 let cat=reportCategory.value;
 
+let totalRevenue=0;
+let totalCash=0;
+let totalReceivable=0;
+
 reportTable.innerHTML="";
 
 tenants.forEach(t=>{
@@ -415,6 +419,10 @@ totalPay+=b.payment||0;
 
 let balance=totalRent-totalPay;
 
+totalRevenue+=totalRent;
+totalCash+=totalPay;
+totalReceivable+=balance;
+
 reportTable.innerHTML+=`
 <tr>
 <td>${t.category}</td>
@@ -424,6 +432,11 @@ reportTable.innerHTML+=`
 <td style="color:${balance>0?'red':'green'}">${balance}</td>
 </tr>`;
 });
+
+totalRevenue && (document.getElementById("totalRevenue").innerText = totalRevenue);
+totalCash && (document.getElementById("totalCash").innerText = totalCash);
+totalReceivable && (document.getElementById("totalReceivable").innerText = totalReceivable);
+
 }
 
 reportFrom.onchange=loadReport;
@@ -432,12 +445,9 @@ reportCategory.onchange=loadReport;
 
 // PRINT
 function printReport(){
-let content=reportTab.innerHTML;
+let content=document.getElementById("reportTab").innerHTML;
 let win=window.open("");
-win.document.write(`
-<html><head><title>Report</title></head>
-<body>${content}</body></html>
-`);
+win.document.write("<html><body>"+content+"</body></html>");
 win.print();
 }
 
