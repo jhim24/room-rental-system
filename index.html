@@ -68,7 +68,7 @@ th { background:#3498db; color:white; }
 
 <h2 style="color:white;">🏨 Accommodation System V3</h2>
 
-<!-- TAB BUTTONS -->
+<!-- TAB -->
 <div class="box">
 <button class="saveBtn" onclick="showTab('main')">Main</button>
 <button class="editBtn" onclick="showTab('room')">Room Status</button>
@@ -77,7 +77,6 @@ th { background:#3498db; color:white; }
 <!-- MAIN -->
 <div id="mainTab">
 
-<!-- DASHBOARD -->
 <div class="box">
 <h3>Dashboard</h3>
 <div class="flex">
@@ -90,7 +89,6 @@ th { background:#3498db; color:white; }
 </div>
 </div>
 
-<!-- ROOM -->
 <div class="box">
 <h3>Add / Edit Room</h3>
 <input id="roomNo" placeholder="Room #">
@@ -98,7 +96,6 @@ th { background:#3498db; color:white; }
 <button class="saveBtn" onclick="saveRoom()">Save</button>
 </div>
 
-<!-- TENANT -->
 <div class="box">
 <h3>Add Tenant</h3>
 <input id="tenantName" placeholder="Tenant Name">
@@ -116,24 +113,18 @@ th { background:#3498db; color:white; }
 <button class="saveBtn" onclick="addTenant()">Save Tenant</button>
 </div>
 
-<!-- TENANT LIST -->
 <div class="box">
 <h3>Tenant List</h3>
 <table>
 <thead>
 <tr>
-<th>#</th>
-<th>Name</th>
-<th>Room</th>
-<th>Category</th>
-<th>Action</th>
+<th>#</th><th>Name</th><th>Room</th><th>Category</th><th>Action</th>
 </tr>
 </thead>
 <tbody id="tenantTable"></tbody>
 </table>
 </div>
 
-<!-- BILLING -->
 <div class="box">
 <h3>Billing</h3>
 <select id="tenantSelect"></select>
@@ -143,7 +134,6 @@ th { background:#3498db; color:white; }
 <button class="saveBtn" onclick="saveBilling()">Save Billing</button>
 </div>
 
-<!-- YEARLY LEDGER -->
 <div class="box">
 <h3>Ledger (Yearly)</h3>
 <select id="yearFilter"></select>
@@ -158,12 +148,10 @@ th { background:#3498db; color:white; }
 <th>Total</th>
 </tr>
 </thead>
-
 <tbody id="ledgerTable"></tbody>
 </table>
 </div>
 
-<!-- RANGE LEDGER -->
 <div class="box">
 <h3>Ledger (Date Range)</h3>
 From: <input type="month" id="fromDate">
@@ -190,17 +178,12 @@ To: <input type="month" id="toDate">
 <table>
 <thead>
 <tr>
-<th>Room</th>
-<th>Capacity</th>
-<th>Occupied</th>
-<th>Available</th>
-<th>Action</th>
+<th>Room</th><th>Capacity</th><th>Occupied</th><th>Available</th><th>Action</th>
 </tr>
 </thead>
 
 <tbody id="roomTable"></tbody>
 </table>
-
 </div>
 </div>
 
@@ -218,7 +201,6 @@ localStorage.setItem("tenants", JSON.stringify(tenants));
 localStorage.setItem("billings", JSON.stringify(billings));
 }
 
-// TAB
 function showTab(tab){
 mainTab.style.display = tab==="main"?"block":"none";
 roomTab.style.display = tab==="room"?"block":"none";
@@ -262,7 +244,6 @@ save(); loadAll();
 tenantName.value="";
 }
 
-// ROOM STATUS
 function loadRoomStatus(){
 roomTable.innerHTML="";
 
@@ -340,7 +321,7 @@ tenantSelect.innerHTML += `<option value="${i}">${t.name}</option>`;
 });
 }
 
-// BILLING
+// BILLING (ORIGINAL)
 function saveBilling(){
 
 let t = tenants[tenantSelect.value];
@@ -372,6 +353,29 @@ loadLedger();
 loadRangeLedger();
 }
 
+// 🔥 ADD ONLY PATCH (MONTHLY FIX)
+let oldSaveBilling = saveBilling;
+
+saveBilling = function(){
+
+oldSaveBilling();
+
+let t = tenants[tenantSelect.value];
+let rentVal = Number(rent.value)||0;
+
+let index = billings.findIndex(b =>
+b.name===t.name && b.month===month.value
+);
+
+if(index !== -1){
+billings[index].monthly = (billings[index].monthly || 0) + rentVal;
+}else{
+billings[billings.length-1].monthly = rentVal;
+}
+
+save();
+};
+
 // YEAR FILTER
 function loadYearFilter(){
 yearFilter.innerHTML="";
@@ -381,7 +385,7 @@ yearFilter.innerHTML += `<option value="${y}">${y}</option>`;
 }
 yearFilter.onchange = loadLedger;
 
-// YEAR LEDGER
+// ORIGINAL LEDGER (UNCHANGED)
 function loadLedger(){
 let year = yearFilter.value;
 ledgerTable.innerHTML="";
@@ -407,6 +411,35 @@ ${months.map(m=>`<td>${m}</td>`).join("")}
 });
 }
 
+// 🔥 ADD ONLY OVERRIDE DISPLAY
+let oldLoadLedger = loadLedger;
+
+loadLedger = function(){
+
+let year = yearFilter.value;
+ledgerTable.innerHTML="";
+
+tenants.forEach(t=>{
+let months = Array(12).fill(0);
+
+billings.forEach(b=>{
+let d = new Date(b.month);
+if(b.name===t.name && d.getFullYear()==year){
+months[d.getMonth()] += (b.monthly || b.rent);
+}
+});
+
+let total = months.reduce((a,b)=>a+b,0);
+
+ledgerTable.innerHTML += `
+<tr>
+<td>${t.name}</td>
+${months.map(m=>`<td>${m}</td>`).join("")}
+<td>${total}</td>
+</tr>`;
+});
+};
+
 // RANGE LEDGER
 function loadRangeLedger(){
 
@@ -418,7 +451,6 @@ let to = new Date(toDate.value);
 rangeTable.innerHTML="";
 
 tenants.forEach(t=>{
-
 let total = 0;
 
 billings.forEach(b=>{
