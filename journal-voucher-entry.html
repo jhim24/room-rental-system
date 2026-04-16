@@ -8,16 +8,21 @@ body {
   margin:0;
   font-family: Arial;
   display:flex;
+  height:100vh;
   background: linear-gradient(135deg,#1d2b64,#f8cdda);
 }
 
+/* 🔥 SIDEBAR FIX */
 .sidebar {
   width:230px;
   background: rgba(0,0,0,0.75);
   color:white;
   padding:20px;
+  position:relative;
+  z-index:1000;
 }
 
+/* 🔥 BUTTON FIX */
 .menu button {
   width:100%;
   padding:12px;
@@ -27,13 +32,23 @@ body {
   background:rgba(255,255,255,0.1);
   color:white;
   cursor:pointer;
+  position:relative;
+  z-index:1001;
 }
 
+.menu button:hover {
+  background:#3498db;
+}
+
+/* 🔥 MAIN FIX */
 .main {
   flex:1;
   padding:20px;
+  position:relative;
+  z-index:1;
 }
 
+/* BOX */
 .box {
   background:white;
   padding:20px;
@@ -41,6 +56,7 @@ body {
   margin-bottom:20px;
 }
 
+/* FORM */
 .formGrid {
   display:grid;
   grid-template-columns: repeat(3,1fr);
@@ -51,17 +67,21 @@ input, select {
   padding:10px;
   border-radius:8px;
   border:1px solid #ccc;
+  width:100%;
+  box-sizing:border-box;
 }
 
-button {
+/* BUTTON */
+.saveBtn {
   padding:10px;
+  background:#2ecc71;
+  color:white;
   border:none;
   border-radius:8px;
   cursor:pointer;
 }
 
-.saveBtn { background:#2ecc71;color:white; }
-
+/* TABLE */
 table {
   width:100%;
   border-collapse:collapse;
@@ -73,24 +93,29 @@ th, td {
   text-align:center;
 }
 
-th { background:#3498db;color:white; }
+th {
+  background:#3498db;
+  color:white;
+}
 </style>
 </head>
 
 <body>
 
+<!-- SIDEBAR -->
 <div class="sidebar">
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-<button onclick="location.href='index.html?v=7'">📊 Dashboard</button>
-<button onclick="location.href='rooms.html?v=7'">🏠 Rooms</button>
-<button onclick="location.href='clients.html?v=7'">👥 Clients</button>
-<button onclick="location.href='journal-voucher-entry.html?v=7'">📒 Journal</button>
-<button onclick="location.href='coa.html?v=7'">📚 Chart of Accounts</button>
+<button onclick="location.href='index.html?v=8'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=8'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=8'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=8'">📒 Journal</button>
+<button onclick="location.href='coa.html?v=8'">📚 Chart of Accounts</button>
 </div>
 </div>
 
+<!-- MAIN -->
 <div class="main">
 
 <div class="box">
@@ -140,14 +165,12 @@ th { background:#3498db;color:white; }
 
 <script>
 
-// 🔥 SAFE LOAD
+// DATA
 let entries = JSON.parse(localStorage.getItem("jv")) || [];
 let coa = JSON.parse(localStorage.getItem("coa")) || [];
 
-// 🔥 LOAD COA (FIXED)
+// LOAD COA
 function loadCOA(){
-
-let acc = document.getElementById("account");
 
 let html = "<option value=''>Select Account</option>";
 
@@ -157,10 +180,10 @@ ${a.code} - ${a.name}
 </option>`;
 });
 
-acc.innerHTML = html;
+document.getElementById("account").innerHTML = html;
 }
 
-// 🔥 ADD ENTRY (FIXED)
+// ADD ENTRY
 function addEntry(){
 
 let d = document.getElementById("date").value;
@@ -188,7 +211,7 @@ loadTable();
 clearForm();
 }
 
-// 🔥 LOAD TABLE (FAST)
+// LOAD TABLE
 function loadTable(){
 
 let html = "";
@@ -209,14 +232,14 @@ html += `
 document.getElementById("jvTable").innerHTML = html;
 }
 
-// 🔥 CLEAR FORM
+// CLEAR
 function clearForm(){
 document.getElementById("description").value="";
 document.getElementById("debit").value="";
 document.getElementById("credit").value="";
 }
 
-// 🔥 INIT
+// INIT
 loadCOA();
 loadTable();
 
