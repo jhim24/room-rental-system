@@ -18,11 +18,7 @@ body {
   margin-bottom:15px;
 }
 
-.flex {
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-}
+.flex { display:flex; gap:10px; flex-wrap:wrap; }
 
 .card {
   flex:1;
@@ -66,38 +62,35 @@ th, td {
 
 th { background:#3498db; color:white; }
 </style>
-
 </head>
 
 <body>
 
 <h2 style="color:white;">🏨 Accommodation System V3</h2>
 
-<!-- 🔥 ADDED TAB BUTTONS -->
+<!-- TAB BUTTONS -->
 <div class="box">
 <button class="saveBtn" onclick="showTab('main')">Main</button>
 <button class="editBtn" onclick="showTab('room')">Room Status</button>
 </div>
 
-<!-- 🔥 MAIN TAB -->
+<!-- MAIN -->
 <div id="mainTab">
 
 <!-- DASHBOARD -->
 <div class="box">
 <h3>Dashboard</h3>
-
 <div class="flex">
 <div class="card">Rooms<br><b id="totalRooms">0</b></div>
 <div class="card">Tenants<br><b id="totalTenants">0</b></div>
 <div class="card">Available<br><b id="availableSlots">0</b></div>
-
 <div class="card">Bed Space<br><b id="bedSpaceCount">0</b></div>
 <div class="card">Freelancer<br><b id="freelancerCount">0</b></div>
 <div class="card">Company Staff<br><b id="companyStaffCount">0</b></div>
 </div>
 </div>
 
-<!-- ROOM FORM -->
+<!-- ROOM -->
 <div class="box">
 <h3>Add / Edit Room</h3>
 <input id="roomNo" placeholder="Room #">
@@ -150,7 +143,7 @@ th { background:#3498db; color:white; }
 <button class="saveBtn" onclick="saveBilling()">Save Billing</button>
 </div>
 
-<!-- LEDGER -->
+<!-- YEARLY LEDGER -->
 <div class="box">
 <h3>Ledger (Yearly)</h3>
 <select id="yearFilter"></select>
@@ -165,15 +158,32 @@ th { background:#3498db; color:white; }
 <th>Total</th>
 </tr>
 </thead>
+
 <tbody id="ledgerTable"></tbody>
 </table>
 </div>
 
-</div> <!-- END MAIN TAB -->
+<!-- RANGE LEDGER -->
+<div class="box">
+<h3>Ledger (Date Range)</h3>
+From: <input type="month" id="fromDate">
+To: <input type="month" id="toDate">
 
-<!-- 🔥 ROOM TAB -->
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Total Balance</th>
+</tr>
+</thead>
+<tbody id="rangeTable"></tbody>
+</table>
+</div>
+
+</div>
+
+<!-- ROOM TAB -->
 <div id="roomTab" style="display:none;">
-
 <div class="box">
 <h3>Room Status</h3>
 
@@ -192,7 +202,6 @@ th { background:#3498db; color:white; }
 </table>
 
 </div>
-
 </div>
 
 <script>
@@ -209,13 +218,10 @@ localStorage.setItem("tenants", JSON.stringify(tenants));
 localStorage.setItem("billings", JSON.stringify(billings));
 }
 
-// 🔥 TAB FUNCTION (ADDED)
+// TAB
 function showTab(tab){
-document.getElementById("mainTab").style.display =
-tab==="main" ? "block" : "none";
-
-document.getElementById("roomTab").style.display =
-tab==="room" ? "block" : "none";
+mainTab.style.display = tab==="main"?"block":"none";
+roomTab.style.display = tab==="room"?"block":"none";
 }
 
 // ROOM
@@ -233,7 +239,6 @@ save(); loadAll();
 roomNo.value=""; capacity.value="";
 }
 
-// LOAD ROOMS
 function loadRooms(){
 roomSelect.innerHTML="";
 rooms.forEach((r,i)=>{
@@ -241,7 +246,6 @@ roomSelect.innerHTML += `<option value="${i}">${r.number}</option>`;
 });
 }
 
-// TENANT
 function addTenant(){
 let r = rooms[roomSelect.value];
 let occupied = tenants.filter(t=>t.room===r.number).length;
@@ -271,7 +275,7 @@ roomTable.innerHTML += `
 <td>${r.number}</td>
 <td>${r.capacity}</td>
 <td>${occupied}</td>
-<td style="color:${available>0?'green':'red'}">${available}</td>
+<td>${available}</td>
 <td>
 <button class="editBtn" onclick="editRoom(${i})">Edit</button>
 <button class="deleteBtn" onclick="deleteRoom(${i})">Delete</button>
@@ -287,7 +291,6 @@ editRoomIndex = i;
 }
 
 function deleteRoom(i){
-if(!confirm("Delete this room?")) return;
 let name = rooms[i].number;
 tenants = tenants.filter(t=>t.room!==name);
 rooms.splice(i,1);
@@ -300,9 +303,7 @@ totalRooms.innerText = rooms.length;
 totalTenants.innerText = tenants.length;
 
 let totalCapacity = rooms.reduce((s,r)=>s+r.capacity,0);
-let occupied = tenants.length;
-
-availableSlots.innerText = totalCapacity - occupied;
+availableSlots.innerText = totalCapacity - tenants.length;
 
 bedSpaceCount.innerText = tenants.filter(t=>t.category==="Bed Space").length;
 freelancerCount.innerText = tenants.filter(t=>t.category==="Freelancer").length;
@@ -335,7 +336,7 @@ save(); loadAll();
 function loadTenantSelect(){
 tenantSelect.innerHTML="";
 tenants.forEach((t,i)=>{
-tenantSelect.innerHTML += `<option value="${i}">${t.name} (${t.room})</option>`;
+tenantSelect.innerHTML += `<option value="${i}">${t.name}</option>`;
 });
 }
 
@@ -368,26 +369,24 @@ balance:rentVal - payVal
 
 save();
 loadLedger();
+loadRangeLedger();
 }
 
 // YEAR FILTER
 function loadYearFilter(){
 yearFilter.innerHTML="";
-let start=2020, end=new Date().getFullYear()+5;
-for(let y=start;y<=end;y++){
+for(let y=2020;y<=2030;y++){
 yearFilter.innerHTML += `<option value="${y}">${y}</option>`;
 }
 }
 yearFilter.onchange = loadLedger;
 
-// LEDGER
+// YEAR LEDGER
 function loadLedger(){
-
 let year = yearFilter.value;
 ledgerTable.innerHTML="";
 
 tenants.forEach(t=>{
-
 let months = Array(12).fill(0);
 
 billings.forEach(b=>{
@@ -403,10 +402,42 @@ ledgerTable.innerHTML += `
 <tr>
 <td>${t.name}</td>
 ${months.map(m=>`<td>${m}</td>`).join("")}
-<td style="color:${total>0?'red':'green'}">${total}</td>
+<td>${total}</td>
 </tr>`;
 });
 }
+
+// RANGE LEDGER
+function loadRangeLedger(){
+
+if(!fromDate.value || !toDate.value) return;
+
+let from = new Date(fromDate.value);
+let to = new Date(toDate.value);
+
+rangeTable.innerHTML="";
+
+tenants.forEach(t=>{
+
+let total = 0;
+
+billings.forEach(b=>{
+let d = new Date(b.month);
+if(b.name===t.name && d>=from && d<=to){
+total += b.balance;
+}
+});
+
+rangeTable.innerHTML += `
+<tr>
+<td>${t.name}</td>
+<td>${total}</td>
+</tr>`;
+});
+}
+
+fromDate.onchange = loadRangeLedger;
+toDate.onchange = loadRangeLedger;
 
 // LOAD ALL
 function loadAll(){
@@ -417,9 +448,9 @@ loadTenantList();
 loadTenantSelect();
 loadYearFilter();
 loadLedger();
+loadRangeLedger();
 }
 
-// INIT
 loadAll();
 
 </script>
