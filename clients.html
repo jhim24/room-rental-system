@@ -44,16 +44,15 @@ body {
   margin-bottom:15px;
 }
 
-input, select {
-  padding:8px;
-  margin:5px;
-  width:100%;
-}
-
 .formGrid {
   display:grid;
   grid-template-columns: repeat(3,1fr);
   gap:10px;
+}
+
+input, select {
+  padding:8px;
+  width:100%;
 }
 
 button {
@@ -87,9 +86,9 @@ th { background:#3498db;color:white; }
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-<button onclick="go('index.html')">📊 Dashboard</button>
-<button onclick="go('rooms.html')">🏠 Rooms</button>
-<button onclick="go('clients.html')">👥 Clients</button>
+<button onclick="location.href='index.html'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html'">🏠 Rooms</button>
+<button onclick="location.href='clients.html'">👥 Clients</button>
 </div>
 </div>
 
@@ -144,10 +143,6 @@ th { background:#3498db;color:white; }
 </div>
 
 <script>
-
-function go(page){
-window.location.href = page;
-}
 
 let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
 let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
