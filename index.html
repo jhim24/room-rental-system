@@ -1,17 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Room Rental System PRO MAX</title>
+<title>Room Rental System FINAL</title>
 
 <style>
 body { font-family: Arial; background:#eef3ff; padding:20px; }
 
-.box {
-  background:white;
-  padding:15px;
-  border-radius:10px;
-  margin-bottom:15px;
-}
+.box { background:white; padding:15px; border-radius:10px; margin-bottom:15px; }
 
 .dashboard { display:flex; gap:10px; }
 
@@ -35,13 +30,10 @@ button {
   cursor:pointer;
 }
 
-.deleteBtn { background:red; }
 .editBtn { background:orange; }
+.deleteBtn { background:red; }
 
-table {
-  width:100%;
-  border-collapse:collapse;
-}
+table { width:100%; border-collapse:collapse; }
 
 th, td {
   border:1px solid #ccc;
@@ -55,25 +47,17 @@ th { background:#3498db; color:white; }
 
 <body>
 
-<h2>🏨 Room Rental System PRO MAX</h2>
-
-<!-- TAB -->
-<div>
-<button onclick="showTab('records')">Records</button>
-<button onclick="showTab('ledger')">Ledger</button>
-</div>
+<h2>🏨 Room Rental System FINAL</h2>
 
 <!-- DASHBOARD -->
 <div class="dashboard">
   <div class="card">Rooms<br><span id="totalRooms">0</span></div>
-  <div class="card">Occupied<br><span id="occupiedRooms">0</span></div>
+  <div class="card">Tenants<br><span id="occupiedRooms">0</span></div>
   <div class="card">Available<br><span id="availableRooms">0</span></div>
   <div class="card">Income<br><span id="totalIncome">0</span></div>
 </div>
 
-<!-- RECORDS -->
-<div id="recordsTab">
-
+<!-- ROOM -->
 <div class="box">
 <h3>Add Room</h3>
 <input id="roomNumber" placeholder="Room #">
@@ -82,58 +66,40 @@ th { background:#3498db; color:white; }
 <button onclick="addRoom()">Add Room</button>
 </div>
 
+<!-- TENANT -->
 <div class="box">
 <h3>Add Tenant</h3>
 <input id="tenantName" placeholder="Tenant Name">
-<select id="category">
-<option>Tenant</option>
-<option>Bed Space</option>
-<option>Freelancer</option>
-<option>Staff</option>
-</select>
 <select id="roomSelect"></select>
 <button onclick="addTenant()">Save Tenant</button>
 </div>
 
-<div class="box">
-<h3>Tenant List</h3>
-<table>
-<thead>
-<tr><th>#</th><th>Name</th><th>Room</th><th>Category</th><th>Action</th></tr>
-</thead>
-<tbody id="tenantList"></tbody>
-</table>
-</div>
-
+<!-- BILLING -->
 <div class="box">
 <h3>Monthly Billing</h3>
 <select id="tenantSelect"></select>
 <input type="month" id="month">
 <input type="number" id="payment" placeholder="Payment">
-<button onclick="addBilling()">Save</button>
-<button onclick="autoNextMonth()">Auto Next Month</button>
+<button onclick="saveBilling()">Save / Update</button>
 </div>
 
+<!-- TABLE -->
 <div class="box">
 <h3>Records</h3>
 <table>
 <thead>
 <tr>
-<th>#</th><th>Name</th><th>Room</th><th>Category</th>
-<th>Month</th><th>Rental</th><th>Payment</th><th>Balance</th><th>Action</th>
+<th>#</th><th>Name</th><th>Room</th><th>Month</th>
+<th>Rental</th><th>Payment</th><th>Balance</th><th>Total</th><th>Action</th>
 </tr>
 </thead>
 <tbody id="table"></tbody>
 </table>
 </div>
 
-</div>
-
 <!-- LEDGER -->
-<div id="ledgerTab" style="display:none;" class="box">
-
+<div class="box">
 <h3>Yearly Ledger</h3>
-
 <select id="yearFilter"></select>
 
 <table>
@@ -149,7 +115,6 @@ th { background:#3498db; color:white; }
 
 <tbody id="ledgerTable"></tbody>
 </table>
-
 </div>
 
 <script>
@@ -158,17 +123,13 @@ let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
 let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
 let billings = JSON.parse(localStorage.getItem("billings")) || [];
 
+let editIndex = -1;
+
 // SAVE
 function save(){
 localStorage.setItem("rooms",JSON.stringify(rooms));
 localStorage.setItem("tenants",JSON.stringify(tenants));
 localStorage.setItem("billings",JSON.stringify(billings));
-}
-
-// TAB
-function showTab(tab){
-recordsTab.style.display = tab=="records"?"block":"none";
-ledgerTab.style.display = tab=="ledger"?"block":"none";
 }
 
 // DASHBOARD
@@ -199,8 +160,8 @@ loadAll();
 function loadRooms(){
 roomSelect.innerHTML="";
 rooms.forEach((r,i)=>{
-if(r.occupied<r.capacity){
-roomSelect.innerHTML+=`<option value="${i}">
+if(r.occupied < r.capacity){
+roomSelect.innerHTML += `<option value="${i}">
 ${r.number} (${r.occupied}/${r.capacity})
 </option>`;
 }
@@ -210,11 +171,10 @@ ${r.number} (${r.occupied}/${r.capacity})
 // TENANT
 function addTenant(){
 let r = rooms[roomSelect.value];
-if(r.occupied>=r.capacity) return alert("Full");
+if(r.occupied >= r.capacity) return alert("Room full");
 
 tenants.push({
 name:tenantName.value,
-category:category.value,
 room:r.number,
 rent:r.price
 });
@@ -224,118 +184,105 @@ save();
 loadAll();
 }
 
-// TENANT LIST
-function loadTenantList(){
-tenantList.innerHTML="";
-tenants.forEach((t,i)=>{
-tenantList.innerHTML+=`
-<tr>
-<td>${i+1}</td>
-<td>${t.name}</td>
-<td>${t.room}</td>
-<td>${t.category}</td>
-<td><button class="deleteBtn" onclick="deleteTenant(${i})">Delete</button></td>
-</tr>`;
-});
-}
-
-// DELETE TENANT
-function deleteTenant(i){
-let t = tenants[i];
-let r = rooms.find(x=>x.number==t.room);
-if(r) r.occupied--;
-
-billings = billings.filter(b=>b.name!=t.name);
-tenants.splice(i,1);
-
-save();
-loadAll();
-}
-
-// TENANT SELECT
+// TENANTS SELECT
 function loadTenants(){
 tenantSelect.innerHTML="";
 tenants.forEach((t,i)=>{
-tenantSelect.innerHTML+=`<option value="${i}">
+tenantSelect.innerHTML += `<option value="${i}">
 ${t.name} (${t.room})
 </option>`;
 });
 }
 
-// BILLING
-function addBilling(){
+// SAVE BILLING (RUNNING TOTAL)
+function saveBilling(){
+
 let t = tenants[tenantSelect.value];
-let pay = Number(payment.value)||0;
+let pay = Number(payment.value) || 0;
 let rental = t.rent;
 
-billings.push({
+if(!month.value) return alert("Select month");
+
+// PREVIOUS TOTAL
+let prevTotal = billings
+  .filter(b=>b.name===t.name)
+  .reduce((s,b)=>s + (b.balance),0);
+
+let balance = rental - pay;
+let total = prevTotal + balance;
+
+let data = {
 name:t.name,
 room:t.room,
-category:t.category,
 month:month.value,
 rental,
 payment:pay,
-balance:rental-pay
-});
+balance,
+total
+};
 
-save();
-loadAll();
+if(editIndex === -1){
+billings.push(data);
+}else{
+billings[editIndex] = data;
+editIndex = -1;
 }
-
-// AUTO NEXT
-function autoNextMonth(){
-let last = billings[billings.length-1];
-if(!last) return;
-
-let d = new Date(last.month);
-d.setMonth(d.getMonth()+1);
-
-billings.push({
-...last,
-month:d.toISOString().slice(0,7),
-payment:0,
-balance:last.rental
-});
 
 save();
 loadAll();
 }
 
 // TABLE
-function formatMonth(m){
-return new Date(m).toLocaleString('default',{month:'short',year:'numeric'});
-}
-
 function loadTable(){
 table.innerHTML="";
+
 billings.forEach((b,i)=>{
-table.innerHTML+=`
+table.innerHTML += `
 <tr>
 <td>${i+1}</td>
 <td>${b.name}</td>
 <td>${b.room}</td>
-<td>${b.category}</td>
-<td>${formatMonth(b.month)}</td>
+<td>${new Date(b.month).toLocaleDateString()}</td>
 <td>${b.rental}</td>
 <td>${b.payment}</td>
 <td style="color:${b.balance>0?'red':'green'}">${b.balance}</td>
-<td><button onclick="deleteBilling(${i})">Delete</button></td>
+<td>${b.total}</td>
+<td>
+<button class="editBtn" onclick="editBilling(${i})">Edit</button>
+<button class="deleteBtn" onclick="deleteBilling(${i})">Delete</button>
+</td>
 </tr>`;
 });
 }
 
+// EDIT
+function editBilling(i){
+let b = billings[i];
+
+tenantSelect.value = tenants.findIndex(t=>t.name===b.name);
+month.value = b.month;
+payment.value = b.payment;
+
+editIndex = i;
+}
+
+// DELETE
 function deleteBilling(i){
+if(confirm("Delete?")){
 billings.splice(i,1);
 save();
 loadAll();
+}
 }
 
 // YEAR FILTER
 function loadYearFilter(){
 yearFilter.innerHTML="";
-let y = new Date().getFullYear();
-for(let i=y;i>=2020;i--){
-yearFilter.innerHTML+=`<option>${i}</option>`;
+let start = 2020;
+let end = new Date().getFullYear() + 5;
+
+for(let y=start;y<=end;y++){
+yearFilter.innerHTML += `<option value="${y}">${y}</option>`;
 }
 }
 
@@ -351,14 +298,14 @@ let months = Array(12).fill(0);
 
 billings.forEach(b=>{
 let d = new Date(b.month);
-if(b.name==t.name && d.getFullYear()==year){
+if(b.name===t.name && d.getFullYear()==year){
 months[d.getMonth()] += b.balance;
 }
 });
 
 let total = months.reduce((a,b)=>a+b,0);
 
-ledgerTable.innerHTML+=`
+ledgerTable.innerHTML += `
 <tr>
 <td>${t.name}</td>
 ${months.map(m=>`<td>${m}</td>`).join("")}
@@ -371,7 +318,6 @@ ${months.map(m=>`<td>${m}</td>`).join("")}
 function loadAll(){
 loadRooms();
 loadTenants();
-loadTenantList();
 loadTable();
 loadDashboard();
 loadYearFilter();
