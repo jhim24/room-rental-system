@@ -83,7 +83,7 @@ th { background:#3498db; color:white; }
 <button onclick="saveBilling()">Save / Update</button>
 </div>
 
-<!-- TABLE -->
+<!-- RECORDS -->
 <div class="box">
 <h3>Records</h3>
 <table>
@@ -184,7 +184,7 @@ save();
 loadAll();
 }
 
-// TENANTS SELECT
+// TENANT SELECT
 function loadTenants(){
 tenantSelect.innerHTML="";
 tenants.forEach((t,i)=>{
@@ -194,7 +194,7 @@ ${t.name} (${t.room})
 });
 }
 
-// SAVE BILLING (RUNNING TOTAL)
+// 🔥 BILLING (SMART ADD)
 function saveBilling(){
 
 let t = tenants[tenantSelect.value];
@@ -203,33 +203,50 @@ let rental = t.rent;
 
 if(!month.value) return alert("Select month");
 
-// PREVIOUS TOTAL
-let prevTotal = billings
-  .filter(b=>b.name===t.name)
-  .reduce((s,b)=>s + (b.balance),0);
+// CHECK EXISTING
+let existingIndex = billings.findIndex(b =>
+  b.name === t.name && b.month === month.value
+);
 
-let balance = rental - pay;
-let total = prevTotal + balance;
+if(existingIndex !== -1){
+  billings[existingIndex].payment += pay;
 
-let data = {
-name:t.name,
-room:t.room,
-month:month.value,
-rental,
-payment:pay,
-balance,
-total
-};
+  let newPayment = billings[existingIndex].payment;
+  billings[existingIndex].balance = rental - newPayment;
 
-if(editIndex === -1){
-billings.push(data);
 }else{
-billings[editIndex] = data;
-editIndex = -1;
+  billings.push({
+    name:t.name,
+    room:t.room,
+    month:month.value,
+    rental,
+    payment:pay,
+    balance:rental - pay
+  });
 }
+
+// TOTAL FIX
+recomputeTotals();
 
 save();
 loadAll();
+
+payment.value="";
+}
+
+// 🔥 TOTAL PER TENANT (iisa lang)
+function recomputeTotals(){
+
+let totals = {};
+
+billings.forEach(b=>{
+  if(!totals[b.name]) totals[b.name] = 0;
+  totals[b.name] += b.balance;
+});
+
+billings.forEach(b=>{
+  b.total = totals[b.name];
+});
 }
 
 // TABLE
@@ -258,11 +275,9 @@ table.innerHTML += `
 // EDIT
 function editBilling(i){
 let b = billings[i];
-
 tenantSelect.value = tenants.findIndex(t=>t.name===b.name);
 month.value = b.month;
 payment.value = b.payment;
-
 editIndex = i;
 }
 
@@ -270,6 +285,7 @@ editIndex = i;
 function deleteBilling(i){
 if(confirm("Delete?")){
 billings.splice(i,1);
+recomputeTotals();
 save();
 loadAll();
 }
@@ -288,7 +304,7 @@ yearFilter.innerHTML += `<option value="${y}">${y}</option>`;
 
 yearFilter.onchange = loadLedger;
 
-// LEDGER
+// LEDGER (PER MONTH)
 function loadLedger(){
 let year = yearFilter.value;
 ledgerTable.innerHTML="";
@@ -316,6 +332,7 @@ ${months.map(m=>`<td>${m}</td>`).join("")}
 
 // LOAD ALL
 function loadAll(){
+recomputeTotals();
 loadRooms();
 loadTenants();
 loadTable();
