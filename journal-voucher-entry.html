@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Chart of Accounts</title>
+<title>Journal Voucher</title>
 
 <style>
 body {
@@ -41,9 +41,14 @@ body {
   margin-bottom:20px;
 }
 
+.formGrid {
+  display:grid;
+  grid-template-columns: repeat(3,1fr);
+  gap:10px;
+}
+
 input, select {
   padding:10px;
-  margin:5px;
   border-radius:8px;
   border:1px solid #ccc;
 }
@@ -78,46 +83,54 @@ th { background:#3498db;color:white; }
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-<button onclick="location.href='index.html?v=6'">📊 Dashboard</button>
-<button onclick="location.href='rooms.html?v=6'">🏠 Rooms</button>
-<button onclick="location.href='clients.html?v=6'">👥 Clients</button>
-<button onclick="location.href='journal-voucher-entry.html?v=6'">📒 Journal</button>
-<button onclick="location.href='coa.html?v=6'">📚 Chart of Accounts</button>
+<button onclick="location.href='index.html?v=7'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=7'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=7'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=7'">📒 Journal</button>
+<button onclick="location.href='coa.html?v=7'">📚 Chart of Accounts</button>
 </div>
 </div>
 
 <div class="main">
 
 <div class="box">
-<h3>Add Account</h3>
+<h3>Journal Entry</h3>
 
-<select id="type">
-<option>Asset</option>
-<option>Income</option>
-<option>Expense</option>
-</select>
+<div class="formGrid">
 
-<input id="accountName" placeholder="Account Name">
+<input type="date" id="date">
 
-<button class="saveBtn" onclick="addAccount()">Save</button>
+<select id="account"></select>
+
+<input id="description" placeholder="Description">
+
+<input type="number" id="debit" placeholder="Debit">
+
+<input type="number" id="credit" placeholder="Credit">
+
+</div>
+
+<br>
+<button class="saveBtn" onclick="addEntry()">Save</button>
 
 </div>
 
 <div class="box">
-<h3>Account List</h3>
+<h3>Journal Records</h3>
 
 <table>
 <thead>
 <tr>
 <th>#</th>
-<th>Code</th>
-<th>Type</th>
-<th>Account Name</th>
-<th>Action</th>
+<th>Date</th>
+<th>Account</th>
+<th>Description</th>
+<th>Debit</th>
+<th>Credit</th>
 </tr>
 </thead>
 
-<tbody id="coaTable"></tbody>
+<tbody id="jvTable"></tbody>
 
 </table>
 
@@ -127,64 +140,84 @@ th { background:#3498db;color:white; }
 
 <script>
 
-let accounts = JSON.parse(localStorage.getItem("coa")) || [];
+// 🔥 SAFE LOAD
+let entries = JSON.parse(localStorage.getItem("jv")) || [];
+let coa = JSON.parse(localStorage.getItem("coa")) || [];
 
-// ADD ACCOUNT
-function addAccount(){
+// 🔥 LOAD COA (FIXED)
+function loadCOA(){
 
-let name = document.getElementById("accountName").value.trim();
-let type = document.getElementById("type").value;
+let acc = document.getElementById("account");
 
-if(name === ""){
-alert("Enter account name");
+let html = "<option value=''>Select Account</option>";
+
+coa.forEach(a=>{
+html += `<option value="${a.code} - ${a.name}">
+${a.code} - ${a.name}
+</option>`;
+});
+
+acc.innerHTML = html;
+}
+
+// 🔥 ADD ENTRY (FIXED)
+function addEntry(){
+
+let d = document.getElementById("date").value;
+let acc = document.getElementById("account").value;
+let desc = document.getElementById("description").value;
+let debit = Number(document.getElementById("debit").value) || 0;
+let credit = Number(document.getElementById("credit").value) || 0;
+
+if(acc === ""){
+alert("Select account");
 return;
 }
 
-// AUTO CODE
-let code = Date.now().toString().slice(-4);
-
-accounts.push({
-code: code,
-type: type,
-name: name
+entries.push({
+date:d,
+account:acc,
+description:desc,
+debit:debit,
+credit:credit
 });
 
-localStorage.setItem("coa", JSON.stringify(accounts));
+localStorage.setItem("jv", JSON.stringify(entries));
 
 loadTable();
-document.getElementById("accountName").value="";
+clearForm();
 }
 
-// LOAD TABLE
+// 🔥 LOAD TABLE (FAST)
 function loadTable(){
 
 let html = "";
 
-accounts.forEach((a,i)=>{
+entries.forEach((e,i)=>{
 html += `
 <tr>
 <td>${i+1}</td>
-<td>${a.code}</td>
-<td>${a.type}</td>
-<td>${a.name}</td>
-<td>
-<button onclick="deleteAcc(${i})">Delete</button>
-</td>
+<td>${e.date || ""}</td>
+<td>${e.account}</td>
+<td>${e.description}</td>
+<td>${e.debit}</td>
+<td>${e.credit}</td>
 </tr>
 `;
 });
 
-document.getElementById("coaTable").innerHTML = html;
+document.getElementById("jvTable").innerHTML = html;
 }
 
-// DELETE
-function deleteAcc(i){
-accounts.splice(i,1);
-localStorage.setItem("coa", JSON.stringify(accounts));
-loadTable();
+// 🔥 CLEAR FORM
+function clearForm(){
+document.getElementById("description").value="";
+document.getElementById("debit").value="";
+document.getElementById("credit").value="";
 }
 
-// INIT
+// 🔥 INIT
+loadCOA();
 loadTable();
 
 </script>
