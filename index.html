@@ -11,24 +11,19 @@ body {
   color:#2c3e50;
 }
 
-/* CONTAINER */
 .box {
   background: rgba(255,255,255,0.95);
-  backdrop-filter: blur(10px);
   padding:15px;
   border-radius:12px;
   margin-bottom:15px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
 
-/* FLEX */
 .flex {
   display:flex;
   gap:10px;
   flex-wrap:wrap;
 }
 
-/* DASHBOARD CARD */
 .card {
   flex:1;
   min-width:150px;
@@ -37,11 +32,8 @@ body {
   padding:15px;
   border-radius:12px;
   text-align:center;
-  font-size:18px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.2);
 }
 
-/* INPUT */
 input, select {
   padding:10px;
   margin:5px;
@@ -49,29 +41,21 @@ input, select {
   border:1px solid #ccc;
 }
 
-/* BUTTON */
 button {
-  padding:10px 15px;
+  padding:8px 12px;
   border:none;
   border-radius:8px;
   color:white;
   cursor:pointer;
-  transition:0.3s;
-}
-
-button:hover {
-  opacity:0.85;
-  transform:scale(1.05);
 }
 
 .saveBtn { background:#2ecc71; }
+.editBtn { background:#f39c12; }
 .deleteBtn { background:#e74c3c; }
 
-/* TABLE */
 table {
   width:100%;
   border-collapse:collapse;
-  margin-top:10px;
 }
 
 th, td {
@@ -80,14 +64,7 @@ th, td {
   text-align:center;
 }
 
-th {
-  background:#3498db;
-  color:white;
-}
-
-tr:nth-child(even){
-  background:#f9f9f9;
-}
+th { background:#3498db; color:white; }
 </style>
 
 </head>
@@ -99,29 +76,25 @@ tr:nth-child(even){
 <!-- DASHBOARD -->
 <div class="box">
 <h3>Dashboard</h3>
-
 <div class="flex">
 <div class="card">Rooms<br><b id="totalRooms">0</b></div>
 <div class="card">Tenants<br><b id="totalTenants">0</b></div>
 <div class="card">Available<br><b id="availableSlots">0</b></div>
 </div>
-
 </div>
 
-<!-- ROOM -->
+<!-- ROOM FORM -->
 <div class="box">
-<h3>Add Room</h3>
+<h3>Add / Edit Room</h3>
 <input id="roomNo" placeholder="Room #">
 <input id="capacity" type="number" placeholder="Capacity">
-<button class="saveBtn" onclick="addRoom()">Add Room</button>
+<button class="saveBtn" onclick="saveRoom()">Save</button>
 </div>
 
 <!-- TENANT -->
 <div class="box">
 <h3>Add Tenant</h3>
-
 <input id="tenantName" placeholder="Tenant Name">
-
 <select id="roomSelect"></select>
 
 <select id="category">
@@ -134,7 +107,6 @@ tr:nth-child(even){
 </select>
 
 <button class="saveBtn" onclick="addTenant()">Save Tenant</button>
-
 </div>
 
 <!-- ROOM STATUS -->
@@ -148,6 +120,7 @@ tr:nth-child(even){
 <th>Capacity</th>
 <th>Occupied</th>
 <th>Available</th>
+<th>Action</th>
 </tr>
 </thead>
 
@@ -160,22 +133,35 @@ tr:nth-child(even){
 
 let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
 let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+let editRoomIndex = -1;
 
-// SAVE
+// SAVE STORAGE
 function save(){
 localStorage.setItem("rooms", JSON.stringify(rooms));
 localStorage.setItem("tenants", JSON.stringify(tenants));
 }
 
-// ADD ROOM
-function addRoom(){
+// SAVE / UPDATE ROOM
+function saveRoom(){
 
 if(!roomNo.value || !capacity.value) return alert("Fill all");
 
-rooms.push({
-number: roomNo.value,
-capacity: Number(capacity.value)
-});
+if(editRoomIndex === -1){
+
+  rooms.push({
+    number: roomNo.value,
+    capacity: Number(capacity.value)
+  });
+
+}else{
+
+  rooms[editRoomIndex] = {
+    number: roomNo.value,
+    capacity: Number(capacity.value)
+  };
+
+  editRoomIndex = -1;
+}
 
 save();
 loadAll();
@@ -184,10 +170,9 @@ roomNo.value="";
 capacity.value="";
 }
 
-// LOAD ROOMS
+// LOAD ROOM DROPDOWN
 function loadRooms(){
 roomSelect.innerHTML="";
-
 rooms.forEach((r,i)=>{
 roomSelect.innerHTML += `<option value="${i}">${r.number}</option>`;
 });
@@ -216,12 +201,12 @@ loadAll();
 tenantName.value="";
 }
 
-// ROOM STATUS
+// ROOM STATUS TABLE
 function loadRoomStatus(){
 
 roomTable.innerHTML="";
 
-rooms.forEach(r=>{
+rooms.forEach((r,i)=>{
 
 let occupied = tenants.filter(t=>t.room===r.number).length;
 let available = r.capacity - occupied;
@@ -232,9 +217,39 @@ roomTable.innerHTML += `
 <td>${r.capacity}</td>
 <td>${occupied}</td>
 <td style="color:${available>0?'green':'red'}">${available}</td>
+<td>
+<button class="editBtn" onclick="editRoom(${i})">Edit</button>
+<button class="deleteBtn" onclick="deleteRoom(${i})">Delete</button>
+</td>
 </tr>
 `;
 });
+}
+
+// EDIT ROOM
+function editRoom(i){
+let r = rooms[i];
+
+roomNo.value = r.number;
+capacity.value = r.capacity;
+
+editRoomIndex = i;
+}
+
+// DELETE ROOM
+function deleteRoom(i){
+
+if(!confirm("Delete this room?")) return;
+
+let roomName = rooms[i].number;
+
+// REMOVE TENANTS IN ROOM
+tenants = tenants.filter(t => t.room !== roomName);
+
+rooms.splice(i,1);
+
+save();
+loadAll();
 }
 
 // DASHBOARD
