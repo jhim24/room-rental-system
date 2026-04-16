@@ -8,6 +8,7 @@ body {
   margin:0;
   font-family: Arial;
   display:flex;
+  height:100vh;
   background: linear-gradient(135deg,#1d2b64,#f8cdda);
 }
 
@@ -30,10 +31,13 @@ body {
   cursor:pointer;
 }
 
-/* MAIN */
+.menu button:hover { background:#3498db; }
+
+/* MAIN FIX */
 .main {
   flex:1;
   padding:20px;
+  overflow-x:hidden;
 }
 
 /* BOX */
@@ -42,6 +46,7 @@ body {
   padding:20px;
   border-radius:12px;
   margin-bottom:20px;
+  overflow-x:auto; /* 🔥 FIX */
 }
 
 /* GRID */
@@ -55,6 +60,8 @@ input, select {
   padding:10px;
   border-radius:8px;
   border:1px solid #ccc;
+  width:100%;
+  box-sizing:border-box;
 }
 
 /* BUTTON */
@@ -67,9 +74,10 @@ button {
 
 .saveBtn { background:#2ecc71;color:white; }
 
-/* TABLE */
+/* TABLE FIX */
 table {
   width:100%;
+  min-width:700px; /* 🔥 prevents collapse */
   border-collapse:collapse;
 }
 
@@ -79,8 +87,10 @@ th, td {
   text-align:center;
 }
 
-th { background:#3498db;color:white; }
-
+th {
+  background:#3498db;
+  color:white;
+}
 </style>
 </head>
 
@@ -90,28 +100,38 @@ th { background:#3498db;color:white; }
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
+<button onclick="location.href='index.html?v=3'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=3'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=3'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=3'">📒 Journal</button>
+<button onclick="location.href='ar.html?v=3'">💰 Accounts Receivable</button>
+</div>
+</div>
 
-<button onclick="location.href='index.html?v=3'">
-📊 Dashboard
-</button>
+<div class="main">
 
-<button onclick="location.href='rooms.html?v=3'">
-🏠 Rooms
-</button>
+<div class="box">
+<h3>Accounts Receivable - Rent Income</h3>
 
-<button onclick="location.href='clients.html?v=3'">
-👥 Clients
-</button>
+<div class="formGrid">
 
-<button onclick="location.href='journal-voucher-entry.html?v=3'">
-📒 Journal Voucher
-</button>
+<select id="client"></select>
 
-<button onclick="location.href='ar.html?v=3'">
-💰 Accounts Receivable
-</button>
+<input type="month" id="month">
+
+<input type="number" id="rent" placeholder="Rent Amount">
+
+<input type="number" id="payment" placeholder="Payment">
+
+<input type="number" id="balance" placeholder="Balance" readonly>
 
 </div>
+
+<br>
+<button class="saveBtn" onclick="addAR()">Save</button>
+
+</div>
+
 <div class="box">
 <h3>AR Records</h3>
 
@@ -137,7 +157,7 @@ th { background:#3498db;color:white; }
 
 <script>
 
-// LOAD DATA
+// DATA
 let clients = JSON.parse(localStorage.getItem("tenants")) || [];
 let arData = JSON.parse(localStorage.getItem("ar")) || [];
 
@@ -156,8 +176,13 @@ let payVal = Number(payment.value) || 0;
 balance.value = rentVal - payVal;
 }
 
-// ADD AR
+// ADD DATA
 function addAR(){
+
+if(client.value === "Select Client"){
+alert("Select client");
+return;
+}
 
 let data = {
 client: client.value,
@@ -174,23 +199,25 @@ loadTable();
 clearForm();
 }
 
-// LOAD TABLE
+// LOAD TABLE (OPTIMIZED)
 function loadTable(){
 
-arTable.innerHTML="";
+let html = "";
 
 arData.forEach((a,i)=>{
-arTable.innerHTML += `
+html += `
 <tr>
 <td>${i+1}</td>
 <td>${a.client}</td>
 <td>${a.month}</td>
 <td>${a.rent}</td>
 <td>${a.payment}</td>
-<td>${a.balance}</td>
+<td style="color:${a.balance>0?'red':'green'}">${a.balance}</td>
 </tr>
 `;
 });
+
+arTable.innerHTML = html;
 }
 
 // CLEAR
