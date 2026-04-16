@@ -8,11 +8,9 @@ body {
   margin:0;
   font-family: Arial;
   display:flex;
-  height:100vh;
   background: linear-gradient(135deg,#1d2b64,#f8cdda);
 }
 
-/* SIDEBAR */
 .sidebar {
   width:230px;
   background: rgba(0,0,0,0.75);
@@ -31,21 +29,13 @@ body {
   background:rgba(255,255,255,0.1);
   color:white;
   cursor:pointer;
-  position:relative;
-  z-index:1001;
 }
 
-.menu button:hover {
-  background:#3498db;
-}
-
-/* MAIN */
 .main {
   flex:1;
   padding:20px;
 }
 
-/* BOX */
 .box {
   background:white;
   padding:20px;
@@ -53,7 +43,6 @@ body {
   margin-bottom:20px;
 }
 
-/* GRID */
 .formGrid {
   display:grid;
   grid-template-columns: repeat(3,1fr);
@@ -64,21 +53,20 @@ input, select {
   padding:10px;
   border-radius:8px;
   border:1px solid #ccc;
-  width:100%;
-  box-sizing:border-box;
 }
 
-/* BUTTON */
-.saveBtn {
-  padding:10px;
-  background:#2ecc71;
-  color:white;
+button {
+  padding:8px 10px;
   border:none;
-  border-radius:8px;
+  border-radius:6px;
   cursor:pointer;
 }
 
-/* TABLE */
+.saveBtn { background:#2ecc71;color:white; }
+.updateBtn { background:#3498db;color:white; }
+.editBtn { background:orange;color:white; }
+.deleteBtn { background:red;color:white; }
+
 table {
   width:100%;
   border-collapse:collapse;
@@ -90,49 +78,25 @@ th, td {
   text-align:center;
 }
 
-th {
-  background:#3498db;
-  color:white;
-}
+th { background:#3498db;color:white; }
 </style>
 </head>
 
 <body>
 
-<!-- SIDEBAR -->
 <div class="sidebar">
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-
-<button onclick="location.href='index.html?v=12'">
-📊 Dashboard
-</button>
-
-<button onclick="location.href='rooms.html?v=12'">
-🏠 Rooms
-</button>
-
-<button onclick="location.href='clients.html?v=12'">
-👥 Clients
-</button>
-
-<button onclick="location.href='journal-voucher-entry.html?v=12'">
-📒 Journal
-</button>
-
-<button onclick="location.href='coa.html?v=12'">
-📚 Chart of Accounts
-</button>
-
-<button onclick="location.href='ledger.html?v=12'">
-📘 Client Ledger
-</button>
-
+<button onclick="location.href='index.html?v=13'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=13'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=13'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=13'">📒 Journal</button>
+<button onclick="location.href='coa.html?v=13'">📚 Chart of Accounts</button>
+<button onclick="location.href='ledger.html?v=13'">📘 Client Ledger</button>
 </div>
 </div>
 
-<!-- MAIN -->
 <div class="main">
 
 <div class="box">
@@ -142,10 +106,8 @@ th {
 
 <input type="date" id="date">
 
-<!-- 🔥 CLIENT (SUB-CODE) -->
 <select id="client"></select>
 
-<!-- 🔥 ACCOUNT (COA) -->
 <select id="account"></select>
 
 <input id="description" placeholder="Description">
@@ -158,6 +120,7 @@ th {
 
 <br>
 <button class="saveBtn" onclick="addEntry()">Save</button>
+<button class="updateBtn" onclick="updateEntry()">Update</button>
 
 </div>
 
@@ -174,6 +137,7 @@ th {
 <th>Description</th>
 <th>Debit</th>
 <th>Credit</th>
+<th>Action</th>
 </tr>
 </thead>
 
@@ -187,68 +151,105 @@ th {
 
 <script>
 
-// 🔥 DATA
 let entries = JSON.parse(localStorage.getItem("jv")) || [];
 let coa = JSON.parse(localStorage.getItem("coa")) || [];
 let clients = JSON.parse(localStorage.getItem("tenants")) || [];
 
-// 🔥 LOAD CLIENTS (SUB-CODE)
+let editIndex = -1;
+
+// LOAD CLIENTS
 function loadClients(){
-
 let html = "<option value=''>Select Client</option>";
-
 clients.forEach(c=>{
 html += `<option value="${c.name}">${c.name}</option>`;
 });
-
-document.getElementById("client").innerHTML = html;
+client.innerHTML = html;
 }
 
-// 🔥 LOAD COA
+// LOAD COA
 function loadCOA(){
-
 let html = "<option value=''>Select Account</option>";
-
 coa.forEach(a=>{
 html += `<option value="${a.code} - ${a.name}">
 ${a.code} - ${a.name}
 </option>`;
 });
-
-document.getElementById("account").innerHTML = html;
+account.innerHTML = html;
 }
 
-// 🔥 ADD ENTRY
+// ADD
 function addEntry(){
 
-let d = document.getElementById("date").value;
-let client = document.getElementById("client").value;
-let acc = document.getElementById("account").value;
-let desc = document.getElementById("description").value;
-let debit = Number(document.getElementById("debit").value) || 0;
-let credit = Number(document.getElementById("credit").value) || 0;
-
-if(acc === ""){
+if(account.value === ""){
 alert("Select account");
 return;
 }
 
 entries.push({
-date:d,
-client:client,
-account:acc,
-description:desc,
-debit:debit,
-credit:credit
+date: date.value,
+client: client.value,
+account: account.value,
+description: description.value,
+debit: Number(debit.value) || 0,
+credit: Number(credit.value) || 0
 });
 
-localStorage.setItem("jv", JSON.stringify(entries));
+saveData();
+}
 
+// UPDATE
+function updateEntry(){
+
+if(editIndex === -1){
+alert("Select record to edit");
+return;
+}
+
+entries[editIndex] = {
+date: date.value,
+client: client.value,
+account: account.value,
+description: description.value,
+debit: Number(debit.value) || 0,
+credit: Number(credit.value) || 0
+};
+
+editIndex = -1;
+saveData();
+}
+
+// EDIT
+function editEntry(i){
+
+let e = entries[i];
+
+date.value = e.date;
+client.value = e.client;
+account.value = e.account;
+description.value = e.description;
+debit.value = e.debit;
+credit.value = e.credit;
+
+editIndex = i;
+}
+
+// DELETE
+function deleteEntry(i){
+
+if(confirm("Delete this entry?")){
+entries.splice(i,1);
+saveData();
+}
+}
+
+// SAVE + RELOAD
+function saveData(){
+localStorage.setItem("jv", JSON.stringify(entries));
 loadTable();
 clearForm();
 }
 
-// 🔥 LOAD TABLE
+// LOAD TABLE
 function loadTable(){
 
 let html = "";
@@ -257,27 +258,31 @@ entries.forEach((e,i)=>{
 html += `
 <tr>
 <td>${i+1}</td>
-<td>${e.date || ""}</td>
+<td>${e.date}</td>
 <td>${e.client || ""}</td>
 <td>${e.account}</td>
 <td>${e.description}</td>
 <td>${e.debit}</td>
 <td>${e.credit}</td>
+<td>
+<button class="editBtn" onclick="editEntry(${i})">Edit</button>
+<button class="deleteBtn" onclick="deleteEntry(${i})">Delete</button>
+</td>
 </tr>
 `;
 });
 
-document.getElementById("jvTable").innerHTML = html;
+jvTable.innerHTML = html;
 }
 
-// 🔥 CLEAR
+// CLEAR
 function clearForm(){
-document.getElementById("description").value="";
-document.getElementById("debit").value="";
-document.getElementById("credit").value="";
+description.value="";
+debit.value="";
+credit.value="";
 }
 
-// 🔥 INIT
+// INIT
 loadClients();
 loadCOA();
 loadTable();
