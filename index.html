@@ -1,16 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Room Rental System</title>
+<title>Room Rental System PRO</title>
 
 <style>
-body {
-  font-family: Arial;
-  background:#eef3ff;
-  padding:20px;
-}
-
-h2 { color:#2c3e50; }
+body { font-family: Arial; background:#eef3ff; padding:20px; }
 
 .box {
   background:white;
@@ -19,10 +13,7 @@ h2 { color:#2c3e50; }
   margin-bottom:15px;
 }
 
-input, select {
-  padding:8px;
-  margin:5px;
-}
+input, select { padding:8px; margin:5px; }
 
 button {
   padding:8px 12px;
@@ -32,6 +23,9 @@ button {
   border-radius:5px;
   cursor:pointer;
 }
+
+.deleteBtn { background:red; }
+.editBtn { background:orange; }
 
 table {
   width:100%;
@@ -44,18 +38,14 @@ th, td {
   text-align:center;
 }
 
-th {
-  background:#3498db;
-  color:white;
-}
+th { background:#3498db; color:white; }
 </style>
 </head>
 
 <body>
 
-<h2>🏨 Room Rental System</h2>
+<h2>🏨 Room Rental System PRO</h2>
 
-<!-- ROOM -->
 <div class="box">
 <h3>Add Room</h3>
 <input type="text" id="roomNumber" placeholder="Room #">
@@ -63,7 +53,6 @@ th {
 <button onclick="addRoom()">Add Room</button>
 </div>
 
-<!-- TENANT -->
 <div class="box">
 <h3>Add Tenant</h3>
 <input type="text" id="tenantName" placeholder="Tenant Name">
@@ -77,16 +66,14 @@ th {
 <button onclick="addTenant()">Save Tenant</button>
 </div>
 
-<!-- BILLING -->
 <div class="box">
 <h3>Monthly Billing</h3>
 <select id="tenantSelect"></select>
 <input type="month" id="month">
 <input type="number" id="payment" placeholder="Payment">
-<button onclick="addBilling()">Save Billing</button>
+<button onclick="addBilling()">Save / Update</button>
 </div>
 
-<!-- TABLE -->
 <div class="box">
 <h3>Records</h3>
 
@@ -101,6 +88,7 @@ th {
 <th>Rental</th>
 <th>Payment</th>
 <th>Balance</th>
+<th>Action</th>
 </tr>
 </thead>
 
@@ -111,10 +99,19 @@ th {
 
 <script>
 
-let rooms = [];
-let tenants = [];
-let billings = [];
+let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
+let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+let billings = JSON.parse(localStorage.getItem("billings")) || [];
+let editIndex = -1;
 
+// SAVE
+function save(){
+  localStorage.setItem("rooms", JSON.stringify(rooms));
+  localStorage.setItem("tenants", JSON.stringify(tenants));
+  localStorage.setItem("billings", JSON.stringify(billings));
+}
+
+// ROOM
 function addRoom(){
   if(!roomNumber.value || !roomPrice.value) return alert("Fill all");
 
@@ -124,7 +121,9 @@ function addRoom(){
     status:"Available"
   });
 
+  save();
   loadRooms();
+
   roomNumber.value="";
   roomPrice.value="";
 }
@@ -138,6 +137,7 @@ function loadRooms(){
   });
 }
 
+// TENANT
 function addTenant(){
   if(!tenantName.value) return alert("Enter name");
 
@@ -152,6 +152,7 @@ function addTenant(){
 
   room.status="Occupied";
 
+  save();
   loadTenants();
   loadRooms();
 
@@ -165,31 +166,58 @@ function loadTenants(){
   });
 }
 
+// FORMAT MONTH
 function formatMonth(m){
   let d = new Date(m);
   return d.toLocaleString('default',{month:'long', year:'numeric'});
 }
 
+// BILLING
 function addBilling(){
   let t = tenants[tenantSelect.value];
   let pay = parseFloat(payment.value) || 0;
   let rental = parseFloat(t.rent);
   let balance = rental - pay;
 
-  billings.push({
-    name:t.name,
-    room:t.room,
-    category:t.category,
-    month:month.value,
-    rental,
-    payment:pay,
-    balance
-  });
+  if(!month.value) return alert("Select month");
 
+  // 🚫 DUPLICATE CHECK
+  let exist = billings.find((b,i)=>
+    b.name===t.name && b.month===month.value && i!==editIndex
+  );
+
+  if(exist) return alert("Already has record for this month!");
+
+  if(editIndex === -1){
+    billings.push({
+      name:t.name,
+      room:t.room,
+      category:t.category,
+      month:month.value,
+      rental,
+      payment:pay,
+      balance
+    });
+  } else {
+    billings[editIndex] = {
+      name:t.name,
+      room:t.room,
+      category:t.category,
+      month:month.value,
+      rental,
+      payment:pay,
+      balance
+    };
+    editIndex = -1;
+  }
+
+  save();
   loadTable();
+
   payment.value="";
 }
 
+// TABLE
 function loadTable(){
   table.innerHTML="";
 
@@ -206,10 +234,39 @@ function loadTable(){
         <td>${b.rental}</td>
         <td>${b.payment}</td>
         <td style="color:${b.balance>0?'red':'green'}">${b.balance}</td>
+        <td>
+          <button class="editBtn" onclick="editBilling(${i})">Edit</button>
+          <button class="deleteBtn" onclick="deleteBilling(${i})">Delete</button>
+        </td>
       </tr>
     `;
   });
 }
+
+// EDIT
+function editBilling(index){
+  let b = billings[index];
+
+  tenantSelect.value = tenants.findIndex(t => t.name === b.name);
+  month.value = b.month;
+  payment.value = b.payment;
+
+  editIndex = index;
+}
+
+// DELETE
+function deleteBilling(index){
+  if(confirm("Delete this record?")){
+    billings.splice(index,1);
+    save();
+    loadTable();
+  }
+}
+
+// INIT
+loadRooms();
+loadTenants();
+loadTable();
 
 </script>
 
