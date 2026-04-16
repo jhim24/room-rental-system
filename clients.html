@@ -48,20 +48,20 @@ body {
   margin-bottom:20px;
 }
 
-/* FORM GRID FIX */
+/* GRID */
 .formGrid {
   display:grid;
   grid-template-columns: repeat(3, 1fr);
   gap:10px;
 }
 
-/* INPUT FIX */
+/* INPUT */
 input, select {
   padding:10px;
   border-radius:8px;
   border:1px solid #ccc;
   width:100%;
-  box-sizing:border-box; /* 🔥 FIX overflow */
+  box-sizing:border-box;
 }
 
 /* BUTTON */
@@ -180,69 +180,80 @@ th { background:#3498db;color:white; }
 
 <script>
 
+// LOAD DATA
 let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
 let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
 
 // LOAD ROOMS
 function loadRooms(){
+let roomSelect = document.getElementById("roomSelect");
 roomSelect.innerHTML="";
 
-if(rooms.length===0){
+if(rooms.length === 0){
 roomSelect.innerHTML="<option>No Rooms</option>";
 return;
 }
 
 rooms.forEach(r=>{
-roomSelect.innerHTML += `<option>${r.number}</option>`;
+roomSelect.innerHTML += `<option value="${r.number}">${r.number}</option>`;
 });
 }
 
-// 🔥 FIXED ADD CLIENT
+// ADD CLIENT (FIXED)
 function addClient(){
 
-let clientName = name.value.trim();
+let nameVal = document.getElementById("name").value.trim();
+let nationalityVal = document.getElementById("nationality").value;
+let qidVal = document.getElementById("qid").value;
+let entryVal = document.getElementById("entry").value;
+let exitVal = document.getElementById("exit").value;
+let roomVal = document.getElementById("roomSelect").value;
+let categoryVal = document.getElementById("category").value;
 
-if(clientName === ""){
+if(nameVal === ""){
 alert("Enter name");
 return;
 }
 
 tenants.push({
-name:clientName,
-nationality:nationality.value,
-qid:qid.value,
-entry:entry.value,
-exit:exit.value,
-room:roomSelect.value,
-category:category.value
+name: nameVal,
+nationality: nationalityVal,
+qid: qidVal,
+entry: entryVal,
+exit: exitVal,
+room: roomVal,
+category: categoryVal
 });
 
+// SAVE
 localStorage.setItem("tenants", JSON.stringify(tenants));
 
-// CLEAR FORM
-name.value="";
-nationality.value="";
-qid.value="";
-entry.value="";
-exit.value="";
+// CLEAR
+document.getElementById("name").value="";
+document.getElementById("nationality").value="";
+document.getElementById("qid").value="";
+document.getElementById("entry").value="";
+document.getElementById("exit").value="";
 
+// RELOAD TABLE
 loadClients();
 }
 
-// LOAD TABLE
+// LOAD TABLE (FIXED)
 function loadClients(){
 
-clientTable.innerHTML="";
+let table = document.getElementById("clientTable");
+table.innerHTML="";
 
 tenants.forEach((t,i)=>{
-clientTable.innerHTML+=`
+table.innerHTML += `
 <tr>
 <td>${i+1}</td>
 <td>${t.name}</td>
-<td>${t.nationality||""}</td>
-<td>${t.qid||""}</td>
-<td>${t.entry||""}</td>
-<td>${t.exit||""}</td>
+<td>${t.nationality || ""}</td>
+<td>${t.qid || ""}</td>
+<td>${t.entry || ""}</td>
+<td>${t.exit || ""}</td>
 <td>${t.room}</td>
 <td>${t.category}</td>
 <td>
