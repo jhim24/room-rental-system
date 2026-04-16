@@ -1,1 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Room Rental System</title>
 
+<style>
+body { font-family: Arial; background:#eef3ff; padding:20px; }
+h2 { color:#2c3e50; }
+
+.box {
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
+  box-shadow:0 0 10px rgba(0,0,0,0.1);
+}
+
+input, select {
+  padding:8px;
+  margin:5px;
+  width:200px;
+}
+
+button {
+  padding:8px 15px;
+  margin:5px;
+  background:#3498db;
+  color:white;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+
+button:hover { background:#2980b9; }
+
+.payBtn { background:green; }
+.deleteBtn { background:red; }
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+th, td {
+  border:1px solid #ccc;
+  padding:10px;
+  text-align:center;
+}
+
+th {
+  background:#3498db;
+  color:white;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>🏨 Room Rental System (Monthly)</h2>
+
+<div class="box">
+<h3>Add Room</h3>
+<input type="text" id="roomNumber" placeholder="Room Number">
+<input type="number" id="roomPrice" placeholder="Monthly Rent">
+<button onclick="addRoom()">Add Room</button>
+</div>
+
+<div class="box">
+<h3>Add Tenant</h3>
+<input type="text" id="tenantName" placeholder="Tenant Name">
+<input type="text" id="contact" placeholder="Contact">
+<input type="date" id="dueDate">
+<select id="roomSelect"></select>
+<button onclick="addTenant()">Assign Room</button>
+</div>
+
+<div class="box">
+<h3>Tenant List</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Room</th>
+<th>Rent</th>
+<th>Due Date</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody id="tenantTable"></tbody>
+</table>
+</div>
+
+<script>
+
+let rooms = JSON.parse(localStorage.getItem("rooms")) || [];
+let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+
+function saveData() {
+  localStorage.setItem("rooms", JSON.stringify(rooms));
+  localStorage.setItem("tenants", JSON.stringify(tenants));
+}
+
+function addRoom() {
+  let number = roomNumber.value;
+  let price = roomPrice.value;
+
+  if(!number || !price) return alert("Fill all fields");
+
+  rooms.push({ number, price, status:"Available" });
+  saveData();
+  loadRooms();
+
+  roomNumber.value="";
+  roomPrice.value="";
+}
+
+function loadRooms() {
+  roomSelect.innerHTML="";
+  rooms.forEach((r,i)=>{
+    if(r.status==="Available"){
+      roomSelect.innerHTML += `<option value="${i}">${r.number} - ${r.price}</option>`;
+    }
+  });
+}
+
+function addTenant() {
+  let name = tenantName.value;
+  let contactVal = contact.value;
+  let due = dueDate.value;
+  let roomIndex = roomSelect.value;
+
+  if(!name || !contactVal || !due) return alert("Complete fields");
+
+  let room = rooms[roomIndex];
+
+  tenants.push({
+    name,
+    contact:contactVal,
+    room:room.number,
+    rent:room.price,
+    dueDate:due,
+    status:"Unpaid"
+  });
+
+  rooms[roomIndex].status="Occupied";
+
+  saveData();
+  loadRooms();
+  loadTenants();
+
+  tenantName.value="";
+  contact.value="";
+  dueDate.value="";
+}
+
+function checkStatus(dueDate) {
+  let today = new Date();
+  let due = new Date(dueDate);
+
+  if(today > due) return "Late";
+  return "Unpaid";
+}
+
+function payTenant(index) {
+  tenants[index].status = "Paid";
+  saveData();
+  loadTenants();
+}
+
+function deleteTenant(index) {
+  let roomNum = tenants[index].room;
+
+  let room = rooms.find(r=>r.number===roomNum);
+  if(room) room.status="Available";
+
+  tenants.splice(index,1);
+  saveData();
+  loadRooms();
+  loadTenants();
+}
+
+function loadTenants() {
+  tenantTable.innerHTML="";
+
+  tenants.forEach((t,i)=>{
+    if(t.status!=="Paid"){
+      t.status = checkStatus(t.dueDate);
+    }
+
+    tenantTable.innerHTML += `
+      <tr>
+        <td>${t.name}</td>
+        <td>${t.room}</td>
+        <td>${t.rent}</td>
+        <td>${t.dueDate}</td>
+        <td>${t.status}</td>
+        <td>
+          <button class="payBtn" onclick="payTenant(${i})">Pay</button>
+          <button class="deleteBtn" onclick="deleteTenant(${i})">Delete</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+loadRooms();
+loadTenants();
+
+</script>
+
+</body>
+</html>
