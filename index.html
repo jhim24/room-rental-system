@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Accommodation System FINAL COMPLETE</title>
+<title>Accommodation System FINAL</title>
 
 <style>
 body {
@@ -75,7 +75,6 @@ th{background:#3498db;color:white;}
 <button class="deleteBtn" onclick="showTab('tenant')">Tenant</button>
 </div>
 
-<!-- MAIN -->
 <div id="mainTab">
 
 <div class="box">
@@ -115,7 +114,7 @@ th{background:#3498db;color:white;}
 <div class="box">
 <h3>Billing</h3>
 <select id="tenantSelect"></select>
-<input type="month" id="month">
+
 <input id="rent" type="number" placeholder="Rent">
 <input id="payment" type="number" placeholder="Payment">
 
@@ -157,7 +156,6 @@ To <input type="date" id="ledgerTo">
 
 </div>
 
-<!-- ROOM -->
 <div id="roomTab" style="display:none;">
 <div class="box">
 <h3>Room Status</h3>
@@ -172,7 +170,6 @@ To <input type="date" id="ledgerTo">
 </div>
 </div>
 
-<!-- TENANT -->
 <div id="tenantTab" style="display:none;">
 <div class="box">
 <h3>Tenant List</h3>
@@ -206,6 +203,10 @@ roomTab.style.display=tab==="room"?"block":"none";
 tenantTab.style.display=tab==="tenant"?"block":"none";
 }
 
+function today(){
+return new Date().toLocaleDateString('en-GB'); // dd/mm/yyyy
+}
+
 // ROOM
 function saveRoom(){
 rooms.push({number:roomNo.value,capacity:+capacity.value});
@@ -219,34 +220,49 @@ tenants.push({name:tenantName.value,room:r.number,category:category.value});
 save();loadAll();
 }
 
-// BILLING
+// 🔥 RENT (AUTO DATE + AUTO REFRESH)
 function addRent(){
 let t=tenants[tenantSelect.value];
 let r=+rent.value||0;
 
-billings.push({name:t.name,month:month.value,rent:r,payment:0});
-save();loadAll();
+billings.push({
+name:t.name,
+date:today(),
+rent:r,
+payment:0
+});
+
+save();
+loadAll();
+rent.value="";
 }
 
+// 🔥 PAYMENT (AUTO DATE + HISTORY + REFRESH)
 function addPayment(){
 let t=tenants[tenantSelect.value];
 let p=+payment.value||0;
 
-billings.push({name:t.name,month:month.value,rent:0,payment:p});
+billings.push({
+name:t.name,
+date:today(),
+rent:0,
+payment:p
+});
 
 payments.push({
 name:t.name,
 amount:p,
-date:new Date().toLocaleDateString('en-GB')
+date:today()
 });
 
-save();loadAll();
+save();
+loadAll();
+payment.value="";
 }
 
 // LOAD ALL
 function loadAll(){
 
-// DASHBOARD
 totalRooms.innerText=rooms.length;
 totalTenants.innerText=tenants.length;
 
@@ -257,7 +273,6 @@ bedSpace.innerText=tenants.filter(t=>t.category==="Bed Space").length;
 freelancer.innerText=tenants.filter(t=>t.category==="Freelancer").length;
 company.innerText=tenants.filter(t=>t.category==="Company Staff").length;
 
-// DROPDOWN
 roomSelect.innerHTML="";
 tenantSelect.innerHTML="";
 
@@ -268,8 +283,7 @@ tenants.forEach((t,i)=>tenantSelect.innerHTML+=`<option value=${i}>${t.name}</op
 roomTable.innerHTML="";
 rooms.forEach(r=>{
 let occ=tenants.filter(t=>t.room===r.number).length;
-roomTable.innerHTML+=`
-<tr>
+roomTable.innerHTML+=`<tr>
 <td>${r.number}</td>
 <td>${r.capacity}</td>
 <td>${occ}</td>
@@ -280,8 +294,7 @@ roomTable.innerHTML+=`
 // TENANT
 tenantTable.innerHTML="";
 tenants.forEach((t,i)=>{
-tenantTable.innerHTML+=`
-<tr>
+tenantTable.innerHTML+=`<tr>
 <td>${t.name}</td>
 <td>${t.room}</td>
 <td>${t.category}</td>
@@ -289,7 +302,7 @@ tenantTable.innerHTML+=`
 </tr>`;
 });
 
-// PAYMENT
+// PAYMENT HISTORY
 paymentTable.innerHTML="";
 payments.forEach((p,i)=>{
 paymentTable.innerHTML+=`
@@ -309,8 +322,7 @@ let from=new Date(ledgerFrom.value);
 let to=new Date(ledgerTo.value);
 
 ledgerDisplay.innerText =
-(ledgerFrom.value?from.toLocaleDateString('en-GB'):"")+
-" - "+
+(ledgerFrom.value?from.toLocaleDateString('en-GB'):"")+" - "+
 (ledgerTo.value?to.toLocaleDateString('en-GB'):"");
 
 ledgerTable.innerHTML="";
@@ -319,7 +331,7 @@ tenants.forEach(t=>{
 let r=0,p=0;
 
 billings.forEach(b=>{
-let d=new Date(b.month);
+let d=new Date(b.date.split('/').reverse().join('-'));
 if((!ledgerFrom.value||d>=from)&&(!ledgerTo.value||d<=to)){
 if(b.name===t.name){
 r+=b.rent;
@@ -341,7 +353,6 @@ ledgerTable.innerHTML+=`
 
 }
 
-// ACTIONS
 function deleteTenant(i){
 tenants.splice(i,1);
 save();loadAll();
