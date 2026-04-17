@@ -10,9 +10,7 @@ body {
   background: linear-gradient(135deg,#1d2b64,#f8cdda);
 }
 
-.container {
-  padding:20px;
-}
+.container { padding:20px; }
 
 .box {
   background:white;
@@ -57,9 +55,11 @@ th, td {
 
 th { background:#3498db;color:white; }
 
-.totalRow {
+.summary {
+  display:flex;
+  justify-content:space-between;
   font-weight:bold;
-  background:#f2f2f2;
+  margin-bottom:10px;
 }
 </style>
 </head>
@@ -73,7 +73,6 @@ th { background:#3498db;color:white; }
 <div class="box">
 <h3>Journal Entry</h3>
 
-<label>Date:</label>
 <input type="date" id="date">
 
 <br><br>
@@ -81,39 +80,17 @@ th { background:#3498db;color:white; }
 <div class="grid">
 
 <!-- ROW 1 -->
-<select id="dc1">
-<option value="D">Debit</option>
-<option value="C">Credit</option>
-</select>
-
+<select id="dc1"><option>D</option><option>C</option></select>
 <select id="code1" onchange="autoFillAccount(1)"></select>
 <input id="accountName1" readonly>
-
-<select id="subDesc1">
-<option value="">None</option>
-<option value="Tenant">Tenant</option>
-</select>
-
-<input type="number" id="amount1">
-
+<input id="amount1" type="number" placeholder="Amount">
 <select id="subName1"></select>
 
 <!-- ROW 2 -->
-<select id="dc2">
-<option value="D">Debit</option>
-<option value="C">Credit</option>
-</select>
-
+<select id="dc2"><option>D</option><option>C</option></select>
 <select id="code2" onchange="autoFillAccount(2)"></select>
 <input id="accountName2" readonly>
-
-<select id="subDesc2">
-<option value="">None</option>
-<option value="Tenant">Tenant</option>
-</select>
-
-<input type="number" id="amount2">
-
+<input id="amount2" type="number" placeholder="Amount">
 <select id="subName2"></select>
 
 </div>
@@ -127,6 +104,11 @@ th { background:#3498db;color:white; }
 
 <h3>Journal Records</h3>
 
+<div class="summary">
+<div id="totalDebit">Total Debit: 0</div>
+<div id="totalCredit">Total Credit: 0</div>
+</div>
+
 <table>
 <thead>
 <tr>
@@ -136,20 +118,12 @@ th { background:#3498db;color:white; }
 <th>Account</th>
 <th>Sub</th>
 <th>Amount</th>
+<th>ADD</th>
 <th>Action</th>
 </tr>
 </thead>
 
 <tbody id="table"></tbody>
-
-<tfoot>
-<tr class="totalRow">
-<td colspan="4">TOTAL</td>
-<td id="totalDebit">Debit: 0</td>
-<td id="totalCredit">Credit: 0</td>
-<td></td>
-</tr>
-</tfoot>
 
 </table>
 
@@ -163,15 +137,6 @@ let entries = JSON.parse(localStorage.getItem("jv")) || [];
 let clients = JSON.parse(localStorage.getItem("tenants")) || [];
 let coa = JSON.parse(localStorage.getItem("coa")) || [];
 
-// FORMAT DATE → dd/mm/yyyy
-function formatDate(dateStr){
-let d = new Date(dateStr);
-let day = String(d.getDate()).padStart(2,'0');
-let month = String(d.getMonth()+1).padStart(2,'0');
-let year = d.getFullYear();
-return `${day}/${month}/${year}`;
-}
-
 // LOAD COA
 function loadCOA(){
 let html = "<option value=''>Select</option>";
@@ -180,15 +145,16 @@ html += `<option value="${a.code}" data-name="${a.name}">
 ${a.code} - ${a.name}
 </option>`;
 });
-code1.innerHTML = html;
-code2.innerHTML = html;
+document.getElementById("code1").innerHTML = html;
+document.getElementById("code2").innerHTML = html;
 }
 
-// AUTO NAME
+// AUTO ACCOUNT NAME
 function autoFillAccount(row){
 let select = document.getElementById("code"+row);
 let selected = select.options[select.selectedIndex];
-document.getElementById("accountName"+row).value = selected.getAttribute("data-name") || "";
+let name = selected.getAttribute("data-name");
+document.getElementById("accountName"+row).value = name || "";
 }
 
 // LOAD CLIENTS
@@ -197,43 +163,39 @@ let html = "<option value=''>Select</option>";
 clients.forEach(c=>{
 html += `<option value="${c.name}">${c.name}</option>`;
 });
-subName1.innerHTML = html;
-subName2.innerHTML = html;
+document.getElementById("subName1").innerHTML = html;
+document.getElementById("subName2").innerHTML = html;
 }
 
 // ADD ENTRY
 function addEntry(){
 
-let dateVal = document.getElementById("date").value;
+let d = document.getElementById("date").value;
 
-if(!dateVal){
+if(!d){
 alert("Select date");
 return;
 }
 
-let rows = [1,2];
-
-rows.forEach(r=>{
+[1,2].forEach(r=>{
 
 let dc = document.getElementById("dc"+r).value;
 let code = document.getElementById("code"+r).value;
 let acc = document.getElementById("accountName"+r).value;
-let amount = Number(document.getElementById("amount"+r).value);
+let amt = Number(document.getElementById("amount"+r).value);
 let sub = document.getElementById("subName"+r).value;
 
-if(!code || amount <= 0) return;
+if(!code || amt <= 0) return;
 
 // AR only may client
-if(code !== "1100"){
-sub = "";
-}
+if(code !== "1100") sub = "";
 
 entries.push({
-date:dateVal,
+date:d,
 dc:dc,
 code:code,
 account:acc,
-amount:amount,
+amount:amt,
 sub:sub
 });
 
@@ -244,7 +206,7 @@ loadTable();
 clearForm();
 }
 
-// LOAD TABLE + TOTAL
+// LOAD TABLE (FULL FIXED)
 function loadTable(){
 
 let html = "";
@@ -253,36 +215,38 @@ let totalC = 0;
 
 entries.forEach((e,i)=>{
 
-if(e.dc==="D") totalD += e.amount;
-if(e.dc==="C") totalC += e.amount;
+if(e.dc === "D") totalD += e.amount;
+if(e.dc === "C") totalC += e.amount;
 
-// 🔥 AR EFFECT (IMPORTANT)
+// AR EFFECT ONLY
 let add = "-";
 if(e.code === "1100"){
-add = e.dc === "D" ? "+"+e.amount : "-"+e.amount;
+add = e.dc === "D" ? "+" + e.amount : "-" + e.amount;
 }
+
+let formattedDate = new Date(e.date).toLocaleDateString('en-GB');
 
 html += `
 <tr>
-<td>${new Date(e.date).toLocaleDateString('en-GB')}</td>
+<td>${formattedDate}</td>
 <td>${e.dc}</td>
 <td>${e.code}</td>
 <td>${e.account}</td>
 <td>${e.sub || ""}</td>
 <td>${e.amount}</td>
 <td>${add}</td>
-<td><button onclick="deleteEntry(${i})">Delete</button></td>
+<td><button class="deleteBtn" onclick="deleteEntry(${i})">Delete</button></td>
 </tr>
 `;
+
 });
 
 document.getElementById("table").innerHTML = html;
 
-// 🔥 TOTAL SA TAAS
 document.getElementById("totalDebit").innerText = "Total Debit: " + totalD;
 document.getElementById("totalCredit").innerText = "Total Credit: " + totalC;
-
 }
+
 // DELETE
 function deleteEntry(i){
 entries.splice(i,1);
@@ -292,8 +256,8 @@ loadTable();
 
 // CLEAR
 function clearForm(){
-amount1.value="";
-amount2.value="";
+document.getElementById("amount1").value = "";
+document.getElementById("amount2").value = "";
 }
 
 // INIT
