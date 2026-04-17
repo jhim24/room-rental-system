@@ -93,10 +93,6 @@ th{background:#3498db;color:white;}
 <script>
 
 // SAMPLE DATA (pwede mo palitan later)
-const accounts = {
-  "AR-001":"Accounts Receivable",
-  "CASH-001":"Cash"
-};
 
 let rowCount = 0;
 
@@ -209,7 +205,6 @@ document.getElementById("totalCr").innerText = crTotal;
 window.onload=function(){
 addRow();
 loadRecords();
-  loadAccountDropdown(rowCount);
 };
 function getAccounts(){
   return JSON.parse(localStorage.getItem("accounts")) || [];
@@ -233,9 +228,9 @@ accounts.forEach(acc=>{
   function fillAccount(row){
 
 let select = document.getElementById("accCode"+row);
-let name = select.options[select.selectedIndex].dataset.name;
+let name = select.options[select.selectedIndex]?.dataset.name;
 
-document.getElementById("accName"+row).value = name || "";
+document.getElementById("name"+row).value = name || "";
 
 }
 </script>
