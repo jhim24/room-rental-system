@@ -19,7 +19,6 @@ body{
   margin-bottom:20px;
 }
 
-/* PANTAY FORM */
 .formRow{
   display:grid;
   grid-template-columns:80px 160px 1fr 140px 160px;
@@ -43,6 +42,7 @@ button{
 }
 
 .saveBtn{background:#2ecc71;color:white;}
+.deleteBtn{background:red;color:white;}
 
 table{
   width:100%;
@@ -148,12 +148,26 @@ th{background:#3498db;color:white;}
 
 <script>
 
-let jv = JSON.parse(localStorage.getItem("jv")) || [];
-let coa = JSON.parse(localStorage.getItem("coa")) || [];
-let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+// STORAGE
+function getJV(){
+return JSON.parse(localStorage.getItem("jv")) || [];
+}
 
-/* LOAD COA */
+function saveJV(data){
+localStorage.setItem("jv", JSON.stringify(data));
+}
+
+function getCOA(){
+return JSON.parse(localStorage.getItem("coa")) || [];
+}
+
+function getTenants(){
+return JSON.parse(localStorage.getItem("tenants")) || [];
+}
+
+// LOAD COA
 function loadCOA(){
+let coa = getCOA();
 let html="<option value=''>Select</option>";
 
 coa.forEach(a=>{
@@ -166,7 +180,7 @@ code1.innerHTML=html;
 code2.innerHTML=html;
 }
 
-/* AUTO ACCOUNT */
+// AUTO ACCOUNT NAME
 function autoFill(r){
 let s=document.getElementById("code"+r);
 let selected=s.options[s.selectedIndex];
@@ -174,8 +188,9 @@ let name=selected.getAttribute("data-name");
 document.getElementById("name"+r).value=name||"";
 }
 
-/* LOAD CLIENT */
+// LOAD CLIENTS
 function loadClients(){
+let tenants = getTenants();
 let html="<option value=''>Select</option>";
 
 tenants.forEach(t=>{
@@ -186,8 +201,18 @@ sub1.innerHTML=html;
 sub2.innerHTML=html;
 }
 
-/* SAVE ENTRY */
+// AUTO DETECT AR
+function isAR(code){
+let coa = getCOA();
+let acc = coa.find(a=>a.code == code);
+if(!acc) return false;
+return acc.name.toLowerCase().includes("receivable");
+}
+
+// SAVE
 function save(){
+
+let jv = getJV();
 
 let d=document.getElementById("date").value;
 let nar=document.getElementById("narration").value;
@@ -204,8 +229,10 @@ let sub=document.getElementById("sub"+r).value;
 
 if(!code || !acc || amt<=0) return;
 
-// AR only may client
-if(code !== "1100") sub="";
+// FIX CLIENT ONLY FOR AR
+if(!isAR(code)){
+sub="";
+}
 
 jv.push({
 date:d,
@@ -213,19 +240,21 @@ dc:dc,
 code:code,
 acc:acc,
 amt:amt,
-sub:sub,
+sub:(sub||"").trim(),
 nar:nar
 });
 
 });
 
-localStorage.setItem("jv",JSON.stringify(jv));
+saveJV(jv);
 load();
 clearForm();
 }
 
-/* LOAD TABLE */
+// LOAD TABLE
 function load(){
+
+let jv = getJV();
 
 let html="";
 let dr=0;
@@ -247,7 +276,7 @@ html+=`
 <td>${e.nar||""}</td>
 <td>${d}</td>
 <td>${c}</td>
-<td><button onclick="del(${i})">Delete</button></td>
+<td><button class="deleteBtn" onclick="del(${i})">Delete</button></td>
 </tr>`;
 });
 
@@ -258,20 +287,21 @@ drTxt.innerText="Dr: "+dr;
 crTxt.innerText="Cr: "+cr;
 }
 
-/* DELETE */
+// DELETE
 function del(i){
+let jv = getJV();
 jv.splice(i,1);
-localStorage.setItem("jv",JSON.stringify(jv));
+saveJV(jv);
 load();
 }
 
-/* CLEAR */
+// CLEAR
 function clearForm(){
 amt1.value="";
 amt2.value="";
 }
 
-/* INIT */
+// INIT
 loadCOA();
 loadClients();
 load();
