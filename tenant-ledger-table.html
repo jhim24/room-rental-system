@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Tenant Ledger Table</title>
+<title>Tenant Ledger (Dynamic)</title>
 
 <style>
 body{
@@ -38,7 +38,7 @@ input{
 
 table{
   border-collapse:collapse;
-  min-width:1400px;
+  min-width:1200px;
 }
 
 th,td{
@@ -63,7 +63,7 @@ th{
 <button class="backBtn" onclick="history.back()">⬅ Back</button>
 
 <div class="box">
-<h3>📊 Tenant Ledger (Yearly)</h3>
+<h3>📊 Tenant Ledger (Dynamic Month)</h3>
 
 From: <input type="date" id="from">
 To: <input type="date" id="to">
@@ -76,15 +76,7 @@ To: <input type="date" id="to">
 
 <table>
 <thead>
-<tr>
-<th>Name</th>
-<th>Previous</th>
-<th>JAN</th><th>FEB</th><th>MAR</th><th>APR</th>
-<th>MAY</th><th>JUN</th><th>JUL</th><th>AUG</th>
-<th>SEP</th><th>OCT</th><th>NOV</th><th>DEC</th>
-<th>Total</th>
-<th>Action</th>
-</tr>
+<tr id="headerRow"></tr>
 </thead>
 
 <tbody id="tbl"></tbody>
@@ -95,7 +87,7 @@ To: <input type="date" id="to">
 
 <script>
 
-// ALWAYS GET FRESH DATA
+// STORAGE
 function getTenants(){
 return JSON.parse(localStorage.getItem("tenants")) || [];
 }
@@ -104,17 +96,35 @@ function getJV(){
 return JSON.parse(localStorage.getItem("jv")) || [];
 }
 
-// SAFE DATE PARSE
+// SAFE DATE
 function parseDate(d){
 let date = new Date(d);
 if(isNaN(date)){
-// fallback format YYYY-MM-DD manual split
-let parts = d.split("-");
-if(parts.length===3){
-date = new Date(parts[0], parts[1]-1, parts[2]);
+let p = d.split("-");
+if(p.length===3){
+date = new Date(p[0], p[1]-1, p[2]);
 }
 }
 return date;
+}
+
+// FORMAT MONTH + YEAR
+function formatMonth(d){
+return d.toLocaleString('default',{month:'short'}) + " " + d.getFullYear();
+}
+
+// GENERATE MONTH RANGE
+function getMonthRange(from,to){
+
+let months=[];
+let d = new Date(from.getFullYear(), from.getMonth(), 1);
+
+while(d <= to){
+months.push(new Date(d));
+d.setMonth(d.getMonth()+1);
+}
+
+return months;
 }
 
 // LOAD TABLE
@@ -126,48 +136,69 @@ let jv = getJV();
 let from = parseDate(document.getElementById("from").value || "2000-01-01");
 let to   = parseDate(document.getElementById("to").value || "2100-12-31");
 
+// dynamic months
+let monthRange = getMonthRange(from,to);
+
+// HEADER BUILD
+let header = `
+<th>Name</th>
+<th>Previous</th>
+${monthRange.map(m=>`<th>${formatMonth(m)}</th>`).join("")}
+<th>Total</th>
+<th>Action</th>
+`;
+
+document.getElementById("headerRow").innerHTML = header;
+
 let html = "";
 
+// LOOP TENANTS
 tenants.forEach((t,i)=>{
 
-let months = new Array(12).fill(0);
+let months = new Array(monthRange.length).fill(0);
 
-// 🔥 LOOP JOURNAL
+// LOOP JOURNAL
 jv.forEach(e=>{
 
-// ONLY AR (AUTO DETECT)
-if(!e.acc.toLowerCase().includes("receivable")) return;
+// detect AR
+if(!e.acc || !e.acc.toLowerCase().includes("receivable")) return;
 
-// CLIENT MATCH (FIXED)
+// match client
 if((e.sub||"").trim().toLowerCase() !== t.name.trim().toLowerCase()) return;
 
-// DATE
+// date
 let d = parseDate(e.date);
 if(isNaN(d)) return;
 
 if(d < from || d > to) return;
 
-// MONTH
-let m = d.getMonth();
+// find month index
+let idx = monthRange.findIndex(m =>
+m.getFullYear() === d.getFullYear() &&
+m.getMonth() === d.getMonth()
+);
 
-// AMOUNT
+if(idx === -1) return;
+
+// amount
 let amt = Number(e.amt || 0);
 
-// COMPUTE
+// compute
 if(e.dc === "D"){
-months[m] += amt;
+months[idx] += amt;
 }else{
-months[m] -= amt;
+months[idx] -= amt;
 }
 
 });
 
-// PREVIOUS
+// previous
 let prev = Number(localStorage.getItem("prev_"+t.name)) || 0;
 
-// TOTAL
+// total
 let total = prev + months.reduce((a,b)=>a+b,0);
 
+// BUILD ROW
 html += `<tr>
 
 <td>${t.name}</td>
@@ -199,7 +230,9 @@ localStorage.setItem("prev_"+name, val);
 // EDIT
 function editTenant(i){
 let tenants = getTenants();
+
 let newName = prompt("Edit name:", tenants[i].name);
+
 if(newName){
 tenants[i].name = newName;
 localStorage.setItem("tenants", JSON.stringify(tenants));
@@ -210,6 +243,7 @@ loadTable();
 // DELETE
 function deleteTenant(i){
 let tenants = getTenants();
+
 if(confirm("Delete tenant?")){
 tenants.splice(i,1);
 localStorage.setItem("tenants", JSON.stringify(tenants));
