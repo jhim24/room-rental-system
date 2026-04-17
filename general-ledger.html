@@ -24,6 +24,15 @@ select,button{
   margin:5px;
 }
 
+button{
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+
+.loadBtn{background:#3498db;color:white;}
+.linkBtn{background:#2ecc71;color:white;}
+
 table{
   width:100%;
   border-collapse:collapse;
@@ -55,8 +64,13 @@ th{
 <div class="box">
 
 <select id="account"></select>
-<button onclick="loadLedger()">Load Ledger</button>
-<a href="tenant-ledger-table.html">📊 Tenant Ledger</a>
+
+<button class="loadBtn" onclick="loadLedger()">Load Ledger</button>
+
+<a href="tenant-ledger-table.html">
+<button class="linkBtn">📊 Tenant Ledger</button>
+</a>
+
 </div>
 
 <div class="box">
@@ -86,10 +100,20 @@ Balance: <span id="bal">0</span>
 
 <script>
 
-let coa = JSON.parse(localStorage.getItem("coa")) || [];
+// LOAD COA
+function getCOA(){
+return JSON.parse(localStorage.getItem("coa")) || [];
+}
 
-/* LOAD ACCOUNTS */
+// LOAD JV
+function getJV(){
+return JSON.parse(localStorage.getItem("jv")) || [];
+}
+
+// LOAD ACCOUNTS DROPDOWN
 function loadAccounts(){
+
+let coa = getCOA();
 
 let html = "<option value=''>Select Account</option>";
 
@@ -102,14 +126,14 @@ ${a.code} - ${a.name}
 document.getElementById("account").innerHTML = html;
 }
 
-/* LOAD LEDGER */
+// LOAD LEDGER
 function loadLedger(){
 
 let selected = document.getElementById("account").value;
 
 if(!selected) return alert("Select account");
 
-let jv = JSON.parse(localStorage.getItem("jv")) || [];
+let jv = getJV();
 
 let html="";
 let balance=0;
@@ -118,22 +142,34 @@ jv.forEach((e,i)=>{
 
 if(e.code !== selected) return;
 
+// DR/CR
 let dr="", cr="";
 
-if(e.dc==="D"){
-dr=e.amt;
-balance+=e.amt;
+let amt = Number(e.amt || 0);
+
+if(e.dc === "D"){
+dr = amt;
+balance += amt;
 }else{
-cr=e.amt;
-balance-=e.amt;
+cr = amt;
+balance -= amt;
 }
+
+// DATE FORMAT
+let date = "";
+if(e.date){
+date = new Date(e.date).toLocaleDateString('en-GB');
+}
+
+// CLIENT FIXED HERE 🔥
+let client = (e.sub || "").trim();
 
 html += `
 <tr>
 <td>${i+1}</td>
-<td>${new Date(e.date).toLocaleDateString('en-GB')}</td>
+<td>${date}</td>
 <td>${e.acc}</td>
-<td>${e.sub||""}</td>
+<td>${client}</td>
 <td>${dr}</td>
 <td>${cr}</td>
 <td>${balance}</td>
@@ -147,7 +183,7 @@ document.getElementById("bal").innerText = balance;
 
 }
 
-/* INIT */
+// INIT
 loadAccounts();
 
 </script>
