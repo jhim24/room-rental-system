@@ -55,8 +55,6 @@ button {
   cursor:pointer;
 }
 
-.saveBtn { background:#2ecc71;color:white; }
-
 table {
   width:100%;
   border-collapse:collapse;
@@ -78,12 +76,12 @@ th { background:#3498db;color:white; }
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-<button onclick="location.href='index.html?v=6'">📊 Dashboard</button>
-<button onclick="location.href='rooms.html?v=6'">🏠 Rooms</button>
-<button onclick="location.href='clients.html?v=6'">👥 Clients</button>
-<button onclick="location.href='journal-voucher-entry.html?v=6'">📒 Journal</button>
-<button onclick="location.href='coa.html?v=6'">📚 Chart of Accounts</button>
-  <a href="general-ledger.html">📊 General Ledger</a>
+<button onclick="location.href='index.html'">Dashboard</button>
+<button onclick="location.href='rooms.html'">Rooms</button>
+<button onclick="location.href='clients.html'">Clients</button>
+<button onclick="location.href='journal-voucher-entry.html'">Journal</button>
+<button onclick="location.href='coa.html'">Chart of Accounts</button>
+<a href="general-ledger.html">General Ledger</a>
 </div>
 </div>
 
@@ -93,12 +91,11 @@ th { background:#3498db;color:white; }
 <h3>Add Account</h3>
 
 <select id="type">
-  <option>Asset</option>
-  <option>Income</option>
+<option>Asset</option>
+<option>Income</option>
 </select>
 
 <input id="accountName" placeholder="Account Name">
-
 <input id="code" placeholder="Account Code">
 
 <button onclick="saveAccount()">Save</button>
@@ -127,28 +124,16 @@ th { background:#3498db;color:white; }
 
 </div>
 
-if(!code || !name){
-  alert("Please fill all fields");
-  return;
-}
-
-let accounts = JSON.parse(localStorage.getItem("accounts")) || [];
-
-accounts.push({
-  code: code,
-  name: name
-});
-
-localStorage.setItem("accounts", JSON.stringify(accounts));
-
-alert("Saved!");
-
-}
-
 <script>
 
 // STORAGE
-let accounts = JSON.parse(localStorage.getItem("accounts")) || [];
+function getAccounts(){
+  return JSON.parse(localStorage.getItem("accounts")) || [];
+}
+
+function saveAccounts(data){
+  localStorage.setItem("accounts", JSON.stringify(data));
+}
 
 // SAVE ACCOUNT
 function saveAccount(){
@@ -163,13 +148,15 @@ if(name === ""){
   return;
 }
 
+let accounts = getAccounts();
+
 accounts.push({
   code: code,
   type: type,
   name: name
 });
 
-localStorage.setItem("accounts", JSON.stringify(accounts));
+saveAccounts(accounts);
 
 alert("Saved!");
 
@@ -183,7 +170,7 @@ loadTable();
 // LOAD TABLE
 function loadTable(){
 
-accounts = JSON.parse(localStorage.getItem("accounts")) || [];
+let accounts = getAccounts();
 
 let html = "";
 
@@ -206,13 +193,17 @@ document.getElementById("coaTable").innerHTML = html;
 
 // DELETE
 function deleteAcc(i){
+
+let accounts = getAccounts();
 accounts.splice(i,1);
-localStorage.setItem("accounts", JSON.stringify(accounts));
+
+saveAccounts(accounts);
 loadTable();
 }
 
 // INIT
 window.onload = loadTable;
+
 </script>
 
 </body>
