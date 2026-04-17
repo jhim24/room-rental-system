@@ -109,12 +109,13 @@ div.className="grid";
 div.id="row"+rowCount;
 
 div.innerHTML=`
-<select id="accCode${rowCount}" onchange="fillAccount(${rowCount})"></select>
 
-<select id="code${rowCount}" onchange="fillName(${rowCount})">
-<option value="">Select</option>
-${Object.keys(accounts).map(c=>`<option value="${c}">${c}</option>`).join("")}
+<select id="dc${rowCount}">
+<option>D</option>
+<option>C</option>
 </select>
+
+<select id="accCode${rowCount}" onchange="fillAccount(${rowCount})"></select>
 
 <input id="name${rowCount}" readonly>
 
@@ -128,14 +129,10 @@ ${Object.keys(accounts).map(c=>`<option value="${c}">${c}</option>`).join("")}
 `;
 
 document.getElementById("rows").appendChild(div);
-}
 
-// AUTO ACCOUNT NAME
-function fillName(i){
-let code = document.getElementById("code"+i).value;
-document.getElementById("name"+i).value = accounts[code] || "";
+// 🔥 IMPORTANT (wag kalimutan)
+loadAccountDropdown(rowCount);
 }
-
 // DELETE ROW
 function deleteRow(i){
 document.getElementById("row"+i).remove();
