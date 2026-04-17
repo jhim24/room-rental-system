@@ -42,7 +42,6 @@ th{background:#3498db;color:white;}
 
 <h3>📒 Journal Entry</h3>
 
-<!-- HEADER -->
 <div class="grid header">
 <div>D/C</div>
 <div>Acc Code</div>
@@ -60,7 +59,6 @@ th{background:#3498db;color:white;}
 
 </div>
 
-<!-- RECORD TABLE -->
 <div class="box">
 
 <h3>📋 Journal Records</h3>
@@ -92,11 +90,15 @@ th{background:#3498db;color:white;}
 
 <script>
 
-// SAMPLE DATA (pwede mo palitan later)
+// ===== STORAGE =====
+function getAccounts(){
+  return JSON.parse(localStorage.getItem("accounts")) || [];
+}
 
+// ===== VARIABLES =====
 let rowCount = 0;
 
-// ADD ROW
+// ===== ADD ROW =====
 function addRow(){
 rowCount++;
 
@@ -126,15 +128,43 @@ div.innerHTML=`
 
 document.getElementById("rows").appendChild(div);
 
-// 🔥 IMPORTANT (wag kalimutan)
+// LOAD ACCOUNTS
 loadAccountDropdown(rowCount);
 }
-// DELETE ROW
+
+// ===== DELETE =====
 function deleteRow(i){
-document.getElementById("row"+i).remove();
+let el = document.getElementById("row"+i);
+if(el) el.remove();
 }
 
-// SAVE
+// ===== LOAD DROPDOWN =====
+function loadAccountDropdown(row){
+
+let accounts = getAccounts();
+let select = document.getElementById("accCode"+row);
+
+select.innerHTML = '<option value="">Select</option>';
+
+accounts.forEach(acc=>{
+select.innerHTML += `
+<option value="${acc.code}" data-name="${acc.name}">
+${acc.code} - ${acc.name}
+</option>
+`;
+});
+}
+
+// ===== AUTO ACCOUNT NAME =====
+function fillAccount(row){
+
+let select = document.getElementById("accCode"+row);
+let name = select.options[select.selectedIndex]?.dataset.name;
+
+document.getElementById("name"+row).value = name || "";
+}
+
+// ===== SAVE =====
 function saveJournal(){
 
 let jv = JSON.parse(localStorage.getItem("jv")) || [];
@@ -157,7 +187,6 @@ nar,
 amt,
 dc:dc.value
 });
-
 }
 
 localStorage.setItem("jv", JSON.stringify(jv));
@@ -166,7 +195,7 @@ alert("Saved!");
 loadRecords();
 }
 
-// LOAD TABLE
+// ===== LOAD TABLE =====
 function loadRecords(){
 
 let jv = JSON.parse(localStorage.getItem("jv")) || [];
@@ -193,7 +222,6 @@ html+=`
 <td>${dr}</td>
 </tr>
 `;
-
 });
 
 document.getElementById("recordTable").innerHTML = html;
@@ -201,39 +229,12 @@ document.getElementById("totalDr").innerText = drTotal;
 document.getElementById("totalCr").innerText = crTotal;
 }
 
-// INIT
+// ===== INIT =====
 window.onload=function(){
 addRow();
 loadRecords();
 };
-function getAccounts(){
-  return JSON.parse(localStorage.getItem("accounts")) || [];
-}
-  function loadAccountDropdown(row){
 
-let accounts = getAccounts();
-let select = document.getElementById("accCode"+row);
-
-select.innerHTML = '<option value="">Select</option>';
-
-accounts.forEach(acc=>{
-  select.innerHTML += `
-    <option value="${acc.code}" data-name="${acc.name}">
-      ${acc.code}
-    </option>
-  `;
-});
-
-}
-  function fillAccount(row){
-
-let select = document.getElementById("accCode"+row);
-let name = select.options[select.selectedIndex]?.dataset.name;
-
-document.getElementById("name"+row).value = name || "";
-
-}
-}
 </script>
 
 </body>
