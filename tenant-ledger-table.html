@@ -2,245 +2,48 @@
 <html>
 <head>
 <title>Tenant Ledger</title>
-
-<style>
-body{
-  font-family:Arial;
-  background:#eef3ff;
-  padding:20px;
-}
-
-.box{
-  background:white;
-  padding:15px;
-  border-radius:10px;
-  margin-bottom:15px;
-}
-
-button{
-  padding:6px 10px;
-  border:none;
-  border-radius:5px;
-  cursor:pointer;
-}
-
-.backBtn{background:#34495e;color:white;}
-.editBtn{background:orange;color:white;}
-.deleteBtn{background:red;color:white;}
-
-input{
-  padding:6px;
-  width:80px;
-}
-
-.table-container{
-  overflow-x:auto;
-}
-
-table{
-  border-collapse:collapse;
-  min-width:1200px;
-}
-
-th,td{
-  border:1px solid #ccc;
-  padding:10px;
-  text-align:center;
-}
-
-th{
-  background:#3498db;
-  color:white;
-}
-
-.prev{background:#fff3cd;}
-
-.actionBox{
-  display:flex;
-  justify-content:center;
-  gap:5px;
-}
-</style>
 </head>
-
 <body>
 
-<button class="backBtn" onclick="history.back()">⬅ Back</button>
+<h2>Tenant Ledger</h2>
 
-<div class="box">
-<h3>📊 Tenant Ledger</h3>
-
-From: <input type="date" id="from">
-To: <input type="date" id="to">
-
-<button onclick="loadTable()">Load</button>
-</div>
-
-<div class="box table-container">
-
-<table>
-<thead>
-<tr id="headerRow"></tr>
-</thead>
+<table border="1" width="100%">
+<tr>
+<th>Date</th>
+<th>Name</th>
+<th>Description</th>
+<th>Debit</th>
+<th>Credit</th>
+</tr>
 
 <tbody id="tbl"></tbody>
 
-<tfoot>
-<tr>
-<td colspan="100%">Grand Total: <b id="grandTotal">0</b></td>
-</tr>
-</tfoot>
-
 </table>
-
-</div>
 
 <script>
 
-function getTenants(){
-return JSON.parse(localStorage.getItem("tenants")) || [];
-}
+function load(){
 
-function getJV(){
-return JSON.parse(localStorage.getItem("jv")) || [];
-}
-
-function parseDate(d){
-let date = new Date(d);
-if(isNaN(date)){
-let p = (d||"").split("-");
-if(p.length===3){
-date = new Date(p[0], p[1]-1, p[2]);
-}
-}
-return date;
-}
-
-function formatMonth(d){
-return d.toLocaleString('default',{month:'short'}) + " " + d.getFullYear();
-}
-
-function getMonthRange(from,to){
-let months=[];
-let d = new Date(from.getFullYear(), from.getMonth(), 1);
-while(d <= to){
-months.push(new Date(d));
-d.setMonth(d.getMonth()+1);
-}
-return months;
-}
-
-function loadTable(){
-
-let tenants = getTenants();
-let jv = getJV();
-
-let from = parseDate(document.getElementById("from").value || "2000-01-01");
-let to   = parseDate(document.getElementById("to").value || "2100-12-31");
-
-let monthRange = getMonthRange(from,to);
-
-headerRow.innerHTML = `
-<th>Name</th>
-<th>Prev</th>
-${monthRange.map(m=>`<th>${formatMonth(m)}</th>`).join("")}
-<th>Total</th>
-<th>Action</th>
-`;
+let data = JSON.parse(localStorage.getItem("tenantLedger")) || [];
 
 let html="";
-let grandTotal=0;
 
-tenants.forEach((t,i)=>{
-
-let months = new Array(monthRange.length).fill(0);
-
-jv.forEach(e=>{
-
-let accName = (e.acc || "").toLowerCase();
-if(!accName.includes("receivable")) return;
-
-if((e.sub||"").trim().toLowerCase() !== t.name.trim().toLowerCase()) return;
-
-let d = parseDate(e.date);
-if(isNaN(d)) return;
-
-if(d < from || d > to) return;
-
-let idx = monthRange.findIndex(m =>
-m.getFullYear() === d.getFullYear() &&
-m.getMonth() === d.getMonth()
-);
-
-if(idx === -1) return;
-
-let amt = Number(e.amt || 0);
-if(isNaN(amt)) amt = 0;
-
-if(e.dc === "D"){
-months[idx] += amt;
-}else if(e.dc === "C"){
-months[idx] -= amt;
-}
-
-});
-
-let prev = Number(localStorage.getItem("prev_"+t.name)) || 0;
-
-let total = prev + months.reduce((a,b)=>a+b,0);
-grandTotal += total;
-
-html += `
+data.forEach(d=>{
+html+=`
 <tr>
-<td>${t.name}</td>
-
-<td class="prev">
-<input value="${prev}" onchange="savePrev('${t.name}', this.value)">
-</td>
-
-${months.map(v=>`<td>${v}</td>`).join("")}
-
-<td><b>${total}</b></td>
-
-<td>
-<div class="actionBox">
-<button class="editBtn" onclick="editTenant(${i})">Edit</button>
-<button class="deleteBtn" onclick="deleteTenant(${i})">Delete</button>
-</div>
-</td>
+<td>${d.date}</td>
+<td>${d.name}</td>
+<td>${d.desc}</td>
+<td>${d.debit}</td>
+<td>${d.credit}</td>
 </tr>
 `;
-
 });
 
-tbl.innerHTML = html;
-document.getElementById("grandTotal").innerText = grandTotal;
+document.getElementById("tbl").innerHTML = html;
 }
 
-function savePrev(name,val){
-localStorage.setItem("prev_"+name,val);
-}
-
-function editTenant(i){
-let tenants = getTenants();
-let newName = prompt("Edit name:", tenants[i].name);
-if(newName){
-tenants[i].name = newName;
-localStorage.setItem("tenants", JSON.stringify(tenants));
-loadTable();
-}
-}
-
-function deleteTenant(i){
-let tenants = getTenants();
-if(confirm("Delete tenant?")){
-tenants.splice(i,1);
-localStorage.setItem("tenants", JSON.stringify(tenants));
-loadTable();
-}
-}
-
-window.onload = loadTable;
+load();
 
 </script>
 
