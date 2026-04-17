@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tenant Ledger Table</title>
+
+<style>
+body{
+  font-family:Arial;
+  background:#eef3ff;
+  padding:20px;
+}
+
+.box{
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
+}
+
+input{
+  padding:6px;
+  margin:5px;
+}
+
+.table-container{
+  overflow-x:auto;
+}
+
+table{
+  border-collapse:collapse;
+  min-width:1200px;
+}
+
+th,td{
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
+}
+
+th{
+  background:#3498db;
+  color:white;
+}
+
+.prev{
+  background:#fff3cd;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h3>📊 Tenant Ledger (Yearly)</h3>
+
+From: <input type="date" id="from">
+To: <input type="date" id="to">
+
+<button onclick="loadTable()">Load</button>
+
+</div>
+
+<div class="box table-container">
+
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Previous Bal</th>
+<th>JAN</th>
+<th>FEB</th>
+<th>MAR</th>
+<th>APR</th>
+<th>MAY</th>
+<th>JUN</th>
+<th>JUL</th>
+<th>AUG</th>
+<th>SEP</th>
+<th>OCT</th>
+<th>NOV</th>
+<th>DEC</th>
+</tr>
+</thead>
+
+<tbody id="tbl"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+let jv = JSON.parse(localStorage.getItem("jv")) || [];
+
+// convert date to month index
+function getMonth(d){
+return new Date(d).getMonth(); // 0-11
+}
+
+function loadTable(){
+
+let from = new Date(document.getElementById("from").value || "2000-01-01");
+let to   = new Date(document.getElementById("to").value || "2100-12-31");
+
+let html = "";
+
+tenants.forEach(t=>{
+
+let months = new Array(12).fill(0);
+
+// compute per month
+jv.forEach(e=>{
+
+if(e.code !== "1100") return; // AR only
+if((e.sub||"").trim().toLowerCase() !== t.name.trim().toLowerCase()) return;
+
+let d = new Date(e.date);
+
+if(d < from || d > to) return;
+
+let m = getMonth(e.date);
+
+// debit = dagdag utang
+if(e.dc === "D"){
+months[m] += e.amt;
+}else{
+months[m] -= e.amt;
+}
+
+});
+
+// previous balance (manual editable)
+let prev = localStorage.getItem("prev_"+t.name) || 0;
+
+html += `<tr>
+<td>${t.name}</td>
+
+<td class="prev">
+<input value="${prev}" 
+onchange="savePrev('${t.name}', this.value)">
+</td>
+
+${months.map(v=>`<td>${v}</td>`).join("")}
+
+</tr>`;
+
+});
+
+document.getElementById("tbl").innerHTML = html;
+
+}
+
+// save previous balance
+function savePrev(name,val){
+localStorage.setItem("prev_"+name, val);
+}
+
+</script>
+
+</body>
+</html>
