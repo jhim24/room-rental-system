@@ -94,169 +94,126 @@ th{background:#3498db;color:white;}
 
 <script>
 
-let rowCount = 0;
-let editIndex = -1;
+// ===== INIT DEFAULT ACCOUNTS =====
+function initAccounts(){
+let acc = JSON.parse(localStorage.getItem("accounts"));
+if(!acc){
+let data=[
+{code:"1000",name:"Cash"},
+{code:"1100",name:"Accounts Receivable"},
+{code:"4000",name:"Rent Income"}
+];
+localStorage.setItem("accounts",JSON.stringify(data));
+}
+}
 
-// ===== DATA =====
+// ===== STORAGE =====
 function getAccounts(){
 return JSON.parse(localStorage.getItem("accounts")) || [];
 }
-
 function getTenants(){
 return JSON.parse(localStorage.getItem("tenants")) || [];
 }
-
 function getJV(){
 return JSON.parse(localStorage.getItem("jv")) || [];
 }
-
 function saveJV(data){
-localStorage.setItem("jv", JSON.stringify(data));
+localStorage.setItem("jv",JSON.stringify(data));
 }
 
 // ===== ADD ROW =====
 function addRow(){
-rowCount++;
 
 let div=document.createElement("div");
 div.className="grid";
-div.id="row"+rowCount;
 
 div.innerHTML=`
-<select id="dc${rowCount}">
+<select>
 <option>D</option>
 <option>C</option>
 </select>
 
-<select id="code${rowCount}" onchange="fillAcc(${rowCount})"></select>
+<select onchange="fillAcc(this)"></select>
 
-<input id="name${rowCount}" readonly>
+<input readonly>
 
-<select id="sub${rowCount}"></select>
+<select></select>
 
-<input id="nar${rowCount}" placeholder="Narration">
+<input placeholder="Narration">
 
-<input id="amt${rowCount}" type="number">
+<input type="number">
 
-<button class="delBtn" onclick="deleteRow(${rowCount})">X</button>
+<button class="delBtn" onclick="this.parentElement.remove()">X</button>
 `;
 
 rows.appendChild(div);
-loadAccounts(rowCount);
-loadClients(rowCount);
-}
 
-// ===== DELETE ROW =====
-function deleteRow(i){
-let el=document.getElementById("row"+i);
-if(el) el.remove();
-}
-
-// ===== LOAD ACCOUNTS =====
-function loadAccounts(r){
-let data=getAccounts();
-let sel=document.getElementById("code"+r);
-
-sel.innerHTML='<option value="">Select</option>';
-
-data.forEach(a=>{
-sel.innerHTML+=`<option value="${a.code}" data-name="${a.name}">
-${a.code} - ${a.name}
-</option>`;
+// LOAD ACCOUNTS
+let accSel = div.children[1];
+getAccounts().forEach(a=>{
+accSel.innerHTML+=`<option value="${a.code}" data-name="${a.name}">
+${a.code} - ${a.name}</option>`;
 });
-}
 
-// ===== LOAD CLIENTS =====
-function loadClients(r){
-let data=getTenants();
-let sel=document.getElementById("sub"+r);
-
-sel.innerHTML='<option value="">Client</option>';
-
-data.forEach(t=>{
-sel.innerHTML+=`<option value="${t.name}">${t.name}</option>`;
+// LOAD CLIENTS
+let clientSel = div.children[3];
+clientSel.innerHTML='<option value="">Client</option>';
+getTenants().forEach(t=>{
+clientSel.innerHTML+=`<option value="${t.name}">${t.name}</option>`;
 });
 }
 
 // ===== AUTO ACCOUNT =====
-function fillAcc(r){
-let s=document.getElementById("code"+r);
-let name=s.options[s.selectedIndex]?.dataset.name;
-document.getElementById("name"+r).value=name||"";
+function fillAcc(el){
+let name = el.options[el.selectedIndex]?.dataset.name;
+el.parentElement.children[2].value = name || "";
 }
 
 // ===== SAVE =====
 function saveJournal(){
 
-let jv = JSON.parse(localStorage.getItem("jv")) || [];
+let jv = getJV();
+let rowsList = document.querySelectorAll("#rows .grid");
 
-let entry = [];
+let entry=[];
 
-// LOOP ALL ROWS
-for(let i=1;i<=rowCount;i++){
+rowsList.forEach(r=>{
 
-let dcEl = document.getElementById("dc"+i);
-let codeEl = document.getElementById("code"+i);
-let nameEl = document.getElementById("name"+i);
-let subEl = document.getElementById("sub"+i);
-let narEl = document.getElementById("nar"+i);
-let amtEl = document.getElementById("amt"+i);
+let dc = r.children[0].value;
+let code = r.children[1].value;
+let acc = r.children[2].value;
+let sub = r.children[3].value;
+let nar = r.children[4].value;
+let amt = Number(r.children[5].value);
 
-if(!code){
-alert("⚠️ Please select Account Code");
-return;
+if(!code || !acc || amt<=0) return;
+
+// only AR may client
+if(!acc.toLowerCase().includes("receivable")){
+sub="";
 }
 
-if(amt <= 0){
-alert("⚠️ Please enter Amount");
-return;
-}
-let dc = dcEl.value;
-let code = codeEl.value;
-let acc = nameEl.value;
-let sub = subEl ? subEl.value : "";
-let nar = narEl ? narEl.value : "";
-let amt = Number(amtEl.value);
+entry.push({dc,code,acc,sub,nar,amt});
 
-// 🔥 STRICT VALIDATION
-if(!code || !acc || amt <= 0) continue;
-
-// ONLY AR may client
-if(!(acc||"").toLowerCase().includes("receivable")){
-sub = "";
-}
-
-// PUSH ENTRY
-entry.push({
-dc:dc,
-code:code,
-acc:acc,
-sub:(sub||"").trim(),
-nar:nar,
-amt:amt
 });
 
-}
-
-// 🚨 IF WALANG DATA
-if(entry.length === 0){
-alert("❌ No valid data to save");
+if(entry.length===0){
+alert("❌ Fill Account & Amount first");
 return;
 }
 
-// SAVE
 jv.push(entry);
-localStorage.setItem("jv", JSON.stringify(jv));
+saveJV(jv);
 
-// REFRESH
 loadRecords();
-clearForm();
+rows.innerHTML="";
+addRow();
+addRow();
 
-alert("✅ Saved Successfully");
-
+alert("✅ Saved!");
 }
 
-// ===== LOAD RECORDS =====
+// ===== LOAD =====
 function loadRecords(){
 
 let jv=getJV();
@@ -295,50 +252,44 @@ totalCr.innerText=cr;
 totalDr.innerText=dr;
 }
 
-// ===== EDIT =====
-function edit(i){
-
-let jv=getJV();
-let entry=jv[i];
-
-clearForm();
-
-entry.forEach((e,idx)=>{
-addRow();
-
-let r=rowCount;
-
-document.getElementById("dc"+r).value=e.dc;
-document.getElementById("code"+r).value=e.code;
-fillAcc(r);
-document.getElementById("amt"+r).value=e.amt;
-document.getElementById("sub"+r).value=e.sub;
-document.getElementById("nar"+r).value=e.nar;
-});
-
-editIndex=i;
-}
-
 // ===== DELETE =====
 function del(i){
 let jv=getJV();
-if(confirm("Delete entry?")){
+if(confirm("Delete?")){
 jv.splice(i,1);
 saveJV(jv);
 loadRecords();
 }
 }
 
-// ===== CLEAR =====
-function clearForm(){
+// ===== EDIT =====
+function edit(i){
+
+let jv=getJV();
+let entry=jv[i];
+
 rows.innerHTML="";
-rowCount=0;
+
+entry.forEach(e=>{
 addRow();
-addRow();
+let r = rows.lastElementChild.children;
+
+r[0].value=e.dc;
+r[1].value=e.code;
+fillAcc(r[1]);
+r[3].value=e.sub;
+r[4].value=e.nar;
+r[5].value=e.amt;
+});
+
+jv.splice(i,1);
+saveJV(jv);
+loadRecords();
 }
 
 // INIT
 window.onload=function(){
+initAccounts();
 addRow();
 addRow();
 loadRecords();
