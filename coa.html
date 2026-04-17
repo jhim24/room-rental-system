@@ -29,10 +29,7 @@ body {
   cursor:pointer;
 }
 
-.main {
-  flex:1;
-  padding:20px;
-}
+.main { flex:1; padding:20px; }
 
 .box {
   background:white;
@@ -55,10 +52,7 @@ button {
   cursor:pointer;
 }
 
-table {
-  width:100%;
-  border-collapse:collapse;
-}
+table { width:100%; border-collapse:collapse; }
 
 th, td {
   border:1px solid #ccc;
@@ -92,11 +86,12 @@ th { background:#3498db;color:white; }
 
 <select id="type">
 <option>Asset</option>
+<option>Liability</option>
 <option>Income</option>
 </select>
 
 <input id="accountName" placeholder="Account Name">
-<input id="code" placeholder="Account Code">
+<input id="code" placeholder="Account Code (optional auto)">
 
 <button onclick="saveAccount()">Save</button>
 
@@ -126,7 +121,7 @@ th { background:#3498db;color:white; }
 
 <script>
 
-// STORAGE
+// ===== STORAGE =====
 function getAccounts(){
   return JSON.parse(localStorage.getItem("accounts")) || [];
 }
@@ -135,18 +130,39 @@ function saveAccounts(data){
   localStorage.setItem("accounts", JSON.stringify(data));
 }
 
-// SAVE ACCOUNT
+// ===== AUTO CODE GENERATOR =====
+function generateCode(type){
+
+let accounts = getAccounts();
+
+let base = 1000;
+
+if(type === "Asset") base = 1000;
+if(type === "Liability") base = 2000;
+if(type === "Income") base = 4000;
+
+let filtered = accounts.filter(a => a.type === type);
+
+let last = filtered.length
+  ? Math.max(...filtered.map(a => Number(a.code)))
+  : base;
+
+return (last + 1).toString();
+}
+
+// ===== SAVE =====
 function saveAccount(){
 
 let name = document.getElementById("accountName").value.trim();
 let type = document.getElementById("type").value;
 let codeInput = document.getElementById("code").value;
-let code = codeInput || Date.now().toString().slice(-4);
 
 if(name === ""){
   alert("Enter account name");
   return;
 }
+
+let code = codeInput || generateCode(type);
 
 let accounts = getAccounts();
 
@@ -158,7 +174,7 @@ accounts.push({
 
 saveAccounts(accounts);
 
-alert("Saved!");
+alert("✅ Saved!");
 
 // CLEAR
 document.getElementById("accountName").value="";
@@ -167,7 +183,7 @@ document.getElementById("code").value="";
 loadTable();
 }
 
-// LOAD TABLE
+// ===== LOAD TABLE =====
 function loadTable(){
 
 let accounts = getAccounts();
@@ -191,7 +207,7 @@ html += `
 document.getElementById("coaTable").innerHTML = html;
 }
 
-// DELETE
+// ===== DELETE =====
 function deleteAcc(i){
 
 let accounts = getAccounts();
@@ -201,7 +217,7 @@ saveAccounts(accounts);
 loadTable();
 }
 
-// INIT
+// ===== INIT =====
 window.onload = loadTable;
 
 </script>
