@@ -9,7 +9,8 @@ body{font-family:Arial;background:#eef3ff;padding:20px;}
 
 .grid{
   display:grid;
-  grid-template-columns: 60px 150px 200px 150px 200px 120px 100px;
+  grid-template-columns
+    : 60px 150px 200px 150px 200px 120px 100px;
   gap:5px;
   margin-bottom:5px;
 }
@@ -97,7 +98,14 @@ function getAccounts(){
 }
 
 function getClients(){
-  return JSON.parse(localStorage.getItem("clients")) || [];
+
+let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+
+return tenants.map((t,i)=>({
+  id: "C" + String(i+1).padStart(3,"0"),
+  name: t.name
+}));
+
 }
 
 // ===== VARIABLES =====
