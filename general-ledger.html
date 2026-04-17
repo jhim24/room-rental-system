@@ -10,7 +10,6 @@ body{
   padding:20px;
 }
 
-/* SCREEN DESIGN */
 .box{
   background:white;
   padding:15px;
@@ -23,12 +22,9 @@ button{
   border:none;
   border-radius:5px;
   cursor:pointer;
-  margin-right:5px;
 }
 
 .loadBtn{background:#3498db;color:white;}
-.tenantBtn{background:#2ecc71;color:white;}
-.printBtn{background:#8e44ad;color:white;}
 
 table{
   width:100%;
@@ -45,80 +41,19 @@ th{
   background:#3498db;
   color:white;
 }
-
-/* PRINT DESIGN */
-@media print{
-
-body{
-  background:white;
-  padding:0;
-}
-
-/* hide buttons */
-button, select{
-  display:none;
-}
-
-/* center content */
-.box{
-  box-shadow:none;
-  border:none;
-}
-
-/* title */
-.printHeader{
-  display:block;
-  text-align:center;
-  margin-bottom:10px;
-}
-
-.printHeader h2{
-  margin:0;
-}
-
-.printHeader p{
-  margin:0;
-  font-size:12px;
-}
-
-/* grid lines strong */
-table, th, td{
-  border:1px solid black !important;
-}
-
-th{
-  background:#ddd !important;
-  color:black !important;
-}
-
-}
 </style>
 </head>
 
 <body>
 
 <div class="box">
-
 <h3>📘 General Ledger (Accounts Receivable)</h3>
 
-<select id="accountFilter">
-<option value="">All</option>
-<option value="receivable">Accounts Receivable</option>
-</select>
-
-<button class="loadBtn" onclick="loadLedger()">Load</button>
-<button class="tenantBtn" onclick="goTenant()">Tenant Ledger</button>
-<button class="printBtn" onclick="printReport()">🖨 Print</button>
+<button class="loadBtn" onclick="loadLedger()">Load Ledger</button>
 
 </div>
 
 <div class="box">
-
-<!-- PRINT HEADER -->
-<div class="printHeader" style="display:none" id="printHeader">
-<h2>General Ledger Report</h2>
-<p id="printDate"></p>
-</div>
 
 <table>
 <thead>
@@ -147,7 +82,6 @@ th{
 
 <script>
 
-// GET DATA
 function getJV(){
 try{
 return JSON.parse(localStorage.getItem("jv")) || [];
@@ -156,113 +90,65 @@ return [];
 }
 }
 
-// NAVIGATION
-function goTenant(){
-window.location.href = "tenant-ledger-table.html";
-}
-
-// LOAD LEDGER
 function loadLedger(){
 
 let jv = getJV();
-let filter = document.getElementById("accountFilter").value;
-
 let map = {};
-let grand = 0;
+let total = 0;
 
-// LOOP
 jv.forEach(e=>{
 
 if(!e || !e.acc) return;
 
 let accName = e.acc.toLowerCase();
-
-// FILTER
-if(filter === "receivable" && !accName.includes("receivable")) return;
-
-// ONLY RECEIVABLE
 if(!accName.includes("receivable")) return;
 
-// CLIENT
 let name = (e.sub || "").trim();
 if(!name) return;
 
-// INIT
 if(!map[name]){
 map[name] = {dr:0, cr:0};
 }
 
-// AMOUNT
 let amt = Number(e.amt || 0);
+if(isNaN(amt)) amt = 0;
 
-// COMPUTE
 if(e.dc === "D"){
 map[name].dr += amt;
-}else{
+}else if(e.dc === "C"){
 map[name].cr += amt;
 }
 
 });
 
-// BUILD TABLE
 let html="";
 let i=1;
 
-let clients = Object.keys(map).sort((a,b)=>{
-return (map[b].dr - map[b].cr) - (map[a].dr - map[a].cr);
-});
-
-clients.forEach(name=>{
+Object.keys(map).forEach(name=>{
 
 let dr = map[name].dr;
 let cr = map[name].cr;
 let balance = dr - cr;
 
-grand += balance;
+total += balance;
 
 html += `
 <tr>
 <td>${i++}</td>
 <td>Accounts Receivable</td>
-<td><b>${name}</b></td>
+<td>${name}</td>
 <td>${dr}</td>
 <td>${cr}</td>
-<td style="color:${balance<0?'red':'green'}"><b>${balance}</b></td>
+<td><b>${balance}</b></td>
 </tr>
 `;
 
 });
 
-if(html===""){
-html=`<tr><td colspan="6">No data found</td></tr>`;
+ledgerTable.innerHTML = html || "<tr><td colspan='6'>No data</td></tr>";
+totalBalance.innerText = total;
 }
 
-document.getElementById("ledgerTable").innerHTML = html;
-document.getElementById("totalBalance").innerText = grand;
-
-}
-
-// PRINT FUNCTION
-function printReport(){
-
-let header = document.getElementById("printHeader");
-
-// show header
-header.style.display="block";
-
-// set date
-let now = new Date();
-document.getElementById("printDate").innerText =
-"Printed: " + now.toLocaleDateString() + " " + now.toLocaleTimeString();
-
-// print
-window.print();
-
-// hide again
-header.style.display="none";
-}
-
-// AUTO LOAD
 window.onload = loadLedger;
 
 </script>
