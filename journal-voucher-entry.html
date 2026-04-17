@@ -253,29 +253,36 @@ let totalC = 0;
 
 entries.forEach((e,i)=>{
 
-if(e.dc === "D") totalD += e.amount;
-if(e.dc === "C") totalC += e.amount;
+if(e.dc==="D") totalD += e.amount;
+if(e.dc==="C") totalC += e.amount;
+
+// 🔥 AR EFFECT (IMPORTANT)
+let add = "-";
+if(e.code === "1100"){
+add = e.dc === "D" ? "+"+e.amount : "-"+e.amount;
+}
 
 html += `
 <tr>
-<td>${formatDate(e.date)}</td>
+<td>${new Date(e.date).toLocaleDateString('en-GB')}</td>
 <td>${e.dc}</td>
 <td>${e.code}</td>
 <td>${e.account}</td>
 <td>${e.sub || ""}</td>
 <td>${e.amount}</td>
-<td><button class="deleteBtn" onclick="deleteEntry(${i})">Delete</button></td>
+<td>${add}</td>
+<td><button onclick="deleteEntry(${i})">Delete</button></td>
 </tr>
 `;
-
 });
 
-table.innerHTML = html;
+document.getElementById("table").innerHTML = html;
 
-document.getElementById("totalDebit").innerText = "Debit: " + totalD;
-document.getElementById("totalCredit").innerText = "Credit: " + totalC;
+// 🔥 TOTAL SA TAAS
+document.getElementById("totalDebit").innerText = "Total Debit: " + totalD;
+document.getElementById("totalCredit").innerText = "Total Credit: " + totalC;
+
 }
-
 // DELETE
 function deleteEntry(i){
 entries.splice(i,1);
