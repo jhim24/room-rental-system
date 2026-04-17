@@ -93,19 +93,27 @@ th{background:#3498db;color:white;}
 <script>
 
 // ===== STORAGE =====
+<script>
+
+// ===== STORAGE =====
 function getAccounts(){
   return JSON.parse(localStorage.getItem("accounts")) || [];
 }
 
 function getClients(){
+  let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+  return tenants.map((t,i)=>({
+    id: "C" + String(i+1).padStart(3,"0"),
+    name: t.name
+  }));
+}
 
-let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+function getJV(){
+  return JSON.parse(localStorage.getItem("jv")) || [];
+}
 
-return tenants.map((t,i)=>({
-  id: "C" + String(i+1).padStart(3,"0"),
-  name: t.name
-}));
-
+function saveJV(data){
+  localStorage.setItem("jv", JSON.stringify(data));
 }
 
 // ===== VARIABLES =====
@@ -130,7 +138,7 @@ div.innerHTML=`
 
 <input id="name${rowCount}" readonly>
 
-<select id="sub${rowCount}" onchange="fillClient(${rowCount})"></select>
+<select id="sub${rowCount}"></select>
 
 <input id="nar${rowCount}" placeholder="Narration">
 
@@ -145,7 +153,7 @@ loadAccountDropdown(rowCount);
 loadClientDropdown(rowCount);
 }
 
-// ===== DELETE =====
+// ===== DELETE ROW =====
 function deleteRow(i){
 let el = document.getElementById("row"+i);
 if(el) el.remove();
@@ -153,7 +161,6 @@ if(el) el.remove();
 
 // ===== LOAD ACCOUNTS =====
 function loadAccountDropdown(row){
-
 let accounts = getAccounts();
 let select = document.getElementById("accCode"+row);
 
@@ -163,14 +170,12 @@ accounts.forEach(acc=>{
 select.innerHTML += `
 <option value="${acc.code}" data-name="${acc.name}">
 ${acc.code} - ${acc.name}
-</option>
-`;
+</option>`;
 });
 }
 
 // ===== LOAD CLIENTS =====
 function loadClientDropdown(row){
-
 let clients = getClients();
 let select = document.getElementById("sub"+row);
 
@@ -180,128 +185,65 @@ clients.forEach(c=>{
 select.innerHTML += `
 <option value="${c.name}">
 ${c.id} - ${c.name}
-</option>
-`;
+</option>`;
 });
 }
 
-// ===== AUTO ACCOUNT NAME =====
+// ===== AUTO ACCOUNT =====
 function fillAccount(row){
-let select = document.getElementById("accCode"+row);
-let name = select.options[select.selectedIndex]?.dataset.name;
-document.getElementById("name"+row).value = name || "";
-}
-
-// ===== AUTO CLIENT NAME (ALREADY IN VALUE) =====
-function fillClient(row){
-let select = document.getElementById("sub"+row);
-let name = select.value;
+let s=document.getElementById("accCode"+row);
+let name=s.options[s.selectedIndex]?.dataset.name;
+document.getElementById("name"+row).value=name||"";
 }
 
 // ===== SAVE =====
 function saveJournal(){
 
-<script>
+let jv = getJV();
 
-let jv = JSON.parse(localStorage.getItem("jv")) || [];
-let coa = JSON.parse(localStorage.getItem("coa")) || [];
-let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+// LOOP ALL ROWS
+for(let i=1;i<=rowCount;i++){
 
-let editIndex = -1;
+let dc=document.getElementById("dc"+i)?.value;
+let code=document.getElementById("accCode"+i)?.value;
+let acc=document.getElementById("name"+i)?.value;
+let sub=document.getElementById("sub"+i)?.value;
+let nar=document.getElementById("nar"+i)?.value;
+let amt=Number(document.getElementById("amt"+i)?.value);
 
-// LOAD COA
-function loadCOA(){
-let html="<option value=''>Select</option>";
+if(!code || !acc || !amt) continue;
 
-coa.forEach(a=>{
-html+=`<option value="${a.code}" data-name="${a.name}">
-${a.code} - ${a.name}
-</option>`;
-});
-
-code1.innerHTML=html;
-code2.innerHTML=html;
-}
-
-// AUTO ACCOUNT
-function autoFill(r){
-let s=document.getElementById("code"+r);
-let selected=s.options[s.selectedIndex];
-let name=selected.getAttribute("data-name");
-document.getElementById("name"+r).value=name||"";
-}
-
-// LOAD CLIENT
-function loadClients(){
-let html="<option value=''>Select</option>";
-
-tenants.forEach(t=>{
-html+=`<option value="${t.name}">${t.name}</option>`;
-});
-
-sub1.innerHTML=html;
-sub2.innerHTML=html;
-}
-
-// SAVE / UPDATE
-function save(){
-
-let d=date.value;
-let nar=narration.value;
-
-if(!d) return alert("Select date");
-
-// DELETE OLD IF EDIT
-if(editIndex !== -1){
-jv.splice(editIndex,2);
-}
-
-[1,2].forEach(r=>{
-
-let dc=document.getElementById("dc"+r).value;
-let code=document.getElementById("code"+r).value;
-let acc=document.getElementById("name"+r).value;
-let amt=Number(document.getElementById("amt"+r).value);
-let sub=document.getElementById("sub"+r).value;
-
-if(!code || !acc || amt<=0) return;
-
-// ONLY AR MAY CLIENT
+// ONLY AR may client
 if(!(acc||"").toLowerCase().includes("receivable")){
 sub="";
 }
 
 jv.push({
-date:d,
-dc:dc,
-code:code,
-acc:acc,
-amt:amt,
+dc, code, acc,
 sub:(sub||"").trim(),
-nar:nar
+nar,
+amt
 });
 
-});
-
-localStorage.setItem("jv",JSON.stringify(jv));
-
-editIndex = -1;
-
-load();
-clearForm();
 }
 
-// LOAD TABLE
-function load(){
+saveJV(jv);
+loadRecords();
+alert("Saved!");
+}
+
+// ===== LOAD TABLE =====
+function loadRecords(){
+
+let jv = getJV();
 
 let html="";
-let dr=0;
-let cr=0;
+let dr=0, cr=0;
 
 jv.forEach((e,i)=>{
 
-let d=e.dc==="D"?e.amt:"";
-let c=e.dc==="C"?e.amt:"";
+let d = e.dc==="D" ? e.amt : "";
+let c = e.dc==="C" ? e.amt : "";
 
 if(d) dr+=e.amt;
 if(c) cr+=e.amt;
@@ -309,76 +251,26 @@ if(c) cr+=e.amt;
 html+=`
 <tr>
 <td>${i+1}</td>
-<td>${e.code}</td>
-<td>${e.acc}${e.sub?" - "+e.sub:""}</td>
+<td>${e.acc}</td>
+<td>${e.sub||""}</td>
 <td>${e.nar||""}</td>
-<td>${d}</td>
 <td>${c}</td>
-<td>
-<button onclick="edit(${i})">Edit</button>
-<button onclick="del(${i})">Delete</button>
-</td>
+<td>${d}</td>
 </tr>`;
 });
 
-tbl.innerHTML=html;
-tdr.innerText=dr;
-tcr.innerText=cr;
-drTxt.innerText="Dr: "+dr;
-crTxt.innerText="Cr: "+cr;
-}
-
-// EDIT
-function edit(i){
-
-let e1 = jv[i];
-let e2 = jv[i+1];
-
-// LOAD ROW 1
-dc1.value = e1.dc;
-code1.value = e1.code;
-name1.value = e1.acc;
-amt1.value = e1.amt;
-sub1.value = e1.sub;
-
-// LOAD ROW 2
-dc2.value = e2.dc;
-code2.value = e2.code;
-name2.value = e2.acc;
-amt2.value = e2.amt;
-sub2.value = e2.sub;
-
-date.value = e1.date;
-narration.value = e1.nar;
-
-editIndex = i;
-}
-
-// DELETE
-function del(i){
-
-if(confirm("Delete this entry?")){
-
-// DELETE 2 ROWS (PAIR)
-jv.splice(i,2);
-
-localStorage.setItem("jv",JSON.stringify(jv));
-load();
-}
-}
-
-// CLEAR
-function clearForm(){
-amt1.value="";
-amt2.value="";
+document.getElementById("recordTable").innerHTML = html;
+document.getElementById("totalCr").innerText = cr;
+document.getElementById("totalDr").innerText = dr;
 }
 
 // INIT
-loadCOA();
-loadClients();
-load();
+window.onload = function(){
+addRow();
+addRow();
+loadRecords();
+}
 
 </script>
-
 </body>
 </html>
