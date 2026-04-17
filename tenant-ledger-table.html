@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Tenant Ledger (Dynamic)</title>
+<title>Tenant Ledger</title>
 
 <style>
 body{
@@ -30,6 +30,7 @@ button{
 
 input{
   padding:6px;
+  width:80px;
 }
 
 .table-container{
@@ -43,7 +44,7 @@ table{
 
 th,td{
   border:1px solid #ccc;
-  padding:8px;
+  padding:10px;
   text-align:center;
 }
 
@@ -52,8 +53,14 @@ th{
   color:white;
 }
 
-.prev{
-  background:#fff3cd;
+tr{height:50px;}
+
+.prev{background:#fff3cd;}
+
+.actionBox{
+  display:flex;
+  justify-content:center;
+  gap:5px;
 }
 </style>
 </head>
@@ -63,13 +70,12 @@ th{
 <button class="backBtn" onclick="history.back()">⬅ Back</button>
 
 <div class="box">
-<h3>📊 Tenant Ledger (Dynamic Month)</h3>
+<h3>📊 Tenant Ledger (Dynamic)</h3>
 
 From: <input type="date" id="from">
 To: <input type="date" id="to">
 
 <button onclick="loadTable()">Load</button>
-
 </div>
 
 <div class="box table-container">
@@ -80,6 +86,12 @@ To: <input type="date" id="to">
 </thead>
 
 <tbody id="tbl"></tbody>
+
+<tfoot>
+<tr>
+<td colspan="100%">Grand Total: <b id="grandTotal">0</b></td>
+</tr>
+</tfoot>
 
 </table>
 
@@ -96,7 +108,7 @@ function getJV(){
 return JSON.parse(localStorage.getItem("jv")) || [];
 }
 
-// SAFE DATE
+// DATE SAFE
 function parseDate(d){
 let date = new Date(d);
 if(isNaN(date)){
@@ -108,14 +120,13 @@ date = new Date(p[0], p[1]-1, p[2]);
 return date;
 }
 
-// FORMAT MONTH + YEAR
+// MONTH FORMAT
 function formatMonth(d){
 return d.toLocaleString('default',{month:'short'}) + " " + d.getFullYear();
 }
 
-// GENERATE MONTH RANGE
+// DYNAMIC MONTH GENERATOR
 function getMonthRange(from,to){
-
 let months=[];
 let d = new Date(from.getFullYear(), from.getMonth(), 1);
 
@@ -127,22 +138,32 @@ d.setMonth(d.getMonth()+1);
 return months;
 }
 
-// LOAD TABLE
+// MAIN LOAD
 function loadTable(){
 
 let tenants = getTenants();
 let jv = getJV();
 
-let from = parseDate(document.getElementById("from").value || "2000-01-01");
-let to   = parseDate(document.getElementById("to").value || "2100-12-31");
+let fromVal = document.getElementById("from").value;
+let toVal   = document.getElementById("to").value;
 
-// dynamic months
+// 🔥 DEFAULT FIX (para hindi mawala dynamic)
+let from = parseDate(fromVal || new Date().getFullYear()+"-01-01");
+let to   = parseDate(toVal   || new Date().getFullYear()+"-12-31");
+
+// 🔥 IMPORTANT: VALIDATION
+if(from > to){
+alert("Invalid date range");
+return;
+}
+
+// DYNAMIC MONTHS
 let monthRange = getMonthRange(from,to);
 
-// HEADER BUILD
+// HEADER
 let header = `
 <th>Name</th>
-<th>Previous</th>
+<th>Prev</th>
 ${monthRange.map(m=>`<th>${formatMonth(m)}</th>`).join("")}
 <th>Total</th>
 <th>Action</th>
@@ -150,29 +171,31 @@ ${monthRange.map(m=>`<th>${formatMonth(m)}</th>`).join("")}
 
 document.getElementById("headerRow").innerHTML = header;
 
-let html = "";
+let html="";
+let grandTotal=0;
 
-// LOOP TENANTS
+// TENANTS LOOP
 tenants.forEach((t,i)=>{
 
 let months = new Array(monthRange.length).fill(0);
 
-// LOOP JOURNAL
+// JOURNAL LOOP
 jv.forEach(e=>{
 
-// detect AR
-if(!e.acc || !e.acc.toLowerCase().includes("receivable")) return;
+if(!e.acc) return;
 
-// match client
+// ✔ detect receivable
+if(!e.acc.toLowerCase().includes("receivable")) return;
+
+// ✔ match client
 if((e.sub||"").trim().toLowerCase() !== t.name.trim().toLowerCase()) return;
 
-// date
 let d = parseDate(e.date);
 if(isNaN(d)) return;
 
 if(d < from || d > to) return;
 
-// find month index
+// FIND MONTH INDEX
 let idx = monthRange.findIndex(m =>
 m.getFullYear() === d.getFullYear() &&
 m.getMonth() === d.getMonth()
@@ -180,10 +203,9 @@ m.getMonth() === d.getMonth()
 
 if(idx === -1) return;
 
-// amount
 let amt = Number(e.amt || 0);
 
-// compute
+// COMPUTE BALANCE
 if(e.dc === "D"){
 months[idx] += amt;
 }else{
@@ -192,15 +214,16 @@ months[idx] -= amt;
 
 });
 
-// previous
+// PREVIOUS
 let prev = Number(localStorage.getItem("prev_"+t.name)) || 0;
 
-// total
+// TOTAL
 let total = prev + months.reduce((a,b)=>a+b,0);
+grandTotal += total;
 
-// BUILD ROW
-html += `<tr>
-
+// ROW
+html += `
+<tr>
 <td>${t.name}</td>
 
 <td class="prev">
@@ -212,25 +235,28 @@ ${months.map(v=>`<td>${v}</td>`).join("")}
 <td><b>${total}</b></td>
 
 <td>
+<div class="actionBox">
 <button class="editBtn" onclick="editTenant(${i})">Edit</button>
 <button class="deleteBtn" onclick="deleteTenant(${i})">Delete</button>
+</div>
 </td>
+</tr>
+`;
 
-</tr>`;
 });
 
 document.getElementById("tbl").innerHTML = html;
+document.getElementById("grandTotal").innerText = grandTotal;
 }
 
 // SAVE PREVIOUS
 function savePrev(name,val){
-localStorage.setItem("prev_"+name, val);
+localStorage.setItem("prev_"+name,val);
 }
 
 // EDIT
 function editTenant(i){
 let tenants = getTenants();
-
 let newName = prompt("Edit name:", tenants[i].name);
 
 if(newName){
@@ -251,8 +277,13 @@ loadTable();
 }
 }
 
-// AUTO LOAD
-window.onload = loadTable;
+// AUTO LOAD (WITH DEFAULT YEAR)
+window.onload = function(){
+let year = new Date().getFullYear();
+document.getElementById("from").value = year+"-01-01";
+document.getElementById("to").value = year+"-12-31";
+loadTable();
+}
 
 </script>
 
