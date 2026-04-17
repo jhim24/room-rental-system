@@ -93,14 +93,15 @@ th { background:#3498db;color:white; }
 <h3>Add Account</h3>
 
 <select id="type">
-<option>Asset</option>
-<option>Income</option>
-<option>Expense</option>
+  <option>Asset</option>
+  <option>Income</option>
 </select>
 
 <input id="accountName" placeholder="Account Name">
 
-<button class="saveBtn" onclick="addAccount()">Save</button>
+<input id="code" placeholder="Account Code">
+
+<button onclick="saveAccount()">Save</button>
 
 </div>
 
@@ -125,6 +126,28 @@ th { background:#3498db;color:white; }
 </div>
 
 </div>
+  function saveAccount(){
+
+let code = document.getElementById("code").value;
+let name = document.getElementById("accountName").value;
+
+if(!code || !name){
+  alert("Please fill all fields");
+  return;
+}
+
+let accounts = JSON.parse(localStorage.getItem("accounts")) || [];
+
+accounts.push({
+  code: code,
+  name: name
+});
+
+localStorage.setItem("accounts", JSON.stringify(accounts));
+
+alert("Saved!");
+
+}
 
 <script>
 
