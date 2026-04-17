@@ -1,249 +1,221 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Mini Accounting System</title>
+<title>Journal Entry</title>
 
 <style>
 body{font-family:Arial;background:#eef3ff;padding:20px;}
 .box{background:white;padding:15px;border-radius:10px;margin-bottom:15px;}
-.tabs button{padding:10px;margin-right:5px;border:none;border-radius:5px;cursor:pointer;background:#3498db;color:white;}
-.hidden{display:none;}
 
 .grid{
   display:grid;
-  grid-template-columns: 60px 120px 200px 120px 200px 120px;
+  grid-template-columns: 60px 130px 200px 120px 200px 120px 120px;
   gap:5px;
   margin-bottom:5px;
 }
+
 .grid input,.grid select{padding:6px;width:100%;}
-.header{background:#2c3e50;color:white;font-weight:bold;text-align:center;}
+
+.header{
+  background:#2c3e50;
+  color:white;
+  font-weight:bold;
+  text-align:center;
+}
+
+button{padding:6px 10px;border:none;border-radius:5px;cursor:pointer;}
+.addBtn{background:#3498db;color:white;}
+.saveBtn{background:#2ecc71;color:white;}
+.delBtn{background:#e74c3c;color:white;}
 
 table{width:100%;border-collapse:collapse;margin-top:10px;}
 th,td{border:1px solid #ccc;padding:8px;text-align:center;}
 th{background:#3498db;color:white;}
+
+.total{font-weight:bold;background:#f1f1f1;}
 </style>
 </head>
 
 <body>
 
-<div class="tabs">
-<button onclick="showTab('journal')">Journal</button>
-<button onclick="showTab('tenant')">Tenant Ledger</button>
-<button onclick="showTab('general')">General Ledger</button>
-</div>
-
-<!-- ================= JOURNAL ================= -->
-<div id="journal" class="box">
+<div class="box">
 
 <h3>📒 Journal Entry</h3>
 
+<!-- HEADER -->
 <div class="grid header">
-<div>D/C</div><div>Acc Code</div><div>Account</div>
-<div>Sub Code</div><div>Client</div><div>Amount</div>
+<div>D/C</div>
+<div>Acc Code</div>
+<div>Account Name</div>
+<div>Sub Code</div>
+<div>Narration</div>
+<div>Amount</div>
+<div>Action</div>
 </div>
 
 <div id="rows"></div>
 
-<button onclick="addRow()">+ Add Row</button>
-<button onclick="saveJournal()">Save</button>
+<button class="addBtn" onclick="addRow()">+ Add Row</button>
+<button class="saveBtn" onclick="saveJournal()">Save</button>
 
 </div>
 
-<!-- ================= TENANT LEDGER ================= -->
-<div id="tenant" class="box hidden">
-<h3>👤 Tenant Ledger</h3>
-<select id="tenantSelect" onchange="loadTenantLedger()"></select>
+<!-- RECORD TABLE -->
+<div class="box">
+
+<h3>📋 Journal Records</h3>
 
 <table>
 <thead>
-<tr><th>Date</th><th>Debit</th><th>Credit</th><th>Balance</th></tr>
+<tr>
+<th>Sr No.</th>
+<th>Account</th>
+<th>Narration</th>
+<th>Cr</th>
+<th>Dr</th>
+</tr>
 </thead>
-<tbody id="tenantTable"></tbody>
-</table>
-</div>
 
-<!-- ================= GENERAL LEDGER ================= -->
-<div id="general" class="box hidden">
-<h3>📘 General Ledger (AR)</h3>
+<tbody id="recordTable"></tbody>
 
-<table>
-<thead>
-<tr><th>Client</th><th>Debit</th><th>Credit</th><th>Balance</th></tr>
-</thead>
-<tbody id="glTable"></tbody>
+<tfoot>
+<tr class="total">
+<td colspan="3">TOTAL</td>
+<td id="totalCr">0</td>
+<td id="totalDr">0</td>
+</tr>
+</tfoot>
+
 </table>
 
 </div>
 
 <script>
 
-// ================= DATA =================
-const accounts={
- "AR-001":"Accounts Receivable",
- "CASH-001":"Cash",
- "REV-001":"Revenue"
+// SAMPLE DATA (pwede mo palitan later)
+const accounts = {
+  "AR-001":"Accounts Receivable",
+  "CASH-001":"Cash"
 };
 
-const clients={
- "C-001":"Juan",
- "C-002":"Pedro"
-};
+let rowCount = 0;
 
-// ================= TAB =================
-function showTab(tab){
-document.querySelectorAll(".box").forEach(b=>b.classList.add("hidden"));
-document.getElementById(tab).classList.remove("hidden");
-if(tab==="tenant") loadTenantDropdown();
-if(tab==="general") loadGL();
-}
-
-// ================= ROW SYSTEM =================
-let rowCount=0;
-
+// ADD ROW
 function addRow(){
 rowCount++;
 
-let div=document.createElement("div");
+let div = document.createElement("div");
 div.className="grid";
+div.id="row"+rowCount;
+
 div.innerHTML=`
 <select id="dc${rowCount}">
-<option>D</option><option>C</option>
+<option>D</option>
+<option>C</option>
 </select>
 
-<select id="acc${rowCount}" onchange="fillAcc(${rowCount})">
+<select id="code${rowCount}" onchange="fillName(${rowCount})">
 <option value="">Select</option>
-${Object.keys(accounts).map(c=>`<option>${c}</option>`).join("")}
+${Object.keys(accounts).map(c=>`<option value="${c}">${c}</option>`).join("")}
 </select>
 
 <input id="name${rowCount}" readonly>
 
-<select id="sub${rowCount}" onchange="fillClient(${rowCount})">
-<option value="">Select</option>
-${Object.keys(clients).map(c=>`<option>${c}</option>`).join("")}
-</select>
+<input id="sub${rowCount}" placeholder="Sub-code">
 
-<input id="client${rowCount}" readonly>
+<input id="nar${rowCount}" placeholder="Narration">
+
 <input id="amt${rowCount}" type="number">
+
+<button class="delBtn" onclick="deleteRow(${rowCount})">X</button>
 `;
 
-rows.appendChild(div);
+document.getElementById("rows").appendChild(div);
 }
 
-// AUTO FILL
-function fillAcc(i){
-let code=document.getElementById("acc"+i).value;
-name"+i
-document.getElementById("name"+i).value=accounts[code]||"";
+// AUTO ACCOUNT NAME
+function fillName(i){
+let code = document.getElementById("code"+i).value;
+document.getElementById("name"+i).value = accounts[code] || "";
 }
 
-function fillClient(i){
-let code=document.getElementById("sub"+i).value;
-document.getElementById("client"+i).value=clients[code]||"";
+// DELETE ROW
+function deleteRow(i){
+document.getElementById("row"+i).remove();
 }
 
-// ================= SAVE =================
+// SAVE
 function saveJournal(){
 
-let jv=JSON.parse(localStorage.getItem("jv"))||[];
+let jv = JSON.parse(localStorage.getItem("jv")) || [];
 
 for(let i=1;i<=rowCount;i++){
 
-let dc=document.getElementById("dc"+i).value;
-let accCode=document.getElementById("acc"+i).value;
-let accName=document.getElementById("name"+i).value;
-let subCode=document.getElementById("sub"+i).value;
-let subName=document.getElementById("client"+i).value;
-let amt=parseFloat(document.getElementById("amt"+i).value)||0;
+let dc = document.getElementById("dc"+i);
+if(!dc) continue;
 
-if(!accName||!subName||amt<=0) continue;
+let acc = document.getElementById("name"+i).value;
+let nar = document.getElementById("nar"+i).value;
+let amt = parseFloat(document.getElementById("amt"+i).value) || 0;
 
-// RECEIVABLE FIX
-if(accName.toLowerCase().includes("receivable")){
-if(dc==="D"){}
-if(dc==="C"){}
-}
+if(!acc || amt<=0) continue;
 
 jv.push({
 date:new Date().toISOString().split("T")[0],
-accCode,acc:accName,
-subCode,sub:subName,
-amt,dc
+acc,
+nar,
+amt,
+dc:dc.value
 });
 
 }
 
-localStorage.setItem("jv",JSON.stringify(jv));
+localStorage.setItem("jv", JSON.stringify(jv));
+
 alert("Saved!");
+loadRecords();
 }
 
-// ================= TENANT LEDGER =================
-function loadTenantDropdown(){
-let select=document.getElementById("tenantSelect");
-select.innerHTML=Object.values(clients).map(c=>`<option>${c}</option>`).join("");
-}
+// LOAD TABLE
+function loadRecords(){
 
-function loadTenantLedger(){
+let jv = JSON.parse(localStorage.getItem("jv")) || [];
 
-let name=tenantSelect.value;
-let jv=JSON.parse(localStorage.getItem("jv"))||[];
-
-let balance=0;
 let html="";
+let drTotal=0;
+let crTotal=0;
+let i=1;
 
-jv.filter(e=>e.sub===name).forEach(e=>{
+jv.forEach(e=>{
 
-let dr=e.dc==="D"?e.amt:0;
-let cr=e.dc==="C"?e.amt:0;
+let dr = e.dc==="D"?e.amt:"";
+let cr = e.dc==="C"?e.amt:"";
 
-balance+=dr-cr;
+if(e.dc==="D") drTotal+=e.amt;
+if(e.dc==="C") crTotal+=e.amt;
 
 html+=`
 <tr>
-<td>${e.date}</td>
-<td>${dr}</td>
+<td>${i++}</td>
+<td>${e.acc}</td>
+<td>${e.nar}</td>
 <td>${cr}</td>
-<td>${balance}</td>
-</tr>`;
-});
-
-tenantTable.innerHTML=html;
-}
-
-// ================= GENERAL LEDGER =================
-function loadGL(){
-
-let jv=JSON.parse(localStorage.getItem("jv"))||[];
-let map={};
-
-jv.forEach(e=>{
-if(!e.acc.toLowerCase().includes("receivable")) return;
-
-if(!map[e.sub]) map[e.sub]={dr:0,cr:0};
-
-if(e.dc==="D") map[e.sub].dr+=e.amt;
-if(e.dc==="C") map[e.sub].cr+=e.amt;
-});
-
-let html="";
-Object.keys(map).forEach(name=>{
-let dr=map[name].dr;
-let cr=map[name].cr;
-let bal=dr-cr;
-
-html+=`<tr>
-<td>${name}</td>
 <td>${dr}</td>
-<td>${cr}</td>
-<td>${bal}</td>
-</tr>`;
+</tr>
+`;
+
 });
 
-glTable.innerHTML=html;
+document.getElementById("recordTable").innerHTML = html;
+document.getElementById("totalDr").innerText = drTotal;
+document.getElementById("totalCr").innerText = crTotal;
 }
 
 // INIT
+window.onload=function(){
 addRow();
-addRow();
+loadRecords();
+};
 
 </script>
 
