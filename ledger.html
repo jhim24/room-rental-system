@@ -1,156 +1,89 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Client Ledger</title>
+<title>Ledger</title>
 
 <style>
-body {
-  margin:0;
-  font-family: Arial;
-  background: linear-gradient(135deg,#1d2b64,#f8cdda);
-}
-
-.container { padding:20px; }
-
-.box {
-  background:white;
-  padding:20px;
-  border-radius:12px;
-  margin-bottom:20px;
-}
-
-select, button {
-  padding:8px;
-  margin:5px;
-}
-
-table {
-  width:100%;
-  border-collapse:collapse;
-}
-
-th, td {
-  border:1px solid #ccc;
-  padding:8px;
-  text-align:center;
-}
-
-th { background:#3498db;color:white; }
-
-.balanceBox {
-  font-size:20px;
-  font-weight:bold;
-  margin-top:10px;
-}
+body{font-family:Arial;padding:20px;background:#eef3ff}
+table{width:100%;border-collapse:collapse}
+th,td{border:1px solid #ccc;padding:8px;text-align:center}
+th{background:#3498db;color:white}
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<h2>Client Ledger</h2>
 
-<div class="box">
-<h3>Client Ledger</h3>
-
-<select id="client" onchange="loadLedger()"></select>
+<select id="client"></select>
 <button onclick="loadLedger()">Load</button>
-
-</div>
-
-<div class="box">
 
 <table>
 <thead>
 <tr>
 <th>#</th>
 <th>Date</th>
-<th>Account</th>
 <th>Dr</th>
 <th>Cr</th>
 <th>Balance</th>
 </tr>
 </thead>
-
-<tbody id="ledgerTable"></tbody>
-
+<tbody id="tbl"></tbody>
 </table>
 
-<div class="balanceBox">
-Balance: <span id="balance">0</span>
-</div>
-
-</div>
-
-</div>
+<h3>Balance: <span id="bal">0</span></h3>
 
 <script>
 
-// LOAD CLIENT LIST
+let tenants=JSON.parse(localStorage.getItem("tenants"))||[];
+
 function loadClients(){
-
-let clients = JSON.parse(localStorage.getItem("tenants")) || [];
-
-let html = "<option value=''>Select Client</option>";
-
-clients.forEach(c=>{
-html += `<option value="${c.name}">${c.name}</option>`;
+let h="<option></option>";
+tenants.forEach(t=>{
+h+=`<option>${t.name}</option>`;
 });
-
-document.getElementById("client").innerHTML = html;
+client.innerHTML=h;
 }
 
-// LOAD LEDGER (CONNECTED SA JOURNAL)
 function loadLedger(){
 
-let selectedClient = document.getElementById("client").value;
+let c=client.value.trim().toLowerCase();
+let jv=JSON.parse(localStorage.getItem("jv"))||[];
 
-if(!selectedClient) return;
+let h="";
+let bal=0;
 
-let entries = JSON.parse(localStorage.getItem("jv")) || [];
+jv.forEach((e,i)=>{
 
-let html = "";
-let balance = 0;
+if((e.sub||"").toLowerCase()!=c) return;
+if(e.code!="1100") return;
 
-entries.forEach((e,i)=>{
+let dr="",cr="";
 
-// 🔥 MATCH CLIENT (FIXED)
-if((e.sub || "").trim().toLowerCase() !== selectedClient.trim().toLowerCase()) return;
-
-// 🔥 ONLY AR
-if(e.code !== "1100") return;
-
-let dr = "";
-let cr = "";
-
-// COMPUTE BALANCE
-if(e.dc === "D"){
-dr = e.amount;
-balance += e.amount;
+if(e.dc=="D"){
+dr=e.amt;
+bal+=e.amt;
 }else{
-cr = e.amount;
-balance -= e.amount;
+cr=e.amt;
+bal-=e.amt;
 }
 
-let date = new Date(e.date).toLocaleDateString('en-GB');
-
-html += `
+h+=`
 <tr>
 <td>${i+1}</td>
-<td>${date}</td>
-<td>${e.account}</td>
+<td>${new Date(e.date).toLocaleDateString('en-GB')}</td>
 <td>${dr}</td>
 <td>${cr}</td>
-<td>${balance}</td>
-</tr>
-`;
-
+<td>${bal}</td>
+</tr>`;
 });
 
-document.getElementById("ledgerTable").innerHTML = html;
-document.getElementById("balance").innerText = balance;
+tbl.innerHTML=h;
+balEl.innerText=bal;
 }
 
-// INIT
+let balEl=document.getElementById("bal");
+
 loadClients();
 
 </script>
