@@ -1,102 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Tenant Ledger</title>
-
-<style>
-body{
-  font-family:Arial;
-  background:#eef3ff;
-  padding:20px;
-}
-
-.box{
-  background:white;
-  padding:15px;
-  border-radius:10px;
-  margin-bottom:15px;
-}
-
-button{
-  padding:6px 10px;
-  border:none;
-  border-radius:5px;
-  cursor:pointer;
-}
-
-.backBtn{background:#34495e;color:white;}
-.editBtn{background:orange;color:white;}
-.deleteBtn{background:red;color:white;}
-
-input{
-  padding:6px;
-  width:80px;
-}
-
-.table-container{
-  overflow-x:auto;
-}
-
-table{
-  border-collapse:collapse;
-  min-width:1200px;
-}
-
-th,td{
-  border:1px solid #ccc;
-  padding:10px;
-  text-align:center;
-}
-
-th{
-  background:#3498db;
-  color:white;
-}
-
-tr{height:50px;}
-
-.prev{background:#fff3cd;}
-
-.actionBox{
-  display:flex;
-  justify-content:center;
-  gap:5px;
-}
-</style>
-</head>
-
-<body>
-
-<button class="backBtn" onclick="history.back()">⬅ Back</button>
-
-<div class="box">
-<h3>📊 Tenant Ledger (Dynamic)</h3>
-
-From: <input type="date" id="from">
-To: <input type="date" id="to">
-
-<button onclick="loadTable()">Load</button>
-</div>
-
-<div class="box table-container">
-
-<table>
-<thead>
-<tr id="headerRow"></tr>
-</thead>
-
-<tbody id="tbl"></tbody>
-
-<tfoot>
-<tr>
-<td colspan="100%">Grand Total: <b id="grandTotal">0</b></td>
-</tr>
-</tfoot>
-
-</table>
-
-</div>
-
 <script>
 
 // STORAGE
@@ -125,7 +26,7 @@ function formatMonth(d){
 return d.toLocaleString('default',{month:'short'}) + " " + d.getFullYear();
 }
 
-// DYNAMIC MONTH GENERATOR
+// MONTH RANGE
 function getMonthRange(from,to){
 let months=[];
 let d = new Date(from.getFullYear(), from.getMonth(), 1);
@@ -134,30 +35,18 @@ while(d <= to){
 months.push(new Date(d));
 d.setMonth(d.getMonth()+1);
 }
-
 return months;
 }
 
-// MAIN LOAD
+// LOAD TABLE
 function loadTable(){
 
 let tenants = getTenants();
 let jv = getJV();
 
-let fromVal = document.getElementById("from").value;
-let toVal   = document.getElementById("to").value;
+let from = parseDate(document.getElementById("from").value || "2000-01-01");
+let to   = parseDate(document.getElementById("to").value || "2100-12-31");
 
-// 🔥 DEFAULT FIX (para hindi mawala dynamic)
-let from = parseDate(fromVal || new Date().getFullYear()+"-01-01");
-let to   = parseDate(toVal   || new Date().getFullYear()+"-12-31");
-
-// 🔥 IMPORTANT: VALIDATION
-if(from > to){
-alert("Invalid date range");
-return;
-}
-
-// DYNAMIC MONTHS
 let monthRange = getMonthRange(from,to);
 
 // HEADER
@@ -168,26 +57,25 @@ ${monthRange.map(m=>`<th>${formatMonth(m)}</th>`).join("")}
 <th>Total</th>
 <th>Action</th>
 `;
-
-document.getElementById("headerRow").innerHTML = header;
+headerRow.innerHTML = header;
 
 let html="";
 let grandTotal=0;
 
-// TENANTS LOOP
+// LOOP TENANTS
 tenants.forEach((t,i)=>{
 
 let months = new Array(monthRange.length).fill(0);
 
-// JOURNAL LOOP
+// 🔥 LOOP JOURNAL
 jv.forEach(e=>{
 
-if(!e.acc) return;
+let accName = (e.acc || "").toLowerCase();
 
-// ✔ detect receivable
-if(!e.acc.toLowerCase().includes("receivable")) return;
+// FIX: detect receivable (both rent & payment)
+if(!accName.includes("receivable")) return;
 
-// ✔ match client
+// FIX: match client
 if((e.sub||"").trim().toLowerCase() !== t.name.trim().toLowerCase()) return;
 
 let d = parseDate(e.date);
@@ -195,7 +83,6 @@ if(isNaN(d)) return;
 
 if(d < from || d > to) return;
 
-// FIND MONTH INDEX
 let idx = monthRange.findIndex(m =>
 m.getFullYear() === d.getFullYear() &&
 m.getMonth() === d.getMonth()
@@ -204,11 +91,12 @@ m.getMonth() === d.getMonth()
 if(idx === -1) return;
 
 let amt = Number(e.amt || 0);
+if(isNaN(amt)) amt = 0;
 
-// COMPUTE BALANCE
+// 🔥 CRITICAL FIX (payment bawas na)
 if(e.dc === "D"){
 months[idx] += amt;
-}else{
+}else if(e.dc === "C"){
 months[idx] -= amt;
 }
 
@@ -235,21 +123,20 @@ ${months.map(v=>`<td>${v}</td>`).join("")}
 <td><b>${total}</b></td>
 
 <td>
-<div class="actionBox">
-<button class="editBtn" onclick="editTenant(${i})">Edit</button>
-<button class="deleteBtn" onclick="deleteTenant(${i})">Delete</button>
-</div>
+<button onclick="editTenant(${i})">Edit</button>
+<button onclick="deleteTenant(${i})">Delete</button>
 </td>
 </tr>
 `;
 
 });
 
-document.getElementById("tbl").innerHTML = html;
+tbl.innerHTML = html;
+grandTotalEl.innerText = grandTotal;
 document.getElementById("grandTotal").innerText = grandTotal;
 }
 
-// SAVE PREVIOUS
+// SAVE PREV
 function savePrev(name,val){
 localStorage.setItem("prev_"+name,val);
 }
@@ -277,15 +164,7 @@ loadTable();
 }
 }
 
-// AUTO LOAD (WITH DEFAULT YEAR)
-window.onload = function(){
-let year = new Date().getFullYear();
-document.getElementById("from").value = year+"-01-01";
-document.getElementById("to").value = year+"-12-31";
-loadTable();
-}
+// AUTO LOAD
+window.onload = loadTable;
 
 </script>
-
-</body>
-</html>
