@@ -126,10 +126,6 @@ th { background:#3498db;color:white; }
 </div>
 
 </div>
-  function saveAccount(){
-
-let code = document.getElementById("code").value;
-let name = document.getElementById("accountName").value;
 
 if(!code || !name){
   alert("Please fill all fields");
@@ -151,8 +147,12 @@ alert("Saved!");
 
 <script>
 
-// ✅ STORAGE
+// STORAGE
 let accounts = JSON.parse(localStorage.getItem("accounts")) || [];
+
+// SAVE ACCOUNT
+function saveAccount(){
+
 let name = document.getElementById("accountName").value.trim();
 let type = document.getElementById("type").value;
 let codeInput = document.getElementById("code").value;
@@ -180,7 +180,7 @@ document.getElementById("code").value="";
 loadTable();
 }
 
-// ✅ LOAD TABLE
+// LOAD TABLE
 function loadTable(){
 
 accounts = JSON.parse(localStorage.getItem("accounts")) || [];
@@ -204,18 +204,15 @@ html += `
 document.getElementById("coaTable").innerHTML = html;
 }
 
-// ✅ DELETE
+// DELETE
 function deleteAcc(i){
-
 accounts.splice(i,1);
 localStorage.setItem("accounts", JSON.stringify(accounts));
-
 loadTable();
 }
 
-// ✅ INIT
+// INIT
 window.onload = loadTable;
-
 </script>
 
 </body>
