@@ -19,20 +19,24 @@ body {
   margin-bottom:20px;
 }
 
-.grid {
+.formRow {
   display:grid;
-  grid-template-columns: repeat(6,1fr);
+  grid-template-columns: 80px 150px 1fr 120px 120px;
   gap:10px;
+  margin-bottom:10px;
 }
 
-input, select {
+.formRow input,
+.formRow select {
+  width:100%;
   padding:8px;
   border-radius:6px;
   border:1px solid #ccc;
+  box-sizing:border-box;
 }
 
 button {
-  padding:8px;
+  padding:8px 12px;
   border:none;
   border-radius:6px;
   cursor:pointer;
@@ -77,22 +81,43 @@ th { background:#3498db;color:white; }
 
 <br><br>
 
-<div class="grid">
+<!-- HEADER -->
+<div class="formRow">
+<b>D/C</b>
+<b>Code</b>
+<b>Account</b>
+<b>Amount</b>
+<b>Client</b>
+</div>
 
 <!-- ROW 1 -->
-<select id="dc1"><option>D</option><option>C</option></select>
+<div class="formRow">
+<select id="dc1">
+<option>D</option>
+<option>C</option>
+</select>
+
 <select id="code1" onchange="autoFillAccount(1)"></select>
 <input id="accountName1" readonly>
-<input id="amount1" type="number" placeholder="Amount">
+
+<input type="number" id="amount1">
+
 <select id="subName1"></select>
+</div>
 
 <!-- ROW 2 -->
-<select id="dc2"><option>D</option><option>C</option></select>
+<div class="formRow">
+<select id="dc2">
+<option>D</option>
+<option>C</option>
+</select>
+
 <select id="code2" onchange="autoFillAccount(2)"></select>
 <input id="accountName2" readonly>
-<input id="amount2" type="number" placeholder="Amount">
-<select id="subName2"></select>
 
+<input type="number" id="amount2">
+
+<select id="subName2"></select>
 </div>
 
 <br>
@@ -116,7 +141,7 @@ th { background:#3498db;color:white; }
 <th>D/C</th>
 <th>Code</th>
 <th>Account</th>
-<th>Sub</th>
+<th>Client</th>
 <th>Amount</th>
 <th>ADD</th>
 <th>Action</th>
@@ -145,8 +170,8 @@ html += `<option value="${a.code}" data-name="${a.name}">
 ${a.code} - ${a.name}
 </option>`;
 });
-document.getElementById("code1").innerHTML = html;
-document.getElementById("code2").innerHTML = html;
+code1.innerHTML = html;
+code2.innerHTML = html;
 }
 
 // AUTO ACCOUNT NAME
@@ -163,8 +188,8 @@ let html = "<option value=''>Select</option>";
 clients.forEach(c=>{
 html += `<option value="${c.name}">${c.name}</option>`;
 });
-document.getElementById("subName1").innerHTML = html;
-document.getElementById("subName2").innerHTML = html;
+subName1.innerHTML = html;
+subName2.innerHTML = html;
 }
 
 // ADD ENTRY
@@ -206,7 +231,7 @@ loadTable();
 clearForm();
 }
 
-// LOAD TABLE (FULL FIXED)
+// LOAD TABLE
 function loadTable(){
 
 let html = "";
@@ -218,17 +243,17 @@ entries.forEach((e,i)=>{
 if(e.dc === "D") totalD += e.amount;
 if(e.dc === "C") totalC += e.amount;
 
-// AR EFFECT ONLY
+// AR effect
 let add = "-";
 if(e.code === "1100"){
-add = e.dc === "D" ? "+" + e.amount : "-" + e.amount;
+add = e.dc === "D" ? "+"+e.amount : "-"+e.amount;
 }
 
-let formattedDate = new Date(e.date).toLocaleDateString('en-GB');
+let date = new Date(e.date).toLocaleDateString('en-GB');
 
 html += `
 <tr>
-<td>${formattedDate}</td>
+<td>${date}</td>
 <td>${e.dc}</td>
 <td>${e.code}</td>
 <td>${e.account}</td>
@@ -256,8 +281,8 @@ loadTable();
 
 // CLEAR
 function clearForm(){
-document.getElementById("amount1").value = "";
-document.getElementById("amount2").value = "";
+amount1.value="";
+amount2.value="";
 }
 
 // INIT
