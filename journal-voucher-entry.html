@@ -109,10 +109,7 @@ div.className="grid";
 div.id="row"+rowCount;
 
 div.innerHTML=`
-<select id="dc${rowCount}">
-<option>D</option>
-<option>C</option>
-</select>
+<select id="accCode${rowCount}" onchange="fillAccount(${rowCount})"></select>
 
 <select id="code${rowCount}" onchange="fillName(${rowCount})">
 <option value="">Select</option>
@@ -215,8 +212,35 @@ document.getElementById("totalCr").innerText = crTotal;
 window.onload=function(){
 addRow();
 loadRecords();
+  loadAccountDropdown(rowCount);
 };
+function getAccounts(){
+  return JSON.parse(localStorage.getItem("accounts")) || [];
+}
+  function loadAccountDropdown(row){
 
+let accounts = getAccounts();
+let select = document.getElementById("accCode"+row);
+
+select.innerHTML = '<option value="">Select</option>';
+
+accounts.forEach(acc=>{
+  select.innerHTML += `
+    <option value="${acc.code}" data-name="${acc.name}">
+      ${acc.code}
+    </option>
+  `;
+});
+
+}
+  function fillAccount(row){
+
+let select = document.getElementById("accCode"+row);
+let name = select.options[select.selectedIndex].dataset.name;
+
+document.getElementById("accName"+row).value = name || "";
+
+}
 </script>
 
 </body>
