@@ -9,8 +9,7 @@ body{font-family:Arial;background:#eef3ff;padding:20px;}
 
 .grid{
   display:grid;
-  grid-template-columns
-    : 60px 150px 200px 150px 200px 120px 100px;
+  grid-template-columns:60px 140px 180px 180px 180px 100px 80px;
   gap:5px;
   margin-bottom:5px;
 }
@@ -28,6 +27,7 @@ button{padding:6px 10px;border:none;border-radius:5px;cursor:pointer;}
 .addBtn{background:#3498db;color:white;}
 .saveBtn{background:#2ecc71;color:white;}
 .delBtn{background:#e74c3c;color:white;}
+.editBtn{background:#f39c12;color:white;}
 
 table{width:100%;border-collapse:collapse;margin-top:10px;}
 th,td{border:1px solid #ccc;padding:8px;text-align:center;}
@@ -45,8 +45,8 @@ th{background:#3498db;color:white;}
 
 <div class="grid header">
 <div>D/C</div>
-<div>Acc Code</div>
-<div>Account Name</div>
+<div>Code</div>
+<div>Account</div>
 <div>Client</div>
 <div>Narration</div>
 <div>Amount</div>
@@ -67,12 +67,13 @@ th{background:#3498db;color:white;}
 <table>
 <thead>
 <tr>
-<th>Sr No.</th>
+<th>#</th>
 <th>Account</th>
 <th>Client</th>
 <th>Narration</th>
 <th>Cr</th>
 <th>Dr</th>
+<th>Action</th>
 </tr>
 </thead>
 
@@ -83,6 +84,7 @@ th{background:#3498db;color:white;}
 <td colspan="4">TOTAL</td>
 <td id="totalCr">0</td>
 <td id="totalDr">0</td>
+<td></td>
 </tr>
 </tfoot>
 
@@ -92,49 +94,41 @@ th{background:#3498db;color:white;}
 
 <script>
 
-// ===== STORAGE =====
-<script>
+let rowCount = 0;
+let editIndex = -1;
 
-// ===== STORAGE =====
+// ===== DATA =====
 function getAccounts(){
-  return JSON.parse(localStorage.getItem("accounts")) || [];
+return JSON.parse(localStorage.getItem("accounts")) || [];
 }
 
-function getClients(){
-  let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
-  return tenants.map((t,i)=>({
-    id: "C" + String(i+1).padStart(3,"0"),
-    name: t.name
-  }));
+function getTenants(){
+return JSON.parse(localStorage.getItem("tenants")) || [];
 }
 
 function getJV(){
-  return JSON.parse(localStorage.getItem("jv")) || [];
+return JSON.parse(localStorage.getItem("jv")) || [];
 }
 
 function saveJV(data){
-  localStorage.setItem("jv", JSON.stringify(data));
+localStorage.setItem("jv", JSON.stringify(data));
 }
-
-// ===== VARIABLES =====
-let rowCount = 0;
 
 // ===== ADD ROW =====
 function addRow(){
 rowCount++;
 
-let div = document.createElement("div");
+let div=document.createElement("div");
 div.className="grid";
 div.id="row"+rowCount;
 
 div.innerHTML=`
-
 <select id="dc${rowCount}">
 <option>D</option>
 <option>C</option>
 </select>
 
-<select id="accCode${rowCount}" onchange="fillAccount(${rowCount})"></select>
+<select id="code${rowCount}" onchange="fillAcc(${rowCount})"></select>
 
 <input id="name${rowCount}" readonly>
 
@@ -147,65 +141,67 @@ div.innerHTML=`
 <button class="delBtn" onclick="deleteRow(${rowCount})">X</button>
 `;
 
-document.getElementById("rows").appendChild(div);
-
-loadAccountDropdown(rowCount);
-loadClientDropdown(rowCount);
+rows.appendChild(div);
+loadAccounts(rowCount);
+loadClients(rowCount);
 }
 
 // ===== DELETE ROW =====
 function deleteRow(i){
-let el = document.getElementById("row"+i);
+let el=document.getElementById("row"+i);
 if(el) el.remove();
 }
 
 // ===== LOAD ACCOUNTS =====
-function loadAccountDropdown(row){
-let accounts = getAccounts();
-let select = document.getElementById("accCode"+row);
+function loadAccounts(r){
+let data=getAccounts();
+let sel=document.getElementById("code"+r);
 
-select.innerHTML = '<option value="">Select</option>';
+sel.innerHTML='<option value="">Select</option>';
 
-accounts.forEach(acc=>{
-select.innerHTML += `
-<option value="${acc.code}" data-name="${acc.name}">
-${acc.code} - ${acc.name}
+data.forEach(a=>{
+sel.innerHTML+=`<option value="${a.code}" data-name="${a.name}">
+${a.code} - ${a.name}
 </option>`;
 });
 }
 
 // ===== LOAD CLIENTS =====
-function loadClientDropdown(row){
-let clients = getClients();
-let select = document.getElementById("sub"+row);
+function loadClients(r){
+let data=getTenants();
+let sel=document.getElementById("sub"+r);
 
-select.innerHTML = '<option value="">Select Client</option>';
+sel.innerHTML='<option value="">Client</option>';
 
-clients.forEach(c=>{
-select.innerHTML += `
-<option value="${c.name}">
-${c.id} - ${c.name}
-</option>`;
+data.forEach(t=>{
+sel.innerHTML+=`<option value="${t.name}">${t.name}</option>`;
 });
 }
 
 // ===== AUTO ACCOUNT =====
-function fillAccount(row){
-let s=document.getElementById("accCode"+row);
+function fillAcc(r){
+let s=document.getElementById("code"+r);
 let name=s.options[s.selectedIndex]?.dataset.name;
-document.getElementById("name"+row).value=name||"";
+document.getElementById("name"+r).value=name||"";
 }
 
 // ===== SAVE =====
 function saveJournal(){
 
-let jv = getJV();
+let jv=getJV();
 
-// LOOP ALL ROWS
+// EDIT MODE
+if(editIndex !== -1){
+jv.splice(editIndex,1);
+}
+
+let entry=[];
+
+// LOOP ROWS
 for(let i=1;i<=rowCount;i++){
 
 let dc=document.getElementById("dc"+i)?.value;
-let code=document.getElementById("accCode"+i)?.value;
+let code=document.getElementById("code"+i)?.value;
 let acc=document.getElementById("name"+i)?.value;
 let sub=document.getElementById("sub"+i)?.value;
 let nar=document.getElementById("nar"+i)?.value;
@@ -218,32 +214,37 @@ if(!(acc||"").toLowerCase().includes("receivable")){
 sub="";
 }
 
-jv.push({
-dc, code, acc,
-sub:(sub||"").trim(),
-nar,
-amt
-});
-
+entry.push({dc,code,acc,sub,nar,amt});
 }
 
+if(entry.length === 0){
+alert("No valid entry");
+return;
+}
+
+jv.push(entry);
 saveJV(jv);
+
+editIndex=-1;
 loadRecords();
+clearForm();
+
 alert("Saved!");
 }
 
-// ===== LOAD TABLE =====
+// ===== LOAD RECORDS =====
 function loadRecords(){
 
-let jv = getJV();
-
+let jv=getJV();
 let html="";
-let dr=0, cr=0;
+let dr=0,cr=0;
 
-jv.forEach((e,i)=>{
+jv.forEach((entry,i)=>{
 
-let d = e.dc==="D" ? e.amt : "";
-let c = e.dc==="C" ? e.amt : "";
+entry.forEach(e=>{
+
+let d=e.dc==="D"?e.amt:"";
+let c=e.dc==="C"?e.amt:"";
 
 if(d) dr+=e.amt;
 if(c) cr+=e.amt;
@@ -256,21 +257,70 @@ html+=`
 <td>${e.nar||""}</td>
 <td>${c}</td>
 <td>${d}</td>
+<td>
+<button class="editBtn" onclick="edit(${i})">Edit</button>
+<button class="delBtn" onclick="del(${i})">Delete</button>
+</td>
 </tr>`;
 });
 
-document.getElementById("recordTable").innerHTML = html;
-document.getElementById("totalCr").innerText = cr;
-document.getElementById("totalDr").innerText = dr;
+});
+
+recordTable.innerHTML=html;
+totalCr.innerText=cr;
+totalDr.innerText=dr;
+}
+
+// ===== EDIT =====
+function edit(i){
+
+let jv=getJV();
+let entry=jv[i];
+
+clearForm();
+
+entry.forEach((e,idx)=>{
+addRow();
+
+let r=rowCount;
+
+document.getElementById("dc"+r).value=e.dc;
+document.getElementById("code"+r).value=e.code;
+fillAcc(r);
+document.getElementById("amt"+r).value=e.amt;
+document.getElementById("sub"+r).value=e.sub;
+document.getElementById("nar"+r).value=e.nar;
+});
+
+editIndex=i;
+}
+
+// ===== DELETE =====
+function del(i){
+let jv=getJV();
+if(confirm("Delete entry?")){
+jv.splice(i,1);
+saveJV(jv);
+loadRecords();
+}
+}
+
+// ===== CLEAR =====
+function clearForm(){
+rows.innerHTML="";
+rowCount=0;
+addRow();
+addRow();
 }
 
 // INIT
-window.onload = function(){
+window.onload=function(){
 addRow();
 addRow();
 loadRecords();
 }
 
 </script>
+
 </body>
 </html>
