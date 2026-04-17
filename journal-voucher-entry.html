@@ -5,29 +5,84 @@
 
 <style>
 body{font-family:Arial;background:#eef3ff;padding:20px;}
-.box{background:white;padding:15px;border-radius:10px;margin-bottom:15px;}
 
-input{padding:8px;margin:5px;width:180px;}
-button{padding:8px 15px;border:none;border-radius:5px;cursor:pointer;}
+.box{
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
+}
+
+input, select{
+  padding:8px;
+  margin:5px;
+  width:180px;
+}
+
+button{
+  padding:8px 15px;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
 
 .saveBtn{background:#2ecc71;color:white;}
 .clearBtn{background:#e74c3c;color:white;}
+.backBtn{background:#34495e;color:white;}
 
-table{width:100%;border-collapse:collapse;}
-th,td{border:1px solid #ccc;padding:10px;text-align:center;}
-th{background:#3498db;color:white;}
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  border:1px solid #ccc;
+  padding:10px;
+  text-align:center;
+}
+
+th{
+  background:#3498db;
+  color:white;
+}
 </style>
 </head>
 
 <body>
 
 <div class="box">
+
 <h3>📒 Journal Entry</h3>
 
+<!-- BACK BUTTON -->
+<button class="backBtn" onclick="goBack()">⬅ Back</button>
+
+<br><br>
+
+<!-- DATE -->
+<input type="date" id="date">
+
+<br>
+
+<!-- ACCOUNT DROPDOWN -->
+<select id="accName">
+  <option value="">Select Account</option>
+  <option value="Accounts Receivable">Accounts Receivable</option>
+  <option value="Cash">Cash</option>
+  <option value="Revenue">Revenue</option>
+</select>
+
+<!-- SUB / CLIENT DROPDOWN -->
+<select id="subName">
+  <option value="">Select Client</option>
+  <option value="Juan">Juan</option>
+  <option value="Pedro">Pedro</option>
+</select>
+
+<br>
+
 <input id="accCode" placeholder="Account Code">
-<input id="accName" placeholder="Account Name (Receivable)">
 <input id="subCode" placeholder="Sub Code">
-<input id="subName" placeholder="Client Name">
 
 <br>
 
@@ -47,13 +102,13 @@ th{background:#3498db;color:white;}
 <thead>
 <tr>
 <th>#</th>
+<th>Date</th>
 <th>Acc Code</th>
 <th>Account</th>
 <th>Sub Code</th>
 <th>Client</th>
 <th>Debit</th>
 <th>Credit</th>
-<th>Date</th>
 </tr>
 </thead>
 
@@ -65,70 +120,68 @@ th{background:#3498db;color:white;}
 
 <script>
 
+// AUTO TODAY DATE
+document.getElementById("date").valueAsDate = new Date();
+
+// GET DATA
 function getJV(){
   try{return JSON.parse(localStorage.getItem("jv"))||[];}
   catch{return [];}
 }
 
-// ✅ SAVE JOURNAL (FIXED + COMPLETE)
+// SAVE
 function saveJournal(){
 
-let accCode = accCodeEl.value.trim();
-let accName = accNameEl.value.trim();
-let subCode = subCodeEl.value.trim();
-let subName = subNameEl.value.trim();
+let date = document.getElementById("date").value;
+let accName = document.getElementById("accName").value;
+let subName = document.getElementById("subName").value;
+let accCode = document.getElementById("accCode").value;
+let subCode = document.getElementById("subCode").value;
 
-let debit = parseFloat(debitEl.value) || 0;
-let credit = parseFloat(creditEl.value) || 0;
+let debit = parseFloat(document.getElementById("debit").value)||0;
+let credit = parseFloat(document.getElementById("credit").value)||0;
 
 if(!accName || !subName){
-  alert("Missing data");
+  alert("Select account & client");
   return;
 }
 
-if(debit <= 0 && credit <= 0){
-  alert("Enter Debit or Credit");
+if(debit<=0 && credit<=0){
+  alert("Enter debit or credit");
   return;
 }
 
-// 🔥 AUTO FIX (IMPORTANT)
+// ✅ FIX LOGIC (IMPORTANT)
 if(accName.toLowerCase().includes("receivable")){
-  
-  // kung naglagay sa debit → charge
-  if(debit > 0){
-    credit = 0;
-  }
-
-  // kung naglagay sa credit → payment
-  if(credit > 0){
-    debit = 0;
-  }
+  if(debit>0) credit=0;
+  if(credit>0) debit=0;
 }
 
 let jv = getJV();
 
-// 👉 SAVE BOTH FORMAT (para compatible sa GL mo)
-if(debit > 0){
+// SAVE DEBIT
+if(debit>0){
   jv.push({
+    date,
     accCode,
-    acc: accName,
+    acc:accName,
     subCode,
-    sub: subName,
-    amt: debit,
-    dc: "D",
-    date: new Date().toLocaleString()
+    sub:subName,
+    amt:debit,
+    dc:"D"
   });
 }
 
-if(credit > 0){
+// SAVE CREDIT
+if(credit>0){
   jv.push({
+    date,
     accCode,
-    acc: accName,
+    acc:accName,
     subCode,
-    sub: subName,
-    amt: credit,
-    dc: "C",
-    date: new Date().toLocaleString()
+    sub:subName,
+    amt:credit,
+    dc:"C"
   });
 }
 
@@ -138,12 +191,12 @@ alert("✅ Saved!");
 
 loadJV();
 
-// clear
-debitEl.value="";
-creditEl.value="";
+// CLEAR INPUT
+document.getElementById("debit").value="";
+document.getElementById("credit").value="";
 }
 
-// ✅ LOAD
+// LOAD
 function loadJV(){
 
 let jv = getJV();
@@ -152,22 +205,21 @@ let i=1;
 
 jv.forEach(e=>{
 
-let dr = e.dc==="D" ? e.amt : "";
-let cr = e.dc==="C" ? e.amt : "";
+let dr = e.dc==="D"?e.amt:"";
+let cr = e.dc==="C"?e.amt:"";
 
 html+=`
 <tr>
 <td>${i++}</td>
+<td>${e.date||""}</td>
 <td>${e.accCode||""}</td>
 <td>${e.acc}</td>
 <td>${e.subCode||""}</td>
 <td>${e.sub}</td>
 <td>${dr}</td>
 <td>${cr}</td>
-<td>${e.date}</td>
 </tr>
 `;
-
 });
 
 jvTable.innerHTML = html || "<tr><td colspan='8'>No data</td></tr>";
@@ -181,13 +233,10 @@ loadJV();
 }
 }
 
-// ELEMENT SHORTCUTS
-const accCodeEl = document.getElementById("accCode");
-const accNameEl = document.getElementById("accName");
-const subCodeEl = document.getElementById("subCode");
-const subNameEl = document.getElementById("subName");
-const debitEl = document.getElementById("debit");
-const creditEl = document.getElementById("credit");
+// BACK BUTTON
+function goBack(){
+  window.history.back();
+}
 
 window.onload = loadJV;
 
