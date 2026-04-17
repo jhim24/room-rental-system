@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Business Report</title>
+
+<style>
+body{
+  font-family:Arial;
+  background:#eef3ff;
+  padding:20px;
+}
+
+.box{
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
+}
+
+h2{margin-bottom:10px;}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  border:1px solid #ccc;
+  padding:10px;
+  text-align:center;
+}
+
+th{
+  background:#3498db;
+  color:white;
+}
+
+.summary{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+
+.card{
+  background:#2c3e50;
+  color:white;
+  padding:15px;
+  border-radius:10px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h2>📊 Business Summary</h2>
+
+<div class="summary">
+
+<div class="card">Total Tenant: <b id="tenantCount">0</b></div>
+<div class="card">Bed Spacer: <b id="bedspaceCount">0</b></div>
+<div class="card">Freelancer: <b id="freelancerCount">0</b></div>
+
+<div class="card">Staff: <b id="staffCount">0</b></div>
+<div class="card">Total Revenue: <b id="totalRevenue">0</b></div>
+<div class="card">Total Payment: <b id="totalPayment">0</b></div>
+
+<div class="card">Receivable: <b id="receivable">0</b></div>
+<div class="card">Electricity: <b id="electricity">0</b></div>
+<div class="card">Profit/Loss: <b id="profit">0</b></div>
+
+</div>
+</div>
+
+<div class="box">
+
+<h2>📅 Monthly Report</h2>
+
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th>Revenue</th>
+<th>Payment</th>
+<th>Receivable</th>
+</tr>
+</thead>
+
+<tbody id="reportTable"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+// DATA
+let jv = JSON.parse(localStorage.getItem("jv")) || [];
+let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
+
+// FORMAT MONTH
+function getMonth(date){
+let d = new Date(date);
+return d.toLocaleString('default',{month:'short'}) + " " + d.getFullYear();
+}
+
+// GROUP DATA
+let monthly = {};
+
+let totalRevenue=0;
+let totalPayment=0;
+let receivable=0;
+let electricity=0;
+
+// LOOP JOURNAL
+jv.forEach(entry=>{
+
+entry.forEach(e=>{
+
+let month = getMonth(new Date());
+
+if(!monthly[month]){
+monthly[month]={rev:0,pay:0,rec:0};
+}
+
+// RENT INCOME
+if(e.acc.toLowerCase().includes("income") && e.dc==="C"){
+monthly[month].rev += e.amt;
+totalRevenue += e.amt;
+}
+
+// PAYMENT (CASH)
+if(e.acc.toLowerCase().includes("cash") && e.dc==="D"){
+monthly[month].pay += e.amt;
+totalPayment += e.amt;
+}
+
+// RECEIVABLE
+if(e.acc.toLowerCase().includes("receivable")){
+if(e.dc==="D"){
+receivable += e.amt;
+}else{
+receivable -= e.amt;
+}
+}
+
+// ELECTRICITY
+if(e.acc.toLowerCase().includes("electric")){
+electricity += e.amt;
+}
+
+});
+
+});
+
+// BUILD TABLE
+let html="";
+
+Object.keys(monthly).forEach(m=>{
+
+let r = monthly[m];
+
+html+=`
+<tr>
+<td>${m}</td>
+<td>${r.rev}</td>
+<td>${r.pay}</td>
+<td>${r.rec}</td>
+</tr>
+`;
+
+});
+
+document.getElementById("reportTable").innerHTML = html;
+
+// COUNTS
+document.getElementById("tenantCount").innerText = tenants.length;
+
+// CATEGORY SAMPLE (optional)
+document.getElementById("bedspaceCount").innerText =
+tenants.filter(t=>t.category==="Bed space").length;
+
+document.getElementById("freelancerCount").innerText =
+tenants.filter(t=>t.category==="Freelancer").length;
+
+document.getElementById("staffCount").innerText =
+tenants.filter(t=>t.category==="Staff").length;
+
+// TOTALS
+document.getElementById("totalRevenue").innerText = totalRevenue;
+document.getElementById("totalPayment").innerText = totalPayment;
+document.getElementById("receivable").innerText = receivable;
+document.getElementById("electricity").innerText = electricity;
+
+// PROFIT
+let profit = totalRevenue - electricity;
+document.getElementById("profit").innerText = profit;
+
+</script>
+
+</body>
+</html>
