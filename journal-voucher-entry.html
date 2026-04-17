@@ -94,8 +94,6 @@ th{background:#3498db;color:white;}
 
 <script>
 
-<script>
-
 // ===== INIT DEFAULT ACCOUNTS =====
 function initAccounts(){
 let acc = JSON.parse(localStorage.getItem("accounts"));
@@ -152,6 +150,8 @@ rows.appendChild(div);
 
 // LOAD ACCOUNTS
 let accSel = div.querySelector(".code");
+accSel.innerHTML='<option value="">Select</option>';
+
 getAccounts().forEach(a=>{
 accSel.innerHTML+=`<option value="${a.code}" data-name="${a.name}">
 ${a.code} - ${a.name}</option>`;
@@ -160,6 +160,7 @@ ${a.code} - ${a.name}</option>`;
 // LOAD CLIENTS
 let clientSel = div.querySelector(".client");
 clientSel.innerHTML='<option value="">Client</option>';
+
 getTenants().forEach(t=>{
 clientSel.innerHTML+=`<option value="${t.name}">${t.name}</option>`;
 });
@@ -172,7 +173,7 @@ div.querySelector(".name").value = name || "";
 
 }
 
-// ===== SAVE (FIXED 100%) =====
+// ===== SAVE =====
 function saveJournal(){
 
 let jv = getJV();
@@ -201,7 +202,7 @@ entry.push({dc,code,acc,sub,nar,amt});
 
 });
 
-// IF EMPTY
+// CHECK EMPTY
 if(entry.length === 0){
 alert("❌ Please fill Account & Amount");
 return;
@@ -219,7 +220,7 @@ alert("✅ Saved Successfully");
 
 }
 
-// ===== LOAD RECORDS =====
+// ===== LOAD =====
 function loadRecords(){
 
 let jv=getJV();
@@ -245,8 +246,8 @@ html+=`
 <td>${c}</td>
 <td>${d}</td>
 <td>
-<button onclick="edit(${i})">Edit</button>
-<button onclick="del(${i})">Delete</button>
+<button class="editBtn" onclick="edit(${i})">Edit</button>
+<button class="delBtn" onclick="del(${i})">Delete</button>
 </td>
 </tr>`;
 });
@@ -274,7 +275,7 @@ function edit(i){
 let jv=getJV();
 let entry=jv[i];
 
-clearForm();
+rows.innerHTML="";
 
 entry.forEach(e=>{
 addRow();
@@ -285,13 +286,11 @@ row.querySelector(".dc").value=e.dc;
 row.querySelector(".code").value=e.code;
 
 // trigger account name
-let evt = new Event("change");
-row.querySelector(".code").dispatchEvent(evt);
+row.querySelector(".code").dispatchEvent(new Event("change"));
 
 row.querySelector(".client").value=e.sub;
 row.querySelector(".nar").value=e.nar;
 row.querySelector(".amt").value=e.amt;
-
 });
 
 jv.splice(i,1);
