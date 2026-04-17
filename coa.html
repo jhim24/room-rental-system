@@ -151,14 +151,8 @@ alert("Saved!");
 
 <script>
 
-<script>
-
 // ✅ STORAGE
 let accounts = JSON.parse(localStorage.getItem("accounts")) || [];
-
-// ✅ SAVE ACCOUNT
-function saveAccount(){
-
 let name = document.getElementById("accountName").value.trim();
 let type = document.getElementById("type").value;
 let codeInput = document.getElementById("code").value;
