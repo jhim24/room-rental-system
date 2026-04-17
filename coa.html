@@ -151,36 +151,48 @@ alert("Saved!");
 
 <script>
 
-let accounts = JSON.parse(localStorage.getItem("coa")) || [];
+<script>
 
-// ADD ACCOUNT
-function addAccount(){
+// ✅ SINGLE STORAGE (IMPORTANT)
+let accounts = JSON.parse(localStorage.getItem("accounts")) || [];
+
+// ✅ SAVE ACCOUNT (ITO LANG GAGAMITIN)
+function saveAccount(){
 
 let name = document.getElementById("accountName").value.trim();
 let type = document.getElementById("type").value;
 
+// AUTO CODE kung walang input
+let codeInput = document.getElementById("code").value;
+let code = codeInput || Date.now().toString().slice(-4);
+
 if(name === ""){
-alert("Enter account name");
-return;
+  alert("Enter account name");
+  return;
 }
 
-// AUTO CODE
-let code = Date.now().toString().slice(-4);
-
+// SAVE
 accounts.push({
-code: code,
-type: type,
-name: name
+  code: code,
+  type: type,
+  name: name
 });
 
-localStorage.setItem("coa", JSON.stringify(accounts));
+localStorage.setItem("accounts", JSON.stringify(accounts));
+
+alert("Saved!");
+
+// CLEAR
+document.getElementById("accountName").value="";
+document.getElementById("code").value="";
 
 loadTable();
-document.getElementById("accountName").value="";
 }
 
 // LOAD TABLE
 function loadTable(){
+
+accounts = JSON.parse(localStorage.getItem("accounts")) || [];
 
 let html = "";
 
@@ -203,14 +215,17 @@ document.getElementById("coaTable").innerHTML = html;
 
 // DELETE
 function deleteAcc(i){
+
 accounts.splice(i,1);
-localStorage.setItem("coa", JSON.stringify(accounts));
+localStorage.setItem("accounts", JSON.stringify(accounts));
+
 loadTable();
 }
 
 // INIT
-loadTable();
+window.onload = loadTable;
 
+</script>
 </script>
 
 </body>
