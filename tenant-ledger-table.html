@@ -95,15 +95,20 @@ To: <input type="date" id="to">
 
 <script>
 
-let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
-let jv = JSON.parse(localStorage.getItem("jv")) || [];
-
-// GET MONTH
-function getMonth(d){
-return new Date(d).getMonth();
+// ALWAYS GET UPDATED DATA
+function getTenants(){
+return JSON.parse(localStorage.getItem("tenants")) || [];
 }
 
+function getJV(){
+return JSON.parse(localStorage.getItem("jv")) || [];
+}
+
+// LOAD TABLE
 function loadTable(){
+
+let tenants = getTenants();
+let jv = getJV();
 
 let from = new Date(document.getElementById("from").value || "2000-01-01");
 let to   = new Date(document.getElementById("to").value || "2100-12-31");
@@ -117,20 +122,24 @@ let months = new Array(12).fill(0);
 // 🔥 COMPUTE FROM JOURNAL
 jv.forEach(e=>{
 
-// only AR
 if(e.code !== "1100") return;
 
-// match client (FIXED)
+// FIX NAME MATCH
 if((e.sub||"").trim().toLowerCase() !== t.name.trim().toLowerCase()) return;
 
+// DATE FIX
 let d = new Date(e.date);
+if(isNaN(d)) return;
+
 if(d < from || d > to) return;
 
-let m = getMonth(e.date);
+// MONTH
+let m = d.getMonth();
 
-// 🔥 FIX AMOUNT FIELD
+// AMOUNT FIX
 let amt = Number(e.amt || 0);
 
+// COMPUTE
 if(e.dc === "D"){
 months[m] += amt;
 }else{
@@ -142,17 +151,15 @@ months[m] -= amt;
 // PREVIOUS BALANCE
 let prev = Number(localStorage.getItem("prev_"+t.name)) || 0;
 
-// 🔥 TOTAL COMPUTE (FIXED)
-let monthlyTotal = months.reduce((a,b)=>a+b,0);
-let total = prev + monthlyTotal;
+// TOTAL
+let total = prev + months.reduce((a,b)=>a+b,0);
 
 html += `<tr>
 
 <td>${t.name}</td>
 
 <td class="prev">
-<input value="${prev}" 
-onchange="savePrev('${t.name}', this.value)">
+<input value="${prev}" onchange="savePrev('${t.name}', this.value)">
 </td>
 
 ${months.map(v=>`<td>${v}</td>`).join("")}
@@ -175,9 +182,12 @@ function savePrev(name,val){
 localStorage.setItem("prev_"+name, val);
 }
 
-// EDIT
+// EDIT TENANT
 function editTenant(i){
+let tenants = getTenants();
+
 let newName = prompt("Edit name:", tenants[i].name);
+
 if(newName){
 tenants[i].name = newName;
 localStorage.setItem("tenants", JSON.stringify(tenants));
@@ -185,14 +195,19 @@ loadTable();
 }
 }
 
-// DELETE
+// DELETE TENANT
 function deleteTenant(i){
+let tenants = getTenants();
+
 if(confirm("Delete tenant?")){
 tenants.splice(i,1);
 localStorage.setItem("tenants", JSON.stringify(tenants));
 loadTable();
 }
 }
+
+// AUTO LOAD
+window.onload = loadTable;
 
 </script>
 
