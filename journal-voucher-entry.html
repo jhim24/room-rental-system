@@ -5,44 +5,33 @@
 
 <style>
 body{
-  margin:0;
   font-family:Arial;
-  background: linear-gradient(135deg,#1d2b64,#f8cdda);
+  background:#eef3ff;
+  padding:20px;
 }
-
-.container{padding:20px;}
 
 .box{
   background:white;
-  padding:20px;
-  border-radius:12px;
-  margin-bottom:20px;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
 }
 
-.formRow{
-  display:grid;
-  grid-template-columns:80px 160px 1fr 140px 160px;
-  gap:10px;
-  margin-bottom:10px;
-}
-
-.formRow input,.formRow select{
-  width:100%;
+input, select{
   padding:8px;
-  border-radius:6px;
-  border:1px solid #ccc;
-  box-sizing:border-box;
+  margin:5px;
+  width:200px;
 }
 
 button{
-  padding:8px 12px;
+  padding:8px 15px;
   border:none;
-  border-radius:6px;
+  border-radius:5px;
   cursor:pointer;
 }
 
 .saveBtn{background:#2ecc71;color:white;}
-.deleteBtn{background:red;color:white;}
+.clearBtn{background:#e74c3c;color:white;}
 
 table{
   width:100%;
@@ -51,260 +40,153 @@ table{
 
 th,td{
   border:1px solid #ccc;
-  padding:8px;
+  padding:10px;
   text-align:center;
 }
 
-th{background:#3498db;color:white;}
-
-.summary{
-  display:flex;
-  justify-content:space-between;
-  font-weight:bold;
-  margin-bottom:10px;
+th{
+  background:#3498db;
+  color:white;
 }
 </style>
 </head>
 
 <body>
 
-<div class="container">
-
 <div class="box">
-<h3>Journal Entry</h3>
+<h3>📒 Journal Entry</h3>
 
-<input type="date" id="date">
-<input id="narration" placeholder="Narration">
+<input id="acc" placeholder="Account (e.g. Accounts Receivable)">
+<input id="sub" placeholder="Client Name">
+<input id="amt" type="number" placeholder="Amount">
 
-<br><br>
-
-<div class="formRow">
-<b>D/C</b>
-<b>Code</b>
-<b>Account</b>
-<b>Amount</b>
-<b>Client</b>
-</div>
-
-<!-- ROW 1 -->
-<div class="formRow">
-<select id="dc1"><option>D</option><option>C</option></select>
-<select id="code1" onchange="autoFill(1)"></select>
-<input id="name1" readonly>
-<input id="amt1" type="number">
-<select id="sub1"></select>
-</div>
-
-<!-- ROW 2 -->
-<div class="formRow">
-<select id="dc2"><option>D</option><option>C</option></select>
-<select id="code2" onchange="autoFill(2)"></select>
-<input id="name2" readonly>
-<input id="amt2" type="number">
-<select id="sub2"></select>
-</div>
+<select id="type">
+  <option value="charge">Charge</option>
+  <option value="payment">Payment</option>
+</select>
 
 <br>
-<button class="saveBtn" onclick="save()">Save</button>
+
+<button class="saveBtn" onclick="saveJournal()">Save Entry</button>
+<button class="clearBtn" onclick="clearJV()">Clear All</button>
 
 </div>
 
 <div class="box">
-
-<div class="summary">
-<div id="drTxt">Dr: 0</div>
-<div id="crTxt">Cr: 0</div>
-</div>
 
 <table>
 <thead>
 <tr>
 <th>#</th>
-<th>Code</th>
 <th>Account</th>
-<th>Narration</th>
-<th>Dr</th>
-<th>Cr</th>
-<th>Action</th>
+<th>Client</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Date</th>
 </tr>
 </thead>
 
-<tbody id="tbl"></tbody>
-
-<tfoot>
-<tr>
-<td colspan="4"><b>TOTAL</b></td>
-<td id="tdr">0</td>
-<td id="tcr">0</td>
-<td></td>
-</tr>
-</tfoot>
+<tbody id="jvTable"></tbody>
 
 </table>
 
 </div>
 
-</div>
-
 <script>
 
-// STORAGE
+// ✅ GET JV
 function getJV(){
-return JSON.parse(localStorage.getItem("jv")) || [];
+  try{
+    return JSON.parse(localStorage.getItem("jv")) || [];
+  }catch{
+    return [];
+  }
 }
 
-function saveJV(data){
-localStorage.setItem("jv", JSON.stringify(data));
+// ✅ SAVE JOURNAL (MAIN FIX)
+function saveJournal(){
+
+let acc = document.getElementById("acc").value.trim();
+let sub = document.getElementById("sub").value.trim();
+let amt = parseFloat(document.getElementById("amt").value) || 0;
+let type = document.getElementById("type").value;
+
+if(!acc || !sub || amt <= 0){
+  alert("Invalid input");
+  return;
 }
 
-function getCOA(){
-return JSON.parse(localStorage.getItem("coa")) || [];
-}
+let dc = "D";
 
-function getTenants(){
-return JSON.parse(localStorage.getItem("tenants")) || [];
-}
-
-// LOAD COA
-function loadCOA(){
-let coa = getCOA();
-let html="<option value=''>Select</option>";
-
-coa.forEach(a=>{
-html+=`<option value="${a.code}" data-name="${a.name}">
-${a.code} - ${a.name}
-</option>`;
-});
-
-code1.innerHTML=html;
-code2.innerHTML=html;
-}
-
-// AUTO ACCOUNT NAME
-function autoFill(r){
-let s=document.getElementById("code"+r);
-let selected=s.options[s.selectedIndex];
-let name=selected.getAttribute("data-name");
-document.getElementById("name"+r).value=name||"";
-}
-
-// LOAD CLIENTS
-function loadClients(){
-let tenants = getTenants();
-let html="<option value=''>Select</option>";
-
-tenants.forEach(t=>{
-html+=`<option value="${t.name}">${t.name}</option>`;
-});
-
-sub1.innerHTML=html;
-sub2.innerHTML=html;
-}
-
-// AUTO DETECT AR
-function isAR(code){
-let coa = getCOA();
-let acc = coa.find(a=>a.code == code);
-if(!acc) return false;
-return acc.name.toLowerCase().includes("receivable");
+// 🔥 AUTO LOGIC (IMPORTANT)
+if(acc.toLowerCase().includes("receivable")){
+  if(type === "payment"){
+    dc = "C"; // ✅ PAYMENT = CREDIT (BABAWAS)
+  }else{
+    dc = "D"; // ✅ CHARGE = DEBIT
+  }
 }
 
 // SAVE
-function save(){
-
 let jv = getJV();
-
-let d=document.getElementById("date").value;
-let nar=document.getElementById("narration").value;
-
-if(!d) return alert("Select date");
-
-[1,2].forEach(r=>{
-
-let dc=document.getElementById("dc"+r).value;
-let code=document.getElementById("code"+r).value;
-let acc=document.getElementById("name"+r).value;
-let amt=Number(document.getElementById("amt"+r).value);
-let sub=document.getElementById("sub"+r).value;
-
-if(!code || !acc || amt<=0) return;
-
-// FIX CLIENT ONLY FOR AR
-if(!isAR(code)){
-sub="";
-}
 
 jv.push({
-date:d,
-dc:dc,
-code:code,
-acc:acc,
-amt:amt,
-sub:(sub||"").trim(),
-nar:nar
+  acc: acc,
+  sub: sub,
+  amt: amt,
+  dc: dc,
+  type: type,
+  date: new Date().toLocaleString()
 });
 
-});
+localStorage.setItem("jv", JSON.stringify(jv));
 
-saveJV(jv);
-load();
-clearForm();
+alert("✅ Saved successfully!");
+
+loadJV();
+
+// clear inputs
+document.getElementById("amt").value = "";
 }
 
-// LOAD TABLE
-function load(){
+// ✅ LOAD TABLE
+function loadJV(){
 
 let jv = getJV();
+let html = "";
+let i = 1;
 
-let html="";
-let dr=0;
-let cr=0;
+jv.forEach(e=>{
 
-jv.forEach((e,i)=>{
+let dr = e.dc === "D" ? e.amt : "";
+let cr = e.dc === "C" ? e.amt : "";
 
-let d=e.dc==="D"?e.amt:"";
-let c=e.dc==="C"?e.amt:"";
-
-if(d) dr+=e.amt;
-if(c) cr+=e.amt;
-
-html+=`
+html += `
 <tr>
-<td>${i+1}</td>
-<td>${e.code}</td>
-<td>${e.acc}${e.sub?" - "+e.sub:""}</td>
-<td>${e.nar||""}</td>
-<td>${d}</td>
-<td>${c}</td>
-<td><button class="deleteBtn" onclick="del(${i})">Delete</button></td>
-</tr>`;
+<td>${i++}</td>
+<td>${e.acc}</td>
+<td>${e.sub}</td>
+<td>${dr}</td>
+<td>${cr}</td>
+<td>${e.date}</td>
+</tr>
+`;
+
 });
 
-tbl.innerHTML=html;
-tdr.innerText=dr;
-tcr.innerText=cr;
-drTxt.innerText="Dr: "+dr;
-crTxt.innerText="Cr: "+cr;
+jvTable.innerHTML = html || "<tr><td colspan='6'>No data</td></tr>";
 }
 
-// DELETE
-function del(i){
-let jv = getJV();
-jv.splice(i,1);
-saveJV(jv);
-load();
+// ✅ CLEAR ALL
+function clearJV(){
+if(confirm("Clear all data?")){
+  localStorage.removeItem("jv");
+  loadJV();
+}
 }
 
-// CLEAR
-function clearForm(){
-amt1.value="";
-amt2.value="";
-}
-
-// INIT
-loadCOA();
-loadClients();
-load();
+// ✅ AUTO LOAD
+window.onload = loadJV;
 
 </script>
 
