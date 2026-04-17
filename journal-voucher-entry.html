@@ -188,48 +188,66 @@ document.getElementById("name"+r).value=name||"";
 // ===== SAVE =====
 function saveJournal(){
 
-let jv=getJV();
+let jv = JSON.parse(localStorage.getItem("jv")) || [];
 
-// EDIT MODE
-if(editIndex !== -1){
-jv.splice(editIndex,1);
-}
+let entry = [];
 
-let entry=[];
-
-// LOOP ROWS
+// LOOP ALL ROWS
 for(let i=1;i<=rowCount;i++){
 
-let dc=document.getElementById("dc"+i)?.value;
-let code=document.getElementById("code"+i)?.value;
-let acc=document.getElementById("name"+i)?.value;
-let sub=document.getElementById("sub"+i)?.value;
-let nar=document.getElementById("nar"+i)?.value;
-let amt=Number(document.getElementById("amt"+i)?.value);
+let dcEl = document.getElementById("dc"+i);
+let codeEl = document.getElementById("code"+i);
+let nameEl = document.getElementById("name"+i);
+let subEl = document.getElementById("sub"+i);
+let narEl = document.getElementById("nar"+i);
+let amtEl = document.getElementById("amt"+i);
 
-if(!code || !acc || !amt) continue;
+// 🔥 SKIP IF ROW NOT EXIST
+if(!dcEl || !codeEl || !nameEl || !amtEl) continue;
+
+let dc = dcEl.value;
+let code = codeEl.value;
+let acc = nameEl.value;
+let sub = subEl ? subEl.value : "";
+let nar = narEl ? narEl.value : "";
+let amt = Number(amtEl.value);
+
+// 🔥 STRICT VALIDATION
+if(!code || !acc || amt <= 0) continue;
 
 // ONLY AR may client
 if(!(acc||"").toLowerCase().includes("receivable")){
-sub="";
+sub = "";
 }
 
-entry.push({dc,code,acc,sub,nar,amt});
+// PUSH ENTRY
+entry.push({
+dc:dc,
+code:code,
+acc:acc,
+sub:(sub||"").trim(),
+nar:nar,
+amt:amt
+});
+
 }
 
+// 🚨 IF WALANG DATA
 if(entry.length === 0){
-alert("No valid entry");
+alert("❌ No valid data to save");
 return;
 }
 
+// SAVE
 jv.push(entry);
-saveJV(jv);
+localStorage.setItem("jv", JSON.stringify(jv));
 
-editIndex=-1;
+// REFRESH
 loadRecords();
 clearForm();
 
-alert("Saved!");
+alert("✅ Saved Successfully");
+
 }
 
 // ===== LOAD RECORDS =====
