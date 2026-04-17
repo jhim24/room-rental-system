@@ -94,6 +94,8 @@ th{background:#3498db;color:white;}
 
 <script>
 
+<script>
+
 // ===== INIT DEFAULT ACCOUNTS =====
 function initAccounts(){
 let acc = JSON.parse(localStorage.getItem("accounts"));
@@ -128,20 +130,20 @@ let div=document.createElement("div");
 div.className="grid";
 
 div.innerHTML=`
-<select>
+<select class="dc">
 <option>D</option>
 <option>C</option>
 </select>
 
-<select onchange="fillAcc(this)"></select>
+<select class="code"></select>
 
-<input readonly>
+<input class="name" readonly>
 
-<select></select>
+<select class="client"></select>
 
-<input placeholder="Narration">
+<input class="nar" placeholder="Narration">
 
-<input type="number">
+<input class="amt" type="number">
 
 <button class="delBtn" onclick="this.parentElement.remove()">X</button>
 `;
@@ -149,27 +151,28 @@ div.innerHTML=`
 rows.appendChild(div);
 
 // LOAD ACCOUNTS
-let accSel = div.children[1];
+let accSel = div.querySelector(".code");
 getAccounts().forEach(a=>{
 accSel.innerHTML+=`<option value="${a.code}" data-name="${a.name}">
 ${a.code} - ${a.name}</option>`;
 });
 
 // LOAD CLIENTS
-let clientSel = div.children[3];
+let clientSel = div.querySelector(".client");
 clientSel.innerHTML='<option value="">Client</option>';
 getTenants().forEach(t=>{
 clientSel.innerHTML+=`<option value="${t.name}">${t.name}</option>`;
 });
+
+// AUTO ACCOUNT NAME
+accSel.onchange = function(){
+let name = this.options[this.selectedIndex]?.dataset.name;
+div.querySelector(".name").value = name || "";
+};
+
 }
 
-// ===== AUTO ACCOUNT =====
-function fillAcc(el){
-let name = el.options[el.selectedIndex]?.dataset.name;
-el.parentElement.children[2].value = name || "";
-}
-
-// ===== SAVE =====
+// ===== SAVE (FIXED 100%) =====
 function saveJournal(){
 
 let jv = getJV();
@@ -177,18 +180,19 @@ let rowsList = document.querySelectorAll("#rows .grid");
 
 let entry=[];
 
-rowsList.forEach(r=>{
+rowsList.forEach(row=>{
 
-let dc = r.children[0].value;
-let code = r.children[1].value;
-let acc = r.children[2].value;
-let sub = r.children[3].value;
-let nar = r.children[4].value;
-let amt = Number(r.children[5].value);
+let dc = row.querySelector(".dc").value;
+let code = row.querySelector(".code").value;
+let acc = row.querySelector(".name").value;
+let sub = row.querySelector(".client").value;
+let nar = row.querySelector(".nar").value;
+let amt = Number(row.querySelector(".amt").value);
 
-if(!code || !acc || amt<=0) return;
+// VALIDATION
+if(!code || !acc || amt <= 0) return;
 
-// only AR may client
+// ONLY AR may client
 if(!acc.toLowerCase().includes("receivable")){
 sub="";
 }
@@ -197,23 +201,25 @@ entry.push({dc,code,acc,sub,nar,amt});
 
 });
 
-if(entry.length===0){
-alert("❌ Fill Account & Amount first");
+// IF EMPTY
+if(entry.length === 0){
+alert("❌ Please fill Account & Amount");
 return;
 }
 
+// SAVE
 jv.push(entry);
 saveJV(jv);
 
+// REFRESH
 loadRecords();
-rows.innerHTML="";
-addRow();
-addRow();
+clearForm();
 
-alert("✅ Saved!");
+alert("✅ Saved Successfully");
+
 }
 
-// ===== LOAD =====
+// ===== LOAD RECORDS =====
 function loadRecords(){
 
 let jv=getJV();
@@ -239,8 +245,8 @@ html+=`
 <td>${c}</td>
 <td>${d}</td>
 <td>
-<button class="editBtn" onclick="edit(${i})">Edit</button>
-<button class="delBtn" onclick="del(${i})">Delete</button>
+<button onclick="edit(${i})">Edit</button>
+<button onclick="del(${i})">Delete</button>
 </td>
 </tr>`;
 });
@@ -268,23 +274,36 @@ function edit(i){
 let jv=getJV();
 let entry=jv[i];
 
-rows.innerHTML="";
+clearForm();
 
 entry.forEach(e=>{
 addRow();
-let r = rows.lastElementChild.children;
 
-r[0].value=e.dc;
-r[1].value=e.code;
-fillAcc(r[1]);
-r[3].value=e.sub;
-r[4].value=e.nar;
-r[5].value=e.amt;
+let row = rows.lastElementChild;
+
+row.querySelector(".dc").value=e.dc;
+row.querySelector(".code").value=e.code;
+
+// trigger account name
+let evt = new Event("change");
+row.querySelector(".code").dispatchEvent(evt);
+
+row.querySelector(".client").value=e.sub;
+row.querySelector(".nar").value=e.nar;
+row.querySelector(".amt").value=e.amt;
+
 });
 
 jv.splice(i,1);
 saveJV(jv);
 loadRecords();
+}
+
+// ===== CLEAR =====
+function clearForm(){
+rows.innerHTML="";
+addRow();
+addRow();
 }
 
 // INIT
