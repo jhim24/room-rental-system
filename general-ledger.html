@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>General Ledger</title>
+
+<style>
+body{
+  font-family:Arial;
+  background:#eef3ff;
+  padding:20px;
+}
+
+h2{margin-bottom:10px;}
+
+.box{
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:20px;
+}
+
+select,button{
+  padding:8px;
+  margin:5px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
+}
+
+th{
+  background:#3498db;
+  color:white;
+}
+
+.balance{
+  font-weight:bold;
+  margin-top:10px;
+  font-size:18px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>📊 General Ledger</h2>
+
+<div class="box">
+
+<select id="account"></select>
+<button onclick="loadLedger()">Load Ledger</button>
+
+</div>
+
+<div class="box">
+
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Date</th>
+<th>Account</th>
+<th>Client</th>
+<th>Dr</th>
+<th>Cr</th>
+<th>Balance</th>
+</tr>
+</thead>
+
+<tbody id="tbl"></tbody>
+
+</table>
+
+<div class="balance">
+Balance: <span id="bal">0</span>
+</div>
+
+</div>
+
+<script>
+
+let coa = JSON.parse(localStorage.getItem("coa")) || [];
+
+/* LOAD ACCOUNTS */
+function loadAccounts(){
+
+let html = "<option value=''>Select Account</option>";
+
+coa.forEach(a=>{
+html += `<option value="${a.code}">
+${a.code} - ${a.name}
+</option>`;
+});
+
+document.getElementById("account").innerHTML = html;
+}
+
+/* LOAD LEDGER */
+function loadLedger(){
+
+let selected = document.getElementById("account").value;
+
+if(!selected) return alert("Select account");
+
+let jv = JSON.parse(localStorage.getItem("jv")) || [];
+
+let html="";
+let balance=0;
+
+jv.forEach((e,i)=>{
+
+if(e.code !== selected) return;
+
+let dr="", cr="";
+
+if(e.dc==="D"){
+dr=e.amt;
+balance+=e.amt;
+}else{
+cr=e.amt;
+balance-=e.amt;
+}
+
+html += `
+<tr>
+<td>${i+1}</td>
+<td>${new Date(e.date).toLocaleDateString('en-GB')}</td>
+<td>${e.acc}</td>
+<td>${e.sub||""}</td>
+<td>${dr}</td>
+<td>${cr}</td>
+<td>${balance}</td>
+</tr>
+`;
+
+});
+
+document.getElementById("tbl").innerHTML = html;
+document.getElementById("bal").innerText = balance;
+
+}
+
+/* INIT */
+loadAccounts();
+
+</script>
+
+</body>
+</html>
