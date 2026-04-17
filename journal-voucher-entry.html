@@ -1,61 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Journal Voucher</title>
+<title>Journal Entry</title>
 
 <style>
-body {
+body{
   margin:0;
-  font-family: Arial;
+  font-family:Arial;
   background: linear-gradient(135deg,#1d2b64,#f8cdda);
 }
 
-.container { padding:20px; }
+.container{padding:20px;}
 
-.box {
+.box{
   background:white;
   padding:20px;
   border-radius:12px;
   margin-bottom:20px;
 }
 
-.formRow {
+/* PANTAY FORM */
+.formRow{
   display:grid;
-  grid-template-columns: 80px 150px 1fr 120px 120px;
+  grid-template-columns:80px 160px 1fr 140px 160px;
   gap:10px;
   margin-bottom:10px;
 }
 
-input, select {
+.formRow input,.formRow select{
+  width:100%;
   padding:8px;
   border-radius:6px;
   border:1px solid #ccc;
-  width:100%;
+  box-sizing:border-box;
 }
 
-button {
-  padding:8px;
+button{
+  padding:8px 12px;
   border:none;
   border-radius:6px;
   cursor:pointer;
 }
 
-.saveBtn { background:#2ecc71;color:white; }
+.saveBtn{background:#2ecc71;color:white;}
 
-table {
+table{
   width:100%;
   border-collapse:collapse;
 }
 
-th, td {
+th,td{
   border:1px solid #ccc;
   padding:8px;
   text-align:center;
 }
 
-th { background:#3498db;color:white; }
+th{background:#3498db;color:white;}
 
-.summary {
+.summary{
   display:flex;
   justify-content:space-between;
   font-weight:bold;
@@ -77,9 +79,14 @@ th { background:#3498db;color:white; }
 <br><br>
 
 <div class="formRow">
-<b>D/C</b><b>Code</b><b>Account</b><b>Amount</b><b>Client</b>
+<b>D/C</b>
+<b>Code</b>
+<b>Account</b>
+<b>Amount</b>
+<b>Client</b>
 </div>
 
+<!-- ROW 1 -->
 <div class="formRow">
 <select id="dc1"><option>D</option><option>C</option></select>
 <select id="code1" onchange="autoFill(1)"></select>
@@ -88,6 +95,7 @@ th { background:#3498db;color:white; }
 <select id="sub1"></select>
 </div>
 
+<!-- ROW 2 -->
 <div class="formRow">
 <select id="dc2"><option>D</option><option>C</option></select>
 <select id="code2" onchange="autoFill(2)"></select>
@@ -104,8 +112,8 @@ th { background:#3498db;color:white; }
 <div class="box">
 
 <div class="summary">
-<div id="dr">Dr: 0</div>
-<div id="cr">Cr: 0</div>
+<div id="drTxt">Dr: 0</div>
+<div id="crTxt">Cr: 0</div>
 </div>
 
 <table>
@@ -117,6 +125,7 @@ th { background:#3498db;color:white; }
 <th>Narration</th>
 <th>Dr</th>
 <th>Cr</th>
+<th>Action</th>
 </tr>
 </thead>
 
@@ -127,6 +136,7 @@ th { background:#3498db;color:white; }
 <td colspan="4"><b>TOTAL</b></td>
 <td id="tdr">0</td>
 <td id="tcr">0</td>
+<td></td>
 </tr>
 </tfoot>
 
@@ -142,96 +152,126 @@ let jv = JSON.parse(localStorage.getItem("jv")) || [];
 let coa = JSON.parse(localStorage.getItem("coa")) || [];
 let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
 
+/* LOAD COA */
 function loadCOA(){
-let h="<option></option>";
+let html="<option value=''>Select</option>";
+
 coa.forEach(a=>{
-h+=`<option value="${a.code}" data-name="${a.name}">${a.code}</option>`;
+html+=`<option value="${a.code}" data-name="${a.name}">
+${a.code} - ${a.name}
+</option>`;
 });
-code1.innerHTML=h;
-code2.innerHTML=h;
+
+code1.innerHTML=html;
+code2.innerHTML=html;
 }
 
+/* AUTO ACCOUNT */
 function autoFill(r){
 let s=document.getElementById("code"+r);
-let name=s.options[s.selectedIndex].getAttribute("data-name");
+let selected=s.options[s.selectedIndex];
+let name=selected.getAttribute("data-name");
 document.getElementById("name"+r).value=name||"";
 }
 
+/* LOAD CLIENT */
 function loadClients(){
-let h="<option></option>";
+let html="<option value=''>Select</option>";
+
 tenants.forEach(t=>{
-h+=`<option value="${t.name}">${t.name}</option>`;
+html+=`<option value="${t.name}">${t.name}</option>`;
 });
-sub1.innerHTML=h;
-sub2.innerHTML=h;
+
+sub1.innerHTML=html;
+sub2.innerHTML=html;
 }
 
+/* SAVE ENTRY */
 function save(){
 
-let date=dateInput.value;
-if(!date) return alert("Select date");
+let d=document.getElementById("date").value;
+let nar=document.getElementById("narration").value;
+
+if(!d) return alert("Select date");
 
 [1,2].forEach(r=>{
+
 let dc=document.getElementById("dc"+r).value;
 let code=document.getElementById("code"+r).value;
 let acc=document.getElementById("name"+r).value;
 let amt=Number(document.getElementById("amt"+r).value);
 let sub=document.getElementById("sub"+r).value;
 
-if(!code||amt<=0) return;
+if(!code || !acc || amt<=0) return;
 
-if(code!="1100") sub="";
+// AR only may client
+if(code !== "1100") sub="";
 
 jv.push({
-date,
-dc,
-code,
-acc,
-amt,
-sub,
-nar:narration.value
+date:d,
+dc:dc,
+code:code,
+acc:acc,
+amt:amt,
+sub:sub,
+nar:nar
 });
+
 });
 
 localStorage.setItem("jv",JSON.stringify(jv));
 load();
+clearForm();
 }
 
+/* LOAD TABLE */
 function load(){
 
-let h="";
-let dr=0,cr=0;
+let html="";
+let dr=0;
+let cr=0;
 
 jv.forEach((e,i)=>{
 
-let d=e.dc=="D"?e.amt:"";
-let c=e.dc=="C"?e.amt:"";
+let d=e.dc==="D"?e.amt:"";
+let c=e.dc==="C"?e.amt:"";
 
 if(d) dr+=e.amt;
 if(c) cr+=e.amt;
 
-h+=`
+html+=`
 <tr>
 <td>${i+1}</td>
 <td>${e.code}</td>
-<td>${e.acc}${e.sub?"-"+e.sub:""}</td>
+<td>${e.acc}${e.sub?" - "+e.sub:""}</td>
 <td>${e.nar||""}</td>
 <td>${d}</td>
 <td>${c}</td>
+<td><button onclick="del(${i})">Delete</button></td>
 </tr>`;
 });
 
-tbl.innerHTML=h;
+tbl.innerHTML=html;
 tdr.innerText=dr;
 tcr.innerText=cr;
-drEl.innerText="Dr: "+dr;
-crEl.innerText="Cr: "+cr;
+drTxt.innerText="Dr: "+dr;
+crTxt.innerText="Cr: "+cr;
 }
 
-let dateInput=document.getElementById("date");
-let drEl=document.getElementById("dr");
-let crEl=document.getElementById("cr");
+/* DELETE */
+function del(i){
+jv.splice(i,1);
+localStorage.setItem("jv",JSON.stringify(jv));
+load();
+}
 
+/* CLEAR */
+function clearForm(){
+amt1.value="";
+amt2.value="";
+}
+
+/* INIT */
 loadCOA();
 loadClients();
 load();
