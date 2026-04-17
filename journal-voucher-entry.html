@@ -202,6 +202,7 @@ let name = select.value;
 function saveJournal(){
 
 let jv = JSON.parse(localStorage.getItem("jv")) || [];
+let tenantLedger = JSON.parse(localStorage.getItem("tenantLedger")) || [];
 
 for(let i=1;i<=rowCount;i++){
 
@@ -215,6 +216,7 @@ let amt = parseFloat(document.getElementById("amt"+i).value) || 0;
 
 if(!acc || amt<=0) continue;
 
+// ===== SAVE JOURNAL =====
 jv.push({
 date:new Date().toISOString().split("T")[0],
 acc,
@@ -223,11 +225,26 @@ nar,
 amt,
 dc:dc.value
 });
+
+// ===== TENANT LEDGER AUTO =====
+if(sub){
+
+tenantLedger.push({
+date:new Date().toISOString().split("T")[0],
+name: sub,
+desc: nar,
+debit: dc.value === "D" ? amt : 0,
+credit: dc.value === "C" ? amt : 0
+});
+
+}
+
 }
 
 localStorage.setItem("jv", JSON.stringify(jv));
+localStorage.setItem("tenantLedger", JSON.stringify(tenantLedger));
 
-alert("Saved!");
+alert("✅ Saved & Ledger Updated!");
 loadRecords();
 }
 
