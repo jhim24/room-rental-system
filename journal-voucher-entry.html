@@ -42,6 +42,7 @@ button {
 
 .saveBtn { background:#2ecc71;color:white; }
 .deleteBtn { background:red;color:white; }
+.backBtn { background:#34495e;color:white; }
 
 table {
   width:100%;
@@ -55,6 +56,11 @@ th, td {
 }
 
 th { background:#3498db;color:white; }
+
+.totalRow {
+  font-weight:bold;
+  background:#f2f2f2;
+}
 </style>
 </head>
 
@@ -62,8 +68,15 @@ th { background:#3498db;color:white; }
 
 <div class="container">
 
+<button class="backBtn" onclick="history.back()">⬅ Back</button>
+
 <div class="box">
-<h3>Journal Entry (2 Rows)</h3>
+<h3>Journal Entry</h3>
+
+<label>Date:</label>
+<input type="date" id="date">
+
+<br><br>
 
 <div class="grid">
 
@@ -106,7 +119,7 @@ th { background:#3498db;color:white; }
 </div>
 
 <br>
-<button class="saveBtn" onclick="addEntry()">Save Transaction</button>
+<button class="saveBtn" onclick="addEntry()">Save</button>
 
 </div>
 
@@ -117,17 +130,26 @@ th { background:#3498db;color:white; }
 <table>
 <thead>
 <tr>
+<th>Date</th>
 <th>D/C</th>
 <th>Code</th>
-<th>Account Name</th>
-<th>Sub Desc</th>
+<th>Account</th>
+<th>Sub</th>
 <th>Amount</th>
-<th>Sub Name</th>
 <th>Action</th>
 </tr>
 </thead>
 
 <tbody id="table"></tbody>
+
+<tfoot>
+<tr class="totalRow">
+<td colspan="4">TOTAL</td>
+<td id="totalDebit">Debit: 0</td>
+<td id="totalCredit">Credit: 0</td>
+<td></td>
+</tr>
+</tfoot>
 
 </table>
 
@@ -141,47 +163,53 @@ let entries = JSON.parse(localStorage.getItem("jv")) || [];
 let clients = JSON.parse(localStorage.getItem("tenants")) || [];
 let coa = JSON.parse(localStorage.getItem("coa")) || [];
 
+// FORMAT DATE → dd/mm/yyyy
+function formatDate(dateStr){
+let d = new Date(dateStr);
+let day = String(d.getDate()).padStart(2,'0');
+let month = String(d.getMonth()+1).padStart(2,'0');
+let year = d.getFullYear();
+return `${day}/${month}/${year}`;
+}
+
 // LOAD COA
 function loadCOA(){
-
 let html = "<option value=''>Select</option>";
-
 coa.forEach(a=>{
 html += `<option value="${a.code}" data-name="${a.name}">
 ${a.code} - ${a.name}
 </option>`;
 });
-
 code1.innerHTML = html;
 code2.innerHTML = html;
 }
 
-// AUTO ACCOUNT NAME
+// AUTO NAME
 function autoFillAccount(row){
-
 let select = document.getElementById("code"+row);
 let selected = select.options[select.selectedIndex];
-
-let name = selected.getAttribute("data-name");
-
-document.getElementById("accountName"+row).value = name || "";
+document.getElementById("accountName"+row).value = selected.getAttribute("data-name") || "";
 }
 
 // LOAD CLIENTS
 function loadClients(){
-
 let html = "<option value=''>Select</option>";
-
 clients.forEach(c=>{
 html += `<option value="${c.name}">${c.name}</option>`;
 });
-
 subName1.innerHTML = html;
 subName2.innerHTML = html;
 }
 
-// ADD ENTRY (2 ROWS)
+// ADD ENTRY
 function addEntry(){
+
+let dateVal = document.getElementById("date").value;
+
+if(!dateVal){
+alert("Select date");
+return;
+}
 
 let rows = [1,2];
 
@@ -190,59 +218,62 @@ rows.forEach(r=>{
 let dc = document.getElementById("dc"+r).value;
 let code = document.getElementById("code"+r).value;
 let acc = document.getElementById("accountName"+r).value;
-let subDesc = document.getElementById("subDesc"+r).value;
 let amount = Number(document.getElementById("amount"+r).value);
 let sub = document.getElementById("subName"+r).value;
 
 if(!code || amount <= 0) return;
 
-// 🔥 ONLY AR CAN HAVE CLIENT
+// AR only may client
 if(code !== "1100"){
 sub = "";
-subDesc = "";
 }
 
 entries.push({
+date:dateVal,
 dc:dc,
 code:code,
 account:acc,
-subDesc:subDesc,
 amount:amount,
-subName:sub
+sub:sub
 });
 
 });
 
 localStorage.setItem("jv", JSON.stringify(entries));
-
 loadTable();
 clearForm();
 }
 
-// LOAD TABLE
+// LOAD TABLE + TOTAL
 function loadTable(){
 
 let html = "";
+let totalD = 0;
+let totalC = 0;
 
 entries.forEach((e,i)=>{
 
+if(e.dc === "D") totalD += e.amount;
+if(e.dc === "C") totalC += e.amount;
+
 html += `
 <tr>
+<td>${formatDate(e.date)}</td>
 <td>${e.dc}</td>
 <td>${e.code}</td>
 <td>${e.account}</td>
-<td>${e.subDesc}</td>
+<td>${e.sub || ""}</td>
 <td>${e.amount}</td>
-<td>${e.subName}</td>
-<td>
-<button class="deleteBtn" onclick="deleteEntry(${i})">Delete</button>
-</td>
+<td><button class="deleteBtn" onclick="deleteEntry(${i})">Delete</button></td>
 </tr>
 `;
 
 });
 
 table.innerHTML = html;
+
+document.getElementById("totalDebit").innerText = "Debit: " + totalD;
+document.getElementById("totalCredit").innerText = "Credit: " + totalC;
 }
 
 // DELETE
