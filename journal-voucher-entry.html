@@ -9,7 +9,7 @@ body{font-family:Arial;background:#eef3ff;padding:20px;}
 
 .grid{
   display:grid;
-  grid-template-columns: 60px 130px 200px 120px 200px 120px 120px;
+  grid-template-columns: 60px 150px 200px 150px 200px 120px 100px;
   gap:5px;
   margin-bottom:5px;
 }
@@ -46,7 +46,7 @@ th{background:#3498db;color:white;}
 <div>D/C</div>
 <div>Acc Code</div>
 <div>Account Name</div>
-<div>Sub Code</div>
+<div>Client</div>
 <div>Narration</div>
 <div>Amount</div>
 <div>Action</div>
@@ -68,6 +68,7 @@ th{background:#3498db;color:white;}
 <tr>
 <th>Sr No.</th>
 <th>Account</th>
+<th>Client</th>
 <th>Narration</th>
 <th>Cr</th>
 <th>Dr</th>
@@ -78,7 +79,7 @@ th{background:#3498db;color:white;}
 
 <tfoot>
 <tr class="total">
-<td colspan="3">TOTAL</td>
+<td colspan="4">TOTAL</td>
 <td id="totalCr">0</td>
 <td id="totalDr">0</td>
 </tr>
@@ -93,6 +94,10 @@ th{background:#3498db;color:white;}
 // ===== STORAGE =====
 function getAccounts(){
   return JSON.parse(localStorage.getItem("accounts")) || [];
+}
+
+function getClients(){
+  return JSON.parse(localStorage.getItem("clients")) || [];
 }
 
 // ===== VARIABLES =====
@@ -117,7 +122,7 @@ div.innerHTML=`
 
 <input id="name${rowCount}" readonly>
 
-<input id="sub${rowCount}" placeholder="Sub-code">
+<select id="sub${rowCount}"></select>
 
 <input id="nar${rowCount}" placeholder="Narration">
 
@@ -128,8 +133,9 @@ div.innerHTML=`
 
 document.getElementById("rows").appendChild(div);
 
-// LOAD ACCOUNTS
+// load dropdowns
 loadAccountDropdown(rowCount);
+loadClientDropdown(rowCount);
 }
 
 // ===== DELETE =====
@@ -138,7 +144,7 @@ let el = document.getElementById("row"+i);
 if(el) el.remove();
 }
 
-// ===== LOAD DROPDOWN =====
+// ===== LOAD ACCOUNTS =====
 function loadAccountDropdown(row){
 
 let accounts = getAccounts();
@@ -155,12 +161,27 @@ ${acc.code} - ${acc.name}
 });
 }
 
+// ===== LOAD CLIENTS =====
+function loadClientDropdown(row){
+
+let clients = getClients();
+let select = document.getElementById("sub"+row);
+
+select.innerHTML = '<option value="">Select Client</option>';
+
+clients.forEach(c=>{
+select.innerHTML += `
+<option value="${c.id}">
+${c.id} - ${c.name}
+</option>
+`;
+});
+}
+
 // ===== AUTO ACCOUNT NAME =====
 function fillAccount(row){
-
 let select = document.getElementById("accCode"+row);
 let name = select.options[select.selectedIndex]?.dataset.name;
-
 document.getElementById("name"+row).value = name || "";
 }
 
@@ -175,6 +196,7 @@ let dc = document.getElementById("dc"+i);
 if(!dc) continue;
 
 let acc = document.getElementById("name"+i).value;
+let sub = document.getElementById("sub"+i).value;
 let nar = document.getElementById("nar"+i).value;
 let amt = parseFloat(document.getElementById("amt"+i).value) || 0;
 
@@ -183,6 +205,7 @@ if(!acc || amt<=0) continue;
 jv.push({
 date:new Date().toISOString().split("T")[0],
 acc,
+sub,
 nar,
 amt,
 dc:dc.value
@@ -195,7 +218,7 @@ alert("Saved!");
 loadRecords();
 }
 
-// ===== LOAD TABLE =====
+// ===== LOAD RECORDS =====
 function loadRecords(){
 
 let jv = JSON.parse(localStorage.getItem("jv")) || [];
@@ -217,6 +240,7 @@ html+=`
 <tr>
 <td>${i++}</td>
 <td>${e.acc}</td>
+<td>${e.sub || ""}</td>
 <td>${e.nar}</td>
 <td>${cr}</td>
 <td>${dr}</td>
