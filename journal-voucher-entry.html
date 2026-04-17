@@ -202,9 +202,15 @@ let subEl = document.getElementById("sub"+i);
 let narEl = document.getElementById("nar"+i);
 let amtEl = document.getElementById("amt"+i);
 
-// 🔥 SKIP IF ROW NOT EXIST
-if(!dcEl || !codeEl || !nameEl || !amtEl) continue;
+if(!code){
+alert("⚠️ Please select Account Code");
+return;
+}
 
+if(amt <= 0){
+alert("⚠️ Please enter Amount");
+return;
+}
 let dc = dcEl.value;
 let code = codeEl.value;
 let acc = nameEl.value;
