@@ -10,28 +10,22 @@ body{
   padding:20px;
 }
 
-h2{margin-bottom:10px;}
-
 .box{
   background:white;
   padding:15px;
   border-radius:10px;
-  margin-bottom:20px;
-}
-
-select,button{
-  padding:8px;
-  margin:5px;
+  margin-bottom:15px;
 }
 
 button{
+  padding:6px 12px;
   border:none;
   border-radius:5px;
   cursor:pointer;
 }
 
 .loadBtn{background:#3498db;color:white;}
-.linkBtn{background:#2ecc71;color:white;}
+.tenantBtn{background:#2ecc71;color:white;}
 
 table{
   width:100%;
@@ -40,7 +34,7 @@ table{
 
 th,td{
   border:1px solid #ccc;
-  padding:8px;
+  padding:10px;
   text-align:center;
 }
 
@@ -48,28 +42,20 @@ th{
   background:#3498db;
   color:white;
 }
-
-.balance{
-  font-weight:bold;
-  margin-top:10px;
-  font-size:18px;
-}
 </style>
 </head>
 
 <body>
 
-<h2>📊 General Ledger</h2>
-
 <div class="box">
+<h3>📘 General Ledger (Accounts Receivable)</h3>
 
-<select id="account"></select>
+<select id="accountFilter">
+<option value="Accounts receivable">Accounts receivable</option>
+</select>
 
 <button class="loadBtn" onclick="loadLedger()">Load Ledger</button>
-
-<a href="tenant-ledger-table.html">
-<button class="linkBtn">📊 Tenant Ledger</button>
-</a>
+<button class="tenantBtn" onclick="window.location='tenant-ledger-table.html'">Tenant Ledger</button>
 
 </div>
 
@@ -79,112 +65,95 @@ th{
 <thead>
 <tr>
 <th>#</th>
-<th>Date</th>
 <th>Account</th>
 <th>Client</th>
-<th>Dr</th>
-<th>Cr</th>
+<th>Total Dr</th>
+<th>Total Cr</th>
 <th>Balance</th>
 </tr>
 </thead>
 
-<tbody id="tbl"></tbody>
+<tbody id="ledgerTable"></tbody>
+
+<tfoot>
+<tr>
+<td colspan="5"><b>GRAND TOTAL</b></td>
+<td id="totalBalance">0</td>
+</tr>
+</tfoot>
 
 </table>
-
-<div class="balance">
-Balance: <span id="bal">0</span>
-</div>
 
 </div>
 
 <script>
 
-// LOAD COA
-function getCOA(){
-return JSON.parse(localStorage.getItem("coa")) || [];
-}
-
-// LOAD JV
-function getJV(){
-return JSON.parse(localStorage.getItem("jv")) || [];
-}
-
-// LOAD ACCOUNTS DROPDOWN
-function loadAccounts(){
-
-let coa = getCOA();
-
-let html = "<option value=''>Select Account</option>";
-
-coa.forEach(a=>{
-html += `<option value="${a.code}">
-${a.code} - ${a.name}
-</option>`;
-});
-
-document.getElementById("account").innerHTML = html;
-}
-
-// LOAD LEDGER
+// LOAD LEDGER (GROUPED BY CLIENT)
 function loadLedger(){
 
-let selected = document.getElementById("account").value;
+let jv = JSON.parse(localStorage.getItem("jv")) || [];
 
-if(!selected) return alert("Select account");
+let map = {};
 
-let jv = getJV();
+// LOOP JOURNAL
+jv.forEach(e=>{
 
-let html="";
-let balance=0;
+if(!e.acc) return;
 
-jv.forEach((e,i)=>{
+// ONLY RECEIVABLE
+if(!e.acc.toLowerCase().includes("receivable")) return;
 
-if(e.code !== selected) return;
+// CLIENT
+let name = (e.sub || "No Client").trim();
 
-// DR/CR
-let dr="", cr="";
+// INIT
+if(!map[name]){
+map[name] = {dr:0, cr:0};
+}
 
+// ADD VALUES
 let amt = Number(e.amt || 0);
 
 if(e.dc === "D"){
-dr = amt;
-balance += amt;
+map[name].dr += amt;
 }else{
-cr = amt;
-balance -= amt;
+map[name].cr += amt;
 }
-
-// DATE FORMAT
-let date = "";
-if(e.date){
-date = new Date(e.date).toLocaleDateString('en-GB');
-}
-
-// CLIENT FIXED HERE 🔥
-let client = (e.sub || "").trim();
-
-html += `
-<tr>
-<td>${i+1}</td>
-<td>${date}</td>
-<td>${e.acc}</td>
-<td>${client}</td>
-<td>${dr}</td>
-<td>${cr}</td>
-<td>${balance}</td>
-</tr>
-`;
 
 });
 
-document.getElementById("tbl").innerHTML = html;
-document.getElementById("bal").innerText = balance;
+// BUILD TABLE
+let html="";
+let i=1;
+let grand=0;
+
+for(let name in map){
+
+let dr = map[name].dr;
+let cr = map[name].cr;
+let balance = dr - cr;
+
+grand += balance;
+
+html += `
+<tr>
+<td>${i++}</td>
+<td>Accounts Receivable</td>
+<td><b>${name}</b></td>
+<td>${dr}</td>
+<td>${cr}</td>
+<td style="color:${balance<0?'red':'green'}"><b>${balance}</b></td>
+</tr>
+`;
+}
+
+document.getElementById("ledgerTable").innerHTML = html;
+document.getElementById("totalBalance").innerText = grand;
 
 }
 
-// INIT
-loadAccounts();
+// AUTO LOAD
+window.onload = loadLedger;
 
 </script>
 
