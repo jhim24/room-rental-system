@@ -17,9 +17,19 @@ body{
   margin-bottom:15px;
 }
 
+button{
+  padding:6px 10px;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+
+.backBtn{background:#34495e;color:white;}
+.editBtn{background:orange;color:white;}
+.deleteBtn{background:red;color:white;}
+
 input{
   padding:6px;
-  margin:5px;
 }
 
 .table-container{
@@ -28,7 +38,7 @@ input{
 
 table{
   border-collapse:collapse;
-  min-width:1200px;
+  min-width:1400px;
 }
 
 th,td{
@@ -50,6 +60,8 @@ th{
 
 <body>
 
+<button class="backBtn" onclick="history.back()">⬅ Back</button>
+
 <div class="box">
 <h3>📊 Tenant Ledger (Yearly)</h3>
 
@@ -66,19 +78,12 @@ To: <input type="date" id="to">
 <thead>
 <tr>
 <th>Name</th>
-<th>Previous Bal</th>
-<th>JAN</th>
-<th>FEB</th>
-<th>MAR</th>
-<th>APR</th>
-<th>MAY</th>
-<th>JUN</th>
-<th>JUL</th>
-<th>AUG</th>
-<th>SEP</th>
-<th>OCT</th>
-<th>NOV</th>
-<th>DEC</th>
+<th>Previous</th>
+<th>JAN</th><th>FEB</th><th>MAR</th><th>APR</th>
+<th>MAY</th><th>JUN</th><th>JUL</th><th>AUG</th>
+<th>SEP</th><th>OCT</th><th>NOV</th><th>DEC</th>
+<th>Total</th>
+<th>Action</th>
 </tr>
 </thead>
 
@@ -93,9 +98,9 @@ To: <input type="date" id="to">
 let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
 let jv = JSON.parse(localStorage.getItem("jv")) || [];
 
-// convert date to month index
+// GET MONTH
 function getMonth(d){
-return new Date(d).getMonth(); // 0-11
+return new Date(d).getMonth();
 }
 
 function loadTable(){
@@ -105,35 +110,44 @@ let to   = new Date(document.getElementById("to").value || "2100-12-31");
 
 let html = "";
 
-tenants.forEach(t=>{
+tenants.forEach((t,i)=>{
 
 let months = new Array(12).fill(0);
 
-// compute per month
+// 🔥 COMPUTE FROM JOURNAL
 jv.forEach(e=>{
 
-if(e.code !== "1100") return; // AR only
+// only AR
+if(e.code !== "1100") return;
+
+// match client (FIXED)
 if((e.sub||"").trim().toLowerCase() !== t.name.trim().toLowerCase()) return;
 
 let d = new Date(e.date);
-
 if(d < from || d > to) return;
 
 let m = getMonth(e.date);
 
-// debit = dagdag utang
+// 🔥 FIX AMOUNT FIELD
+let amt = Number(e.amt || 0);
+
 if(e.dc === "D"){
-months[m] += e.amt;
+months[m] += amt;
 }else{
-months[m] -= e.amt;
+months[m] -= amt;
 }
 
 });
 
-// previous balance (manual editable)
-let prev = localStorage.getItem("prev_"+t.name) || 0;
+// PREVIOUS BALANCE
+let prev = Number(localStorage.getItem("prev_"+t.name)) || 0;
+
+// 🔥 TOTAL COMPUTE (FIXED)
+let monthlyTotal = months.reduce((a,b)=>a+b,0);
+let total = prev + monthlyTotal;
 
 html += `<tr>
+
 <td>${t.name}</td>
 
 <td class="prev">
@@ -143,17 +157,41 @@ onchange="savePrev('${t.name}', this.value)">
 
 ${months.map(v=>`<td>${v}</td>`).join("")}
 
-</tr>`;
+<td><b>${total}</b></td>
 
+<td>
+<button class="editBtn" onclick="editTenant(${i})">Edit</button>
+<button class="deleteBtn" onclick="deleteTenant(${i})">Delete</button>
+</td>
+
+</tr>`;
 });
 
 document.getElementById("tbl").innerHTML = html;
-
 }
 
-// save previous balance
+// SAVE PREVIOUS
 function savePrev(name,val){
 localStorage.setItem("prev_"+name, val);
+}
+
+// EDIT
+function editTenant(i){
+let newName = prompt("Edit name:", tenants[i].name);
+if(newName){
+tenants[i].name = newName;
+localStorage.setItem("tenants", JSON.stringify(tenants));
+loadTable();
+}
+}
+
+// DELETE
+function deleteTenant(i){
+if(confirm("Delete tenant?")){
+tenants.splice(i,1);
+localStorage.setItem("tenants", JSON.stringify(tenants));
+loadTable();
+}
 }
 
 </script>
