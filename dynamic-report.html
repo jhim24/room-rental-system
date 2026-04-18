@@ -16,6 +16,13 @@ body{
   padding:15px;
   border-radius:12px;
   margin-bottom:15px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.2);
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 
 input, select{
@@ -28,7 +35,12 @@ button{
   border:none;
   border-radius:6px;
   cursor:pointer;
+  font-weight:bold;
 }
+
+.loadBtn{background:#2ecc71;color:white;}
+.refreshBtn{background:#3498db;color:white;}
+.backBtn{background:#e74c3c;color:white;}
 
 table{
   width:100%;
@@ -52,8 +64,17 @@ th{
 
 <body>
 
-<div class="box">
+<div class="box header">
 <h3>📊 Dynamic Monthly Report</h3>
+
+<div>
+<button class="loadBtn" onclick="loadReport()">Load</button>
+<button class="refreshBtn" onclick="refreshPage()">Refresh</button>
+<button class="backBtn" onclick="goDashboard()">🏠 Dashboard</button>
+</div>
+</div>
+
+<div class="box">
 
 From: <input type="date" id="fromDate">
 To: <input type="date" id="toDate">
@@ -62,8 +83,6 @@ Client:
 <select id="clientFilter">
 <option value="">All</option>
 </select>
-
-<button onclick="loadReport()">Filter</button>
 
 </div>
 
@@ -88,6 +107,7 @@ Client:
 
 <script>
 
+/* DATA */
 function getJV(){
 return JSON.parse(localStorage.getItem("jv")) || [];
 }
@@ -124,11 +144,11 @@ if(!e.date) return;
 
 let d = new Date(e.date);
 
-// DATE FILTER
+// FILTER DATE
 if(from && d < new Date(from)) return;
 if(to && d > new Date(to)) return;
 
-// CLIENT FILTER
+// FILTER CLIENT
 let name = e.client || "Unknown";
 if(selectedClient && name !== selectedClient) return;
 
@@ -136,11 +156,10 @@ if(!map[name]){
 map[name] = Array(12).fill(0);
 }
 
-// MONTH INDEX
-let m = d.getMonth();
+let month = d.getMonth();
 
-// USE CREDIT (income)
-map[name][m] += Number(e.c) || 0;
+// INCOME (credit)
+map[name][month] += Number(e.c) || 0;
 
 });
 
@@ -168,6 +187,16 @@ html += "</tr>";
 
 reportTable.innerHTML = html || "<tr><td colspan='14'>No data</td></tr>";
 
+}
+
+/* REFRESH */
+function refreshPage(){
+location.reload();
+}
+
+/* NAV */
+function goDashboard(){
+location.href="index.html?v=12";
 }
 
 /* INIT */
