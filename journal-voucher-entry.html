@@ -237,7 +237,9 @@ let editIndex=null;
 
 /* FUNCTIONS */
 function getAccounts(){return JSON.parse(localStorage.getItem("accounts"))||[];}
-function getClients(){return JSON.parse(localStorage.getItem("clients"))||[];}
+function getClients(){
+return JSON.parse(localStorage.getItem("tenants")) || [];
+}
 function getJV(){return JSON.parse(localStorage.getItem("jv"))||[];}
 function saveJV(d){localStorage.setItem("jv",JSON.stringify(d));}
 
@@ -276,7 +278,20 @@ cliSel.innerHTML='<option value="">Select</option>';
 getClients().forEach(c=>{
 cliSel.innerHTML+=`<option value="${c.name}">${c.name}</option>`;
 });
+accSel.onchange=function(){
 
+let name=this.options[this.selectedIndex]?.dataset.name || "";
+div.querySelector(".name").value=name;
+
+// SHOW CLIENT ONLY IF AR
+if(name.toLowerCase().includes("receivable")){
+div.querySelector(".client").disabled=false;
+}else{
+div.querySelector(".client").value="";
+div.querySelector(".client").disabled=true;
+}
+
+};
 /* AUTO NAME */
 accSel.onchange=function(){
 div.querySelector(".name").value=this.options[this.selectedIndex]?.dataset.name||"";
