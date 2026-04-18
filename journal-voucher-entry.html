@@ -1,133 +1,244 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Journal Entry</title>
+<title>Journal Voucher</title>
 
 <style>
-body{font-family:Arial;background:#eef3ff;padding:20px;}
-.box{background:white;padding:15px;border-radius:10px;margin-bottom:15px;}
 
-.grid{
-  display:grid;
-  grid-template-columns:60px 140px 180px 180px 180px 100px 80px;
-  gap:5px;
-  margin-bottom:5px;
+/* ===== GLOBAL ===== */
+body{
+  margin:0;
+  font-family:Segoe UI, Tahoma;
+  background:#f4f6fb;
 }
 
-.grid input,.grid select{padding:6px;width:100%;}
+/* ===== CONTAINER ===== */
+.container{
+  width:95%;
+  margin:20px auto;
+}
 
+/* ===== HEADER ===== */
 .header{
-  background:#2c3e50;
-  color:white;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  background:white;
+  padding:15px 20px;
+  border-radius:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+.header h2{
+  margin:0;
+  color:#2c3e50;
+}
+
+/* ===== BUTTONS ===== */
+.btn{
+  padding:8px 14px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
   font-weight:bold;
+}
+
+.btn-blue{background:#3498db;color:white;}
+.btn-green{background:#2ecc71;color:white;}
+.btn-red{background:#e74c3c;color:white;}
+.btn-gray{background:#bdc3c7;color:black;}
+
+/* ===== FORM ===== */
+.form{
+  margin-top:15px;
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+  display:flex;
+  gap:15px;
+}
+
+.form input, .form textarea{
+  padding:8px;
+  border:1px solid #ccc;
+  border-radius:6px;
+  width:100%;
+}
+
+/* ===== GRID HEADER ===== */
+.grid-header{
+  margin-top:15px;
+  display:grid;
+  grid-template-columns:50px 70px 120px 200px 150px 200px 120px 120px 80px;
+  background:#34495e;
+  color:white;
+  border-radius:6px 6px 0 0;
+}
+
+.grid-header div{
+  padding:10px;
+  text-align:center;
+  font-weight:bold;
+  border-right:1px solid #2c3e50;
+}
+
+/* ===== GRID BODY ===== */
+.rows{
+  background:white;
+  border:1px solid #ddd;
+  border-top:none;
+}
+
+.row{
+  display:grid;
+  grid-template-columns:50px 70px 120px 200px 150px 200px 120px 120px 80px;
+}
+
+.row input, .row select{
+  padding:6px;
+  border:1px solid #ddd;
+  width:100%;
+}
+
+/* ===== FOOTER ===== */
+.footer{
+  margin-top:10px;
+  display:flex;
+  justify-content:flex-end;
+  gap:20px;
+}
+
+.total-box{
+  background:#fff;
+  padding:10px 20px;
+  border-radius:8px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.1);
+  font-weight:bold;
+}
+
+/* ===== RECORD TABLE ===== */
+.table{
+  margin-top:20px;
+  background:white;
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+.table table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.table th{
+  background:#2980b9;
+  color:white;
+  padding:10px;
+}
+
+.table td{
+  padding:8px;
+  border-bottom:1px solid #ddd;
   text-align:center;
 }
 
-button{padding:6px 10px;border:none;border-radius:5px;cursor:pointer;}
-.addBtn{background:#3498db;color:white;}
-.saveBtn{background:#2ecc71;color:white;}
-.delBtn{background:#e74c3c;color:white;}
-.editBtn{background:#f39c12;color:white;}
-
-table{width:100%;border-collapse:collapse;margin-top:10px;}
-th,td{border:1px solid #ccc;padding:8px;text-align:center;}
-th{background:#3498db;color:white;}
-
-.total{font-weight:bold;background:#f1f1f1;}
 </style>
 </head>
 
 <body>
 
-<div class="box">
+<div class="container">
 
-<h3>📒 Journal Entry</h3>
-
-<div class="grid header">
-<div>D/C</div>
-<div>Code</div>
-<div>Account</div>
-<div>Client</div>
-<div>Narration</div>
-<div>Amount</div>
-<div>Action</div>
+<!-- HEADER -->
+<div class="header">
+  <h2>📒 Journal Voucher</h2>
+  <div>
+    <button class="btn btn-blue" onclick="addRow()">+ Row</button>
+    <button class="btn btn-green" onclick="saveJournal()">Save</button>
+  </div>
 </div>
 
-<div id="rows"></div>
+<!-- FORM -->
+<div class="form">
+  <div>
+    Ref No<br>
+    <input id="ref">
+  </div>
 
-<button class="addBtn" onclick="addRow()">+ Add Row</button>
-<button class="saveBtn" onclick="saveJournal()">Save</button>
-
+  <div style="flex:1">
+    Remarks<br>
+    <textarea id="remarks"></textarea>
+  </div>
 </div>
 
-<div class="box">
+<!-- GRID HEADER -->
+<div class="grid-header">
+  <div>SN</div>
+  <div>D/C</div>
+  <div>Code</div>
+  <div>Account</div>
+  <div>Client</div>
+  <div>Narration</div>
+  <div>Debit</div>
+  <div>Credit</div>
+  <div>Del</div>
+</div>
 
-<h3>📋 Journal Records</h3>
+<!-- ROWS -->
+<div id="rows" class="rows"></div>
 
-<table>
-<thead>
-<tr>
-<th>#</th>
-<th>Account</th>
-<th>Client</th>
-<th>Narration</th>
-<th>Cr</th>
-<th>Dr</th>
-<th>Action</th>
-</tr>
-</thead>
+<!-- FOOTER -->
+<div class="footer">
+  <div class="total-box">Debit: <span id="totalDr">0</span></div>
+  <div class="total-box">Credit: <span id="totalCr">0</span></div>
+</div>
 
-<tbody id="recordTable"></tbody>
-
-<tfoot>
-<tr class="total">
-<td colspan="4">TOTAL</td>
-<td id="totalCr">0</td>
-<td id="totalDr">0</td>
-<td></td>
-</tr>
-</tfoot>
-
-</table>
+<!-- RECORDS -->
+<div class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Account</th>
+        <th>Client</th>
+        <th>Debit</th>
+        <th>Credit</th>
+      </tr>
+    </thead>
+    <tbody id="recordTable"></tbody>
+  </table>
+</div>
 
 </div>
 
 <script>
 
-// ===== INIT DEFAULT ACCOUNTS =====
-function initAccounts(){
-let acc = JSON.parse(localStorage.getItem("accounts"));
-if(!acc){
-let data=[
+/* ===== SAMPLE DATA ===== */
+if(!localStorage.getItem("accounts")){
+localStorage.setItem("accounts",JSON.stringify([
 {code:"1000",name:"Cash"},
 {code:"1100",name:"Accounts Receivable"},
-{code:"4000",name:"Rent Income"}
-];
-localStorage.setItem("accounts",JSON.stringify(data));
-}
+{code:"4000",name:"Income"}
+]));
 }
 
-// ===== STORAGE =====
+/* ===== FUNCTIONS ===== */
+
 function getAccounts(){
 return JSON.parse(localStorage.getItem("accounts")) || [];
 }
-function getTenants(){
-return JSON.parse(localStorage.getItem("tenants")) || [];
-}
-function getJV(){
-return JSON.parse(localStorage.getItem("jv")) || [];
-}
-function saveJV(data){
-localStorage.setItem("jv",JSON.stringify(data));
-}
 
-// ===== ADD ROW =====
 function addRow(){
 
+let index = document.querySelectorAll(".row").length + 1;
+
 let div=document.createElement("div");
-div.className="grid";
+div.className="row";
 
 div.innerHTML=`
+<input value="${index}" readonly>
+
 <select class="dc">
 <option>D</option>
 <option>C</option>
@@ -137,181 +248,103 @@ div.innerHTML=`
 
 <input class="name" readonly>
 
-<select class="client"></select>
+<input class="client">
 
-<input class="nar" placeholder="Narration">
+<input class="nar">
 
-<input class="amt" type="number">
+<input class="debit" type="number" oninput="calc()">
 
-<button class="delBtn" onclick="this.parentElement.remove()">X</button>
+<input class="credit" type="number" oninput="calc()">
+
+<button onclick="this.parentElement.remove();calc()">X</button>
 `;
 
 rows.appendChild(div);
 
-// LOAD ACCOUNTS
+/* LOAD ACCOUNTS */
 let accSel = div.querySelector(".code");
 accSel.innerHTML='<option value="">Select</option>';
 
 getAccounts().forEach(a=>{
 accSel.innerHTML+=`<option value="${a.code}" data-name="${a.name}">
-${a.code} - ${a.name}</option>`;
+${a.code}</option>`;
 });
 
-// LOAD CLIENTS
-let clientSel = div.querySelector(".client");
-clientSel.innerHTML='<option value="">Client</option>';
-
-getTenants().forEach(t=>{
-clientSel.innerHTML+=`<option value="${t.name}">${t.name}</option>`;
-});
-
-// AUTO ACCOUNT NAME
-accSel.onchange = function(){
+/* AUTO NAME */
+accSel.onchange=function(){
 let name = this.options[this.selectedIndex]?.dataset.name;
 div.querySelector(".name").value = name || "";
 };
 
 }
 
-// ===== SAVE =====
-function saveJournal(){
+/* ===== CALCULATE ===== */
+function calc(){
+let dr=0, cr=0;
 
-let jv = getJV();
-let rowsList = document.querySelectorAll("#rows .grid");
+document.querySelectorAll(".row").forEach(r=>{
+dr += Number(r.querySelector(".debit").value) || 0;
+cr += Number(r.querySelector(".credit").value) || 0;
+});
 
-let entry=[];
-
-rowsList.forEach(row=>{
-
-let dc = row.querySelector(".dc").value;
-let code = row.querySelector(".code").value;
-let acc = row.querySelector(".name").value;
-let sub = row.querySelector(".client").value;
-let nar = row.querySelector(".nar").value;
-let amt = Number(row.querySelector(".amt").value);
-
-// VALIDATION
-if(!code || !acc || amt <= 0) return;
-
-// ONLY AR may client
-if(!acc.toLowerCase().includes("receivable")){
-sub="";
+totalDr.innerText = dr.toFixed(2);
+totalCr.innerText = cr.toFixed(2);
 }
 
-entry.push({dc,code,acc,sub,nar,amt});
+/* ===== SAVE ===== */
+function saveJournal(){
+
+let rowsList=document.querySelectorAll(".row");
+
+let entry=[];
+let dr=0, cr=0;
+
+rowsList.forEach(r=>{
+
+let dc=r.querySelector(".dc").value;
+let acc=r.querySelector(".name").value;
+let client=r.querySelector(".client").value;
+let d=Number(r.querySelector(".debit").value)||0;
+let c=Number(r.querySelector(".credit").value)||0;
+
+if(!acc || (d==0 && c==0)) return;
+
+dr+=d; cr+=c;
+
+entry.push({acc,client,d,c});
 
 });
 
-// CHECK EMPTY
-if(entry.length === 0){
-alert("❌ Please fill Account & Amount");
+if(dr!==cr){
+alert("❌ Debit must equal Credit");
 return;
 }
 
-// SAVE
-jv.push(entry);
-saveJV(jv);
-
-// REFRESH
-loadRecords();
-clearForm();
-
-alert("✅ Saved Successfully");
-
-}
-
-// ===== LOAD =====
-function loadRecords(){
-
-let jv=getJV();
 let html="";
-let dr=0,cr=0;
 
-jv.forEach((entry,i)=>{
-
-entry.forEach(e=>{
-
-let d=e.dc==="D"?e.amt:"";
-let c=e.dc==="C"?e.amt:"";
-
-if(d) dr+=e.amt;
-if(c) cr+=e.amt;
-
+entry.forEach((e,i)=>{
 html+=`
 <tr>
 <td>${i+1}</td>
 <td>${e.acc}</td>
-<td>${e.sub||""}</td>
-<td>${e.nar||""}</td>
-<td>${c}</td>
-<td>${d}</td>
-<td>
-<button class="editBtn" onclick="edit(${i})">Edit</button>
-<button class="delBtn" onclick="del(${i})">Delete</button>
-</td>
+<td>${e.client}</td>
+<td>${e.d}</td>
+<td>${e.c}</td>
 </tr>`;
 });
 
-});
+recordTable.innerHTML+=html;
 
-recordTable.innerHTML=html;
-totalCr.innerText=cr;
-totalDr.innerText=dr;
-}
-
-// ===== DELETE =====
-function del(i){
-let jv=getJV();
-if(confirm("Delete?")){
-jv.splice(i,1);
-saveJV(jv);
-loadRecords();
-}
-}
-
-// ===== EDIT =====
-function edit(i){
-
-let jv=getJV();
-let entry=jv[i];
+alert("✅ Saved!");
 
 rows.innerHTML="";
-
-entry.forEach(e=>{
 addRow();
-
-let row = rows.lastElementChild;
-
-row.querySelector(".dc").value=e.dc;
-row.querySelector(".code").value=e.code;
-
-// trigger account name
-row.querySelector(".code").dispatchEvent(new Event("change"));
-
-row.querySelector(".client").value=e.sub;
-row.querySelector(".nar").value=e.nar;
-row.querySelector(".amt").value=e.amt;
-});
-
-jv.splice(i,1);
-saveJV(jv);
-loadRecords();
+calc();
 }
 
-// ===== CLEAR =====
-function clearForm(){
-rows.innerHTML="";
+/* INIT */
 addRow();
 addRow();
-}
-
-// INIT
-window.onload=function(){
-initAccounts();
-addRow();
-addRow();
-loadRecords();
-}
 
 </script>
 
