@@ -42,11 +42,17 @@ body{
 .orange{background:#f39c12;color:white;}
 .red{background:#e74c3c;color:white;}
 
+/* FIXED FORM */
 .form{
   display:grid;
-  grid-template-columns:200px 200px 1fr;
+  grid-template-columns:180px 180px 1fr;
   gap:15px;
   margin-top:15px;
+}
+
+.form div{
+  display:flex;
+  flex-direction:column;
 }
 
 input, textarea, select{
@@ -54,11 +60,18 @@ input, textarea, select{
   border:1px solid #ccc;
   border-radius:6px;
   width:100%;
+  box-sizing:border-box;
 }
 
+textarea{
+  height:60px;
+  resize:vertical;
+}
+
+/* GRID */
 .grid-header, .row{
   display:grid;
-  grid-template-columns:40px 70px 120px 180px 150px 200px 120px 120px 80px;
+  grid-template-columns:40px 70px 120px 200px 160px 200px 120px 120px 60px;
 }
 
 .grid-header{
@@ -78,6 +91,7 @@ input, textarea, select{
   border:1px solid #ccc;
 }
 
+/* TOTAL */
 .footer{
   display:flex;
   justify-content:flex-end;
@@ -92,6 +106,7 @@ input, textarea, select{
   font-weight:bold;
 }
 
+/* TABLE */
 table{
   width:100%;
   border-collapse:collapse;
@@ -117,13 +132,13 @@ th{
 <div class="card">
 
 <div class="header">
-  <h2>📒 Journal Voucher</h2>
-  <div>
-    <button class="btn blue" onclick="addRow()">+ Row</button>
-    <button class="btn green" onclick="saveJournal()">Save</button>
-    <button class="btn orange" onclick="updateJournal()">Update</button>
-    <button class="btn red" onclick="location.href='index.html'">Dashboard</button>
-  </div>
+<h2>📒 Journal Voucher</h2>
+<div>
+<button class="btn blue" onclick="addRow()">+ Row</button>
+<button class="btn green" onclick="saveJournal()">Save</button>
+<button class="btn orange" onclick="updateJournal()">Update</button>
+<button class="btn red" onclick="location.href='index.html'">Dashboard</button>
+</div>
 </div>
 
 <div class="form">
@@ -146,8 +161,15 @@ th{
 </div>
 
 <div class="grid-header">
-<div>#</div><div>D/C</div><div>Code</div><div>Account</div>
-<div>Client</div><div>Narration</div><div>Debit</div><div>Credit</div><div>X</div>
+<div>#</div>
+<div>D/C</div>
+<div>Code</div>
+<div>Account</div>
+<div>Client</div>
+<div>Narration</div>
+<div>Debit</div>
+<div>Credit</div>
+<div>X</div>
 </div>
 
 <div id="rows"></div>
@@ -185,10 +207,21 @@ th{
 <script>
 
 /* DATA */
-function getAccounts(){return JSON.parse(localStorage.getItem("accounts"))||[];}
-function getClients(){return JSON.parse(localStorage.getItem("tenants"))||[];}
-function getJV(){return JSON.parse(localStorage.getItem("jv"))||[];}
-function saveJV(d){localStorage.setItem("jv",JSON.stringify(d));}
+function getAccounts(){
+return JSON.parse(localStorage.getItem("accounts")) || [];
+}
+
+function getClients(){
+return JSON.parse(localStorage.getItem("tenants")) || [];
+}
+
+function getJV(){
+return JSON.parse(localStorage.getItem("jv")) || [];
+}
+
+function saveJV(d){
+localStorage.setItem("jv", JSON.stringify(d));
+}
 
 let editIndex=null;
 
@@ -214,47 +247,56 @@ div.innerHTML=`
 
 rows.appendChild(div);
 
-/* ACCOUNTS */
+/* LOAD ACCOUNTS */
 let accSel=div.querySelector(".code");
+let nameInput=div.querySelector(".name");
+
 accSel.innerHTML='<option value="">Select</option>';
+
 getAccounts().forEach(a=>{
-accSel.innerHTML+=`<option value="${a.code}" data-name="${a.name}">${a.code}</option>`;
+accSel.innerHTML+=`<option value="${a.code}" data-name="${a.name}">
+${a.code} - ${a.name}
+</option>`;
 });
 
-/* CLIENTS */
+/* AUTO SYNC CODE + ACCOUNT */
+accSel.onchange=function(){
+let selected=this.options[this.selectedIndex];
+let name=selected.dataset.name || "";
+nameInput.value=name;
+
+/* CLIENT ENABLE ONLY IF AR */
+let clientSel=div.querySelector(".client");
+
+if(name.toLowerCase().includes("receivable")){
+clientSel.disabled=false;
+}else{
+clientSel.value="";
+clientSel.disabled=true;
+}
+};
+
+/* LOAD CLIENTS */
 let cliSel=div.querySelector(".client");
 cliSel.innerHTML='<option value="">Select</option>';
+
 getClients().forEach(c=>{
 cliSel.innerHTML+=`<option value="${c.name}">${c.name}</option>`;
 });
 
 cliSel.disabled=true;
 
-/* ON CHANGE */
-accSel.onchange=function(){
-
-let name=this.options[this.selectedIndex]?.dataset.name || "";
-div.querySelector(".name").value=name;
-
-// enable client only if AR
-if(name.toLowerCase().includes("receivable")){
-cliSel.disabled=false;
-}else{
-cliSel.value="";
-cliSel.disabled=true;
-}
-
-};
-
 }
 
 /* CALC */
 function calc(){
 let dr=0,cr=0;
+
 document.querySelectorAll(".row").forEach(r=>{
 dr+=Number(r.querySelector(".debit").value)||0;
 cr+=Number(r.querySelector(".credit").value)||0;
 });
+
 totalDr.innerText=dr.toFixed(2);
 totalCr.innerText=cr.toFixed(2);
 }
@@ -291,6 +333,7 @@ return;
 
 jv.push(entry);
 saveJV(jv);
+
 loadRecords();
 clearForm();
 
@@ -348,10 +391,16 @@ editIndex=i;
 
 /* UPDATE */
 function updateJournal(){
-if(editIndex===null){alert("Select entry first");return;}
+
+if(editIndex===null){
+alert("Select entry first");
+return;
+}
+
 let jv=getJV();
 jv.splice(editIndex,1);
 saveJV(jv);
+
 editIndex=null;
 saveJournal();
 }
