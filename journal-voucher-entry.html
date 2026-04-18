@@ -60,7 +60,7 @@ textarea{height:60px;}
 
 .grid-header,.row{
   display:grid;
-  grid-template-columns:40px 70px 120px 200px 150px 200px 120px 120px 60px;
+  grid-template-columns:40px 70px 120px 200px 150px 120px 200px 120px 120px 60px;
 }
 
 .grid-header{
@@ -146,7 +146,8 @@ th{
 
 <div class="grid-header">
 <div>#</div><div>D/C</div><div>Code</div><div>Account</div>
-<div>Client</div><div>Narration</div><div>Debit</div><div>Credit</div><div>X</div>
+<div>Client</div><div>Room</div><div>Narration</div>
+<div>Debit</div><div>Credit</div><div>X</div>
 </div>
 
 <div id="rows"></div>
@@ -204,6 +205,7 @@ div.innerHTML=`
 <select class="code"></select>
 <input class="name" readonly>
 <select class="client"></select>
+<input class="room" readonly>
 <input class="nar">
 <input class="debit" type="number" oninput="calc()">
 <input class="credit" type="number" oninput="calc()">
@@ -224,8 +226,9 @@ ${a.code} - ${a.name}
 </option>`;
 });
 
-/* CLIENTS FIXED */
+/* CLIENTS */
 let cliSel=div.querySelector(".client");
+let roomInput=div.querySelector(".room");
 
 cliSel.innerHTML='<option value="">Select Client</option>';
 
@@ -235,24 +238,36 @@ clients.forEach(c=>{
 cliSel.innerHTML+=`<option value="${c.name}">${c.name}</option>`;
 });
 
-/* 🔥 ALWAYS ENABLE (FIX) */
 cliSel.disabled=false;
+
+/* CLIENT CHANGE */
+cliSel.onchange=function(){
+
+let selectedName=this.value;
+let tenants=getClients();
+
+let found=tenants.find(t=>t.name===selectedName);
+
+if(found){
+roomInput.value=found.room || "";
+
+/* 🔥 AUTO AR */
+let ar = getAccounts().find(a=>a.name.toLowerCase().includes("receivable"));
+
+if(ar){
+accSel.value = ar.code;
+nameInput.value = ar.name;
+}
+
+}
+
+};
 
 /* ACCOUNT CHANGE */
 accSel.onchange=function(){
-
 let selected=this.options[this.selectedIndex];
 let name=selected.dataset.name||"";
-
 nameInput.value=name;
-
-/* OPTIONAL LOGIC */
-if(name.toLowerCase().includes("receivable")){
-cliSel.disabled=false;
-}else{
-cliSel.disabled=false; // ← FIX (never disable)
-}
-
 };
 
 }
