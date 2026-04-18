@@ -130,53 +130,88 @@ clientFilter.innerHTML += `<option value="${c.name}">${c.name}</option>`;
 function loadReport(){
 
 let jv = getJV();
-let from = fromDate.value;
-let to = toDate.value;
+let from = new Date(fromDate.value);
+let to = new Date(toDate.value);
 let selectedClient = clientFilter.value;
 
+if(!fromDate.value || !toDate.value){
+alert("Select date range");
+return;
+}
+
+/* ===== GENERATE MONTH RANGE ===== */
+let months = [];
+let temp = new Date(from);
+
+while(temp <= to){
+months.push({
+year: temp.getFullYear(),
+month: temp.getMonth()
+});
+temp.setMonth(temp.getMonth() + 1);
+}
+
+/* ===== MAP ===== */
 let map = {};
 
 jv.forEach(entry=>{
-
 entry.forEach(e=>{
 
 if(!e.date) return;
 
 let d = new Date(e.date);
 
-// FILTER DATE
-if(from && d < new Date(from)) return;
-if(to && d > new Date(to)) return;
+// FILTER
+if(d < from || d > to) return;
 
-// FILTER CLIENT
 let name = e.client || "Unknown";
 if(selectedClient && name !== selectedClient) return;
 
 if(!map[name]){
-map[name] = Array(12).fill(0);
+map[name] = {};
 }
 
-let month = d.getMonth();
+/* KEY */
+let key = d.getFullYear() + "-" + d.getMonth();
 
-// INCOME (credit)
-map[name][month] += Number(e.c) || 0;
+if(!map[name][key]){
+map[name][key] = 0;
+}
+
+map[name][key] += Number(e.c) || 0;
 
 });
-
 });
 
-/* BUILD TABLE */
-let html="";
+/* ===== HEADER ===== */
+let header = "<tr><th>Name</th>";
+
+months.forEach(m=>{
+let label = new Date(m.year, m.month)
+.toLocaleString('default',{month:'short',year:'numeric'});
+
+header += `<th>${label}</th>`;
+});
+
+header += "<th>Total</th></tr>";
+
+document.querySelector("#reportTable").innerHTML = "";
+
+/* ===== TABLE ===== */
+let html = header;
 
 Object.keys(map).forEach(name=>{
 
-let months = map[name];
-let total = months.reduce((a,b)=>a+b,0);
-
+let total = 0;
 html += "<tr>";
 html += `<td>${name}</td>`;
 
-months.forEach(val=>{
+months.forEach(m=>{
+let key = m.year + "-" + m.month;
+let val = map[name][key] || 0;
+
+total += val;
+
 html += `<td>${val.toFixed(2)}</td>`;
 });
 
@@ -185,8 +220,7 @@ html += "</tr>";
 
 });
 
-reportTable.innerHTML = html || "<tr><td colspan='14'>No data</td></tr>";
-
+reportTable.innerHTML = html;
 }
 
 /* REFRESH */
