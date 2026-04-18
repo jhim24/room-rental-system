@@ -34,9 +34,7 @@ body{
   align-items:center;
 }
 
-h2{
-  margin:0;
-}
+h2{ margin:0; }
 
 /* ===== BUTTONS ===== */
 .btn{
@@ -52,12 +50,12 @@ h2{
 .orange{background:#f39c12;color:white;}
 .red{background:#e74c3c;color:white;}
 
-/* ===== FORM ===== */
+/* ===== FIXED FORM ALIGNMENT ===== */
 .form{
   display:grid;
-  grid-template-columns: 200px 1fr;
-  gap:15px;
-  align-items:start;
+  grid-template-columns:200px 1fr;
+  gap:20px;
+  margin-top:15px;
 }
 
 .form label{
@@ -74,13 +72,18 @@ h2{
   box-sizing:border-box;
 }
 
+.form textarea{
+  min-height:60px;
+  resize:vertical;
+}
+
 /* ===== GRID HEADER ===== */
 .grid-header{
   display:grid;
   grid-template-columns:40px 70px 120px 180px 150px 200px 120px 120px 80px;
   background:#2c3e50;
   color:white;
-  margin-top:10px;
+  margin-top:15px;
 }
 
 .grid-header div{
@@ -101,14 +104,11 @@ h2{
 }
 
 /* ===== TABLE ===== */
-.table{
-  margin-top:15px;
-}
-
 table{
   width:100%;
   border-collapse:collapse;
   background:white;
+  margin-top:10px;
 }
 
 th,td{
@@ -155,18 +155,22 @@ th{
   </div>
 </div>
 
+<!-- ✅ FIXED FORM -->
 <div class="form">
+
   <div>
-    Ref No<br>
+    <label>Ref No</label>
     <input id="ref">
   </div>
 
-  <div style="flex:1">
-    Remarks<br>
+  <div>
+    <label>Remarks</label>
     <textarea id="remarks"></textarea>
   </div>
+
 </div>
 
+<!-- GRID -->
 <div class="grid-header">
   <div>#</div>
   <div>D/C</div>
@@ -188,7 +192,7 @@ th{
 
 </div>
 
-<div class="card table">
+<div class="card">
 
 <table>
 <thead>
@@ -213,7 +217,7 @@ th{
 
 <script>
 
-/* ===== SAMPLE DATA ===== */
+/* SAMPLE DATA */
 if(!localStorage.getItem("accounts")){
 localStorage.setItem("accounts",JSON.stringify([
 {code:"1000",name:"Cash"},
@@ -229,42 +233,31 @@ localStorage.setItem("clients",JSON.stringify([
 ]));
 }
 
-let editIndex = null;
+let editIndex=null;
 
-/* ===== GET DATA ===== */
-function getAccounts(){ return JSON.parse(localStorage.getItem("accounts")) || []; }
-function getClients(){ return JSON.parse(localStorage.getItem("clients")) || []; }
-function getJV(){ return JSON.parse(localStorage.getItem("jv")) || []; }
-function saveJV(data){ localStorage.setItem("jv",JSON.stringify(data)); }
+/* FUNCTIONS */
+function getAccounts(){return JSON.parse(localStorage.getItem("accounts"))||[];}
+function getClients(){return JSON.parse(localStorage.getItem("clients"))||[];}
+function getJV(){return JSON.parse(localStorage.getItem("jv"))||[];}
+function saveJV(d){localStorage.setItem("jv",JSON.stringify(d));}
 
-/* ===== ADD ROW ===== */
+/* ADD ROW */
 function addRow(){
 
-let i = document.querySelectorAll(".row").length+1;
+let i=document.querySelectorAll(".row").length+1;
 
 let div=document.createElement("div");
 div.className="row";
 
 div.innerHTML=`
 <input value="${i}" readonly>
-
-<select class="dc">
-<option>D</option>
-<option>C</option>
-</select>
-
+<select class="dc"><option>D</option><option>C</option></select>
 <select class="code"></select>
-
 <input class="name" readonly>
-
 <select class="client"></select>
-
 <input class="nar">
-
 <input class="debit" type="number" oninput="calc()">
-
 <input class="credit" type="number" oninput="calc()">
-
 <button onclick="this.parentElement.remove();calc()">X</button>
 `;
 
@@ -274,8 +267,7 @@ rows.appendChild(div);
 let accSel=div.querySelector(".code");
 accSel.innerHTML='<option value="">Select</option>';
 getAccounts().forEach(a=>{
-accSel.innerHTML+=`<option value="${a.code}" data-name="${a.name}">
-${a.code}</option>`;
+accSel.innerHTML+=`<option value="${a.code}" data-name="${a.name}">${a.code}</option>`;
 });
 
 /* LOAD CLIENTS */
@@ -285,28 +277,25 @@ getClients().forEach(c=>{
 cliSel.innerHTML+=`<option value="${c.name}">${c.name}</option>`;
 });
 
-/* AUTO ACCOUNT NAME */
+/* AUTO NAME */
 accSel.onchange=function(){
-let name=this.options[this.selectedIndex]?.dataset.name;
-div.querySelector(".name").value=name||"";
+div.querySelector(".name").value=this.options[this.selectedIndex]?.dataset.name||"";
 };
 
 }
 
-/* ===== CALCULATE ===== */
+/* CALC */
 function calc(){
 let dr=0,cr=0;
-
 document.querySelectorAll(".row").forEach(r=>{
 dr+=Number(r.querySelector(".debit").value)||0;
 cr+=Number(r.querySelector(".credit").value)||0;
 });
-
 totalDr.innerText=dr.toFixed(2);
 totalCr.innerText=cr.toFixed(2);
 }
 
-/* ===== SAVE ===== */
+/* SAVE */
 function saveJournal(){
 
 let jv=getJV();
@@ -314,7 +303,6 @@ let entry=[];
 let dr=0,cr=0;
 
 document.querySelectorAll(".row").forEach(r=>{
-
 let acc=r.querySelector(".name").value;
 let client=r.querySelector(".client").value;
 let nar=r.querySelector(".nar").value;
@@ -328,20 +316,15 @@ dr+=d; cr+=c;
 entry.push({acc,client,nar,d,c});
 });
 
-if(dr!==cr){
-alert("❌ Debit must equal Credit");
-return;
-}
+if(dr!==cr){alert("❌ Debit must equal Credit");return;}
 
 jv.push(entry);
 saveJV(jv);
-
 loadRecords();
 clearForm();
-
 }
 
-/* ===== LOAD ===== */
+/* LOAD */
 function loadRecords(){
 
 let jv=getJV();
@@ -368,7 +351,7 @@ html+=`
 recordTable.innerHTML=html;
 }
 
-/* ===== EDIT ===== */
+/* EDIT */
 function edit(i){
 let jv=getJV();
 let entry=jv[i];
@@ -378,7 +361,6 @@ rows.innerHTML="";
 entry.forEach(e=>{
 addRow();
 let r=rows.lastElementChild;
-
 r.querySelector(".name").value=e.acc;
 r.querySelector(".client").value=e.client;
 r.querySelector(".nar").value=e.nar;
@@ -389,23 +371,17 @@ r.querySelector(".credit").value=e.c;
 editIndex=i;
 }
 
-/* ===== UPDATE ===== */
+/* UPDATE */
 function updateJournal(){
-
-if(editIndex===null){
-alert("Select entry first");
-return;
-}
-
+if(editIndex===null){alert("Select entry first");return;}
 let jv=getJV();
 jv.splice(editIndex,1);
 saveJV(jv);
-
 editIndex=null;
 saveJournal();
 }
 
-/* ===== DELETE ===== */
+/* DELETE */
 function del(i){
 let jv=getJV();
 if(confirm("Delete?")){
@@ -415,7 +391,7 @@ loadRecords();
 }
 }
 
-/* ===== CLEAR ===== */
+/* CLEAR */
 function clearForm(){
 rows.innerHTML="";
 addRow();
