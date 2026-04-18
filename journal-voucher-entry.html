@@ -328,7 +328,15 @@ if(!acc || (d==0 && c==0)) return;
 
 dr+=d; cr+=c;
 
-entry.push({acc,client,nar,d,c});
+let today = new Date().toISOString().split("T")[0];
+
+entry.push({
+  date: today,
+  acc,
+  client,
+  nar,
+  d,
+  c
 });
 
 if(dr!==cr){alert("❌ Debit must equal Credit");return;}
