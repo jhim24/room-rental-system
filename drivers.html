@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Drivers Excel Table</title>
+<title>Drivers Excel System</title>
 
 <style>
 body{
@@ -10,7 +10,6 @@ body{
   padding:20px;
 }
 
-/* BOX */
 .box{
   background:white;
   padding:15px;
@@ -18,17 +17,17 @@ body{
   margin-bottom:10px;
 }
 
-/* BUTTON */
 button{
   padding:6px 10px;
   border:none;
   cursor:pointer;
+  margin-right:5px;
 }
 
 .add{background:#27ae60;color:white;}
+.export{background:#2980b9;color:white;}
 .del{background:red;color:white;}
 
-/* TABLE */
 .table-wrap{
   overflow:auto;
 }
@@ -45,13 +44,10 @@ th,td{
   font-size:12px;
 }
 
-/* HEADER */
 th{
   background:#e3eaf5;
-  font-weight:bold;
 }
 
-/* INPUT */
 input{
   width:70px;
   border:none;
@@ -59,10 +55,13 @@ input{
   text-align:center;
 }
 
-/* TOTAL */
 .total{
   background:#dfe6e9;
   font-weight:bold;
+}
+
+.overdue{
+  background:#ffcccc !important;
 }
 </style>
 
@@ -71,8 +70,11 @@ input{
 <body>
 
 <div class="box">
-<h3>🚗 Drivers Payment (Excel Style)</h3>
+<h3>🚗 Drivers Excel System</h3>
+
 <button class="add" onclick="addRow()">+ Add Driver</button>
+<button class="export" onclick="exportCSV()">Export Excel</button>
+
 </div>
 
 <div class="box table-wrap">
@@ -81,23 +83,28 @@ input{
 
 <script>
 
-const months = [
-"Jan","Feb","Mar","Apr","May","Jun",
-"Jul","Aug","Sep","Oct","Nov","Dec"
-];
+const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-/* BUILD HEADER */
+/* STORAGE */
+function saveData(){
+localStorage.setItem("driversData", JSON.stringify(getTableData()));
+}
+
+function loadData(){
+let data = JSON.parse(localStorage.getItem("driversData")) || [];
+data.forEach(d=>addRow(d));
+}
+
+/* BUILD */
 function build(){
-
 let html="";
 
-/* HEADER */
 html+="<tr>";
 html+="<th rowspan='2'>Driver</th>";
 html+="<th rowspan='2'>Car</th>";
 html+="<th rowspan='2'>Old</th>";
 html+="<th rowspan='2'>New</th>";
-html+="<th rowspan='2'>Prev Bal</th>";
+html+="<th rowspan='2'>Prev</th>";
 
 months.forEach(m=>{
 html+=`<th colspan="3">${m}</th>`;
@@ -107,68 +114,61 @@ html+="<th rowspan='2'>TOTAL</th>";
 html+="<th rowspan='2'>Action</th>";
 html+="</tr>";
 
-/* SUB HEADER */
 html+="<tr>";
-
 months.forEach(()=>{
-html+="<th>Due</th>";
-html+="<th>Pay</th>";
-html+="<th>Bal</th>";
+html+="<th>Due</th><th>Pay</th><th>Bal</th>";
 });
-
 html+="</tr>";
 
 tbl.innerHTML = html;
-
 }
 
 build();
 
-/* ADD ROW */
-function addRow(){
+/* ADD */
+function addRow(data={}){
 
 let tr=document.createElement("tr");
 
 let html="";
 
-html+=`<td><input></td>`;
-html+=`<td><input></td>`;
-html+=`<td><input></td>`;
-html+=`<td><input></td>`;
-html+=`<td><input class="prev" value="0"></td>`;
+html+=`<td><input value="${data.driver||""}"></td>`;
+html+=`<td><input value="${data.car||""}"></td>`;
+html+=`<td><input value="${data.old||""}"></td>`;
+html+=`<td><input value="${data.new||""}"></td>`;
+html+=`<td><input class="prev" value="${data.prev||0}"></td>`;
 
-months.forEach(()=>{
-html+=`<td><input class="due" value="0"></td>`;
-html+=`<td><input class="pay" value="0"></td>`;
+months.forEach((m,i)=>{
+html+=`<td><input class="due" value="${data.due?.[i]||0}"></td>`;
+html+=`<td><input class="pay" value="${data.pay?.[i]||0}"></td>`;
 html+=`<td><input class="bal" readonly></td>`;
 });
 
 html+=`<td class="total">0</td>`;
-
-html+=`
-<td>
-<button class="del" onclick="delRow(this)">X</button>
-</td>
-`;
+html+=`<td><button class="del" onclick="delRow(this)">X</button></td>`;
 
 tr.innerHTML = html;
 
 tbl.appendChild(tr);
 
-/* AUTO CALC */
 tr.querySelectorAll("input").forEach(inp=>{
-inp.oninput=()=>calcRow(tr);
+inp.oninput=()=>{
+calcRow(tr);
+saveData();
+};
 });
 
+calcRow(tr);
 }
 
 /* DELETE */
 function delRow(btn){
 btn.closest("tr").remove();
+saveData();
 calcGrand();
 }
 
-/* CALCULATE PER ROW */
+/* CALC */
 function calcRow(tr){
 
 let prev = Number(tr.querySelector(".prev").value)||0;
@@ -189,37 +189,36 @@ running = running + due - pay;
 
 bals[i].value = running.toFixed(2);
 
+if(running > 0){
+bals[i].classList.add("overdue");
+}else{
+bals[i].classList.remove("overdue");
+}
+
 total += due;
 
 });
 
-/* TOTAL ROW */
 tr.querySelector(".total").innerText = total.toFixed(2);
 
 calcGrand();
 
 }
 
-/* GRAND TOTAL */
+/* GRAND */
 function calcGrand(){
 
-let rows = document.querySelectorAll("#tbl tr");
 let sum = 0;
 
-rows.forEach(r=>{
-let t = r.querySelector(".total");
-if(t){
+document.querySelectorAll(".total").forEach(t=>{
 sum += Number(t.innerText)||0;
-}
 });
 
-/* REMOVE OLD FOOTER */
-let old = document.getElementById("grandRow");
+let old=document.getElementById("grand");
 if(old) old.remove();
 
-/* ADD FOOTER */
 let tr=document.createElement("tr");
-tr.id="grandRow";
+tr.id="grand";
 
 tr.innerHTML = `
 <td colspan="5"><b>GRAND TOTAL</b></td>
@@ -233,6 +232,71 @@ tr.innerHTML = `
 tbl.appendChild(tr);
 
 }
+
+/* GET DATA */
+function getTableData(){
+
+let data=[];
+
+document.querySelectorAll("#tbl tr").forEach((tr,i)=>{
+if(i<2) return;
+
+let inputs = tr.querySelectorAll("input");
+
+if(inputs.length===0) return;
+
+let obj={
+driver:inputs[0].value,
+car:inputs[1].value,
+old:inputs[2].value,
+new:inputs[3].value,
+prev:inputs[4].value,
+due:[],
+pay:[]
+};
+
+let dues = tr.querySelectorAll(".due");
+let pays = tr.querySelectorAll(".pay");
+
+dues.forEach(d=>obj.due.push(d.value));
+pays.forEach(p=>obj.pay.push(p.value));
+
+data.push(obj);
+
+});
+
+return data;
+
+}
+
+/* EXPORT */
+function exportCSV(){
+
+let rows = [];
+
+document.querySelectorAll("#tbl tr").forEach(tr=>{
+let cols = tr.querySelectorAll("th,td");
+
+let row=[];
+cols.forEach(c=>{
+row.push(c.innerText);
+});
+
+rows.push(row.join(","));
+});
+
+let csv = rows.join("\n");
+
+let blob = new Blob([csv], { type: "text/csv" });
+let a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = "drivers.csv";
+a.click();
+
+}
+
+/* INIT */
+loadData();
 
 </script>
 
