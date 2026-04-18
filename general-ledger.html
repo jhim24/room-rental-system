@@ -5,30 +5,47 @@
 
 <style>
 body{
-  font-family:Arial;
-  background:#eef3ff;
+  font-family:Segoe UI;
+  margin:0;
+  background:linear-gradient(135deg,#667eea,#764ba2);
   padding:20px;
 }
 
 .box{
   background:white;
   padding:15px;
-  border-radius:10px;
+  border-radius:12px;
   margin-bottom:15px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
 }
 
 button{
-  padding:6px 12px;
+  padding:8px 14px;
   border:none;
-  border-radius:5px;
+  border-radius:6px;
   cursor:pointer;
+  font-weight:bold;
 }
 
 .loadBtn{background:#3498db;color:white;}
+.backBtn{background:#e74c3c;color:white;}
+.filter{
+  padding:6px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
 
+/* TABLE */
 table{
   width:100%;
   border-collapse:collapse;
+  margin-top:10px;
 }
 
 th,td{
@@ -38,18 +55,30 @@ th,td{
 }
 
 th{
-  background:#3498db;
+  background:#2980b9;
   color:white;
+}
+
+tfoot{
+  background:#ecf0f1;
+  font-weight:bold;
 }
 </style>
 </head>
 
 <body>
 
-<div class="box">
+<div class="box header">
 <h3>📘 General Ledger (Accounts Receivable)</h3>
 
-<button class="loadBtn" onclick="loadLedger()">Load Ledger</button>
+<div>
+<select id="clientFilter" class="filter" onchange="loadLedger()">
+<option value="">All Clients</option>
+</select>
+
+<button class="loadBtn" onclick="loadLedger()">Refresh</button>
+<button class="backBtn" onclick="goDashboard()">🏠 Dashboard</button>
+</div>
 
 </div>
 
@@ -59,6 +88,7 @@ th{
 <thead>
 <tr>
 <th>#</th>
+<th>Date</th>
 <th>Account</th>
 <th>Client</th>
 <th>Debit</th>
@@ -71,7 +101,7 @@ th{
 
 <tfoot>
 <tr>
-<td colspan="5"><b>GRAND TOTAL</b></td>
+<td colspan="6">TOTAL BALANCE</td>
 <td id="totalBalance">0</td>
 </tr>
 </tfoot>
@@ -82,74 +112,104 @@ th{
 
 <script>
 
+/* ===== DATA ===== */
 function getJV(){
-try{
 return JSON.parse(localStorage.getItem("jv")) || [];
-}catch{
-return [];
-}
 }
 
+function getClients(){
+return JSON.parse(localStorage.getItem("tenants")) || [];
+}
+
+/* ===== LOAD CLIENT FILTER ===== */
+function loadClientFilter(){
+
+let clients = getClients();
+clientFilter.innerHTML = '<option value="">All Clients</option>';
+
+clients.forEach(c=>{
+clientFilter.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+});
+
+}
+
+/* ===== LOAD LEDGER ===== */
 function loadLedger(){
 
 let jv = getJV();
-let map = {};
-let total = 0;
+let selectedClient = clientFilter.value;
 
-jv.forEach(e=>{
+let rows = [];
+let runningBalance = 0;
 
-if(!e || !e.acc) return;
+/* LOOP JOURNAL */
+jv.forEach((entry, index)=>{
 
-let accName = e.acc.toLowerCase();
-if(!accName.includes("receivable")) return;
+entry.forEach(e=>{
 
-let name = (e.sub || "").trim();
-if(!name) return;
+let acc = (e.acc || "").toLowerCase();
 
-if(!map[name]){
-map[name] = {dr:0, cr:0};
-}
+// ONLY AR
+if(!acc.includes("receivable")) return;
 
-let amt = Number(e.amt || 0);
-if(isNaN(amt)) amt = 0;
+let client = e.client || "";
 
-if(e.dc === "D"){
-map[name].dr += amt;
-}else if(e.dc === "C"){
-map[name].cr += amt;
-}
+// FILTER
+if(selectedClient && client !== selectedClient) return;
+
+let debit = Number(e.d) || 0;
+let credit = Number(e.c) || 0;
+
+runningBalance += debit - credit;
+
+rows.push({
+date: index + 1,
+acc: e.acc,
+client: client,
+d: debit,
+c: credit,
+bal: runningBalance
+});
 
 });
 
+});
+
+/* BUILD TABLE */
 let html="";
-let i=1;
+let total=0;
 
-Object.keys(map).forEach(name=>{
+rows.forEach((r,i)=>{
 
-let dr = map[name].dr;
-let cr = map[name].cr;
-let balance = dr - cr;
-
-total += balance;
+total = r.bal;
 
 html += `
 <tr>
-<td>${i++}</td>
-<td>Accounts Receivable</td>
-<td>${name}</td>
-<td>${dr}</td>
-<td>${cr}</td>
-<td><b>${balance}</b></td>
+<td>${i+1}</td>
+<td>${r.date}</td>
+<td>${r.acc}</td>
+<td>${r.client}</td>
+<td>${r.d.toFixed(2)}</td>
+<td>${r.c.toFixed(2)}</td>
+<td><b>${r.bal.toFixed(2)}</b></td>
 </tr>
 `;
 
 });
 
-ledgerTable.innerHTML = html || "<tr><td colspan='6'>No data</td></tr>";
-totalBalance.innerText = total;
+ledgerTable.innerHTML = html || "<tr><td colspan='7'>No data</td></tr>";
+totalBalance.innerText = total.toFixed(2);
+
 }
 
-window.onload = loadLedger;
+/* ===== NAV ===== */
+function goDashboard(){
+location.href="index.html?v=12";
+}
+
+/* INIT */
+loadClientFilter();
+loadLedger();
 
 </script>
 
