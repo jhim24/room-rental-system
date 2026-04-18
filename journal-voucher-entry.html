@@ -4,21 +4,17 @@
 <title>Journal Voucher Pro</title>
 
 <style>
-
-/* ===== BACKGROUND ===== */
 body{
   margin:0;
   font-family:Segoe UI;
   background:linear-gradient(135deg,#667eea,#764ba2);
 }
 
-/* ===== CONTAINER ===== */
 .container{
   width:95%;
   margin:20px auto;
 }
 
-/* ===== CARD ===== */
 .card{
   background:white;
   border-radius:12px;
@@ -27,16 +23,12 @@ body{
   margin-bottom:15px;
 }
 
-/* ===== HEADER ===== */
 .header{
   display:flex;
   justify-content:space-between;
   align-items:center;
 }
 
-h2{ margin:0; }
-
-/* ===== BUTTONS ===== */
 .btn{
   padding:8px 14px;
   border:none;
@@ -50,37 +42,26 @@ h2{ margin:0; }
 .orange{background:#f39c12;color:white;}
 .red{background:#e74c3c;color:white;}
 
-/* ===== FIXED FORM ALIGNMENT ===== */
 .form{
   display:grid;
-  grid-template-columns:200px 1fr;
-  gap:20px;
+  grid-template-columns:200px 200px 1fr;
+  gap:15px;
   margin-top:15px;
 }
 
-.form label{
-  font-weight:600;
-  margin-bottom:5px;
-  display:block;
-}
-
-.form input, .form textarea{
-  width:100%;
+input, textarea, select{
   padding:8px;
   border:1px solid #ccc;
   border-radius:6px;
-  box-sizing:border-box;
+  width:100%;
 }
 
-.form textarea{
-  min-height:60px;
-  resize:vertical;
-}
-
-/* ===== GRID HEADER ===== */
-.grid-header{
+.grid-header, .row{
   display:grid;
   grid-template-columns:40px 70px 120px 180px 150px 200px 120px 120px 80px;
+}
+
+.grid-header{
   background:#2c3e50;
   color:white;
   margin-top:15px;
@@ -92,37 +73,11 @@ h2{ margin:0; }
   text-align:center;
 }
 
-/* ===== ROW ===== */
-.row{
-  display:grid;
-  grid-template-columns:40px 70px 120px 180px 150px 200px 120px 120px 80px;
-}
-
 .row input, .row select{
   padding:6px;
   border:1px solid #ccc;
 }
 
-/* ===== TABLE ===== */
-table{
-  width:100%;
-  border-collapse:collapse;
-  background:white;
-  margin-top:10px;
-}
-
-th,td{
-  border:1px solid #999;
-  padding:8px;
-  text-align:center;
-}
-
-th{
-  background:#2980b9;
-  color:white;
-}
-
-/* ===== TOTAL ===== */
 .footer{
   display:flex;
   justify-content:flex-end;
@@ -137,6 +92,21 @@ th{
   font-weight:bold;
 }
 
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  border:1px solid #999;
+  padding:8px;
+  text-align:center;
+}
+
+th{
+  background:#2980b9;
+  color:white;
+}
 </style>
 </head>
 
@@ -152,42 +122,39 @@ th{
     <button class="btn blue" onclick="addRow()">+ Row</button>
     <button class="btn green" onclick="saveJournal()">Save</button>
     <button class="btn orange" onclick="updateJournal()">Update</button>
+    <button class="btn red" onclick="location.href='index.html'">Dashboard</button>
   </div>
 </div>
 
-<!-- ✅ FIXED FORM -->
 <div class="form">
 
-  <div>
-    <label>Ref No</label>
-    <input id="ref">
-  </div>
+<div>
+<label>Date</label>
+<input type="date" id="date">
+</div>
 
-  <div>
-    <label>Remarks</label>
-    <textarea id="remarks"></textarea>
-  </div>
+<div>
+<label>Ref No</label>
+<input id="ref">
+</div>
+
+<div>
+<label>Remarks</label>
+<textarea id="remarks"></textarea>
+</div>
 
 </div>
 
-<!-- GRID -->
 <div class="grid-header">
-  <div>#</div>
-  <div>D/C</div>
-  <div>Code</div>
-  <div>Account</div>
-  <div>Client</div>
-  <div>Narration</div>
-  <div>Debit</div>
-  <div>Credit</div>
-  <div>Del</div>
+<div>#</div><div>D/C</div><div>Code</div><div>Account</div>
+<div>Client</div><div>Narration</div><div>Debit</div><div>Credit</div><div>X</div>
 </div>
 
 <div id="rows"></div>
 
 <div class="footer">
-  <div class="total">Debit: <span id="totalDr">0</span></div>
-  <div class="total">Credit: <span id="totalCr">0</span></div>
+<div class="total">Debit: <span id="totalDr">0</span></div>
+<div class="total">Credit: <span id="totalCr">0</span></div>
 </div>
 
 </div>
@@ -198,9 +165,9 @@ th{
 <thead>
 <tr>
 <th>#</th>
+<th>Date</th>
 <th>Account</th>
 <th>Client</th>
-<th>Narration</th>
 <th>Debit</th>
 <th>Credit</th>
 <th>Action</th>
@@ -217,31 +184,13 @@ th{
 
 <script>
 
-/* SAMPLE DATA */
-if(!localStorage.getItem("accounts")){
-localStorage.setItem("accounts",JSON.stringify([
-{code:"1000",name:"Cash"},
-{code:"1100",name:"Accounts Receivable"},
-{code:"4000",name:"Income"}
-]));
-}
-
-if(!localStorage.getItem("clients")){
-localStorage.setItem("clients",JSON.stringify([
-{name:"Juan Dela Cruz"},
-{name:"Maria Santos"}
-]));
-}
-
-let editIndex=null;
-
-/* FUNCTIONS */
+/* DATA */
 function getAccounts(){return JSON.parse(localStorage.getItem("accounts"))||[];}
-function getClients(){
-return JSON.parse(localStorage.getItem("tenants")) || [];
-}
+function getClients(){return JSON.parse(localStorage.getItem("tenants"))||[];}
 function getJV(){return JSON.parse(localStorage.getItem("jv"))||[];}
 function saveJV(d){localStorage.setItem("jv",JSON.stringify(d));}
+
+let editIndex=null;
 
 /* ADD ROW */
 function addRow(){
@@ -265,36 +214,36 @@ div.innerHTML=`
 
 rows.appendChild(div);
 
-/* LOAD ACCOUNTS */
+/* ACCOUNTS */
 let accSel=div.querySelector(".code");
 accSel.innerHTML='<option value="">Select</option>';
 getAccounts().forEach(a=>{
 accSel.innerHTML+=`<option value="${a.code}" data-name="${a.name}">${a.code}</option>`;
 });
 
-/* LOAD CLIENTS */
+/* CLIENTS */
 let cliSel=div.querySelector(".client");
 cliSel.innerHTML='<option value="">Select</option>';
 getClients().forEach(c=>{
 cliSel.innerHTML+=`<option value="${c.name}">${c.name}</option>`;
 });
+
+cliSel.disabled=true;
+
+/* ON CHANGE */
 accSel.onchange=function(){
 
 let name=this.options[this.selectedIndex]?.dataset.name || "";
 div.querySelector(".name").value=name;
 
-// SHOW CLIENT ONLY IF AR
+// enable client only if AR
 if(name.toLowerCase().includes("receivable")){
-div.querySelector(".client").disabled=false;
+cliSel.disabled=false;
 }else{
-div.querySelector(".client").value="";
-div.querySelector(".client").disabled=true;
+cliSel.value="";
+cliSel.disabled=true;
 }
 
-};
-/* AUTO NAME */
-accSel.onchange=function(){
-div.querySelector(".name").value=this.options[this.selectedIndex]?.dataset.name||"";
 };
 
 }
@@ -317,7 +266,10 @@ let jv=getJV();
 let entry=[];
 let dr=0,cr=0;
 
+let dateVal = date.value || new Date().toISOString().split("T")[0];
+
 document.querySelectorAll(".row").forEach(r=>{
+
 let acc=r.querySelector(".name").value;
 let client=r.querySelector(".client").value;
 let nar=r.querySelector(".nar").value;
@@ -328,23 +280,20 @@ if(!acc || (d==0 && c==0)) return;
 
 dr+=d; cr+=c;
 
-let today = new Date().toISOString().split("T")[0];
+entry.push({date:dateVal, acc, client, nar, d, c});
 
-entry.push({
-  date: today,
-  acc,
-  client,
-  nar,
-  d,
-  c
 });
 
-if(dr!==cr){alert("❌ Debit must equal Credit");return;}
+if(dr!==cr){
+alert("❌ Debit must equal Credit");
+return;
+}
 
 jv.push(entry);
 saveJV(jv);
 loadRecords();
 clearForm();
+
 }
 
 /* LOAD */
@@ -358,14 +307,14 @@ entry.forEach(e=>{
 html+=`
 <tr>
 <td>${i+1}</td>
+<td>${e.date}</td>
 <td>${e.acc}</td>
 <td>${e.client}</td>
-<td>${e.nar}</td>
 <td>${e.d}</td>
 <td>${e.c}</td>
 <td>
 <button onclick="edit(${i})">Edit</button>
-<button onclick="del(${i})">Del</button>
+<button onclick="del(${i})">Delete</button>
 </td>
 </tr>`;
 });
@@ -376,6 +325,7 @@ recordTable.innerHTML=html;
 
 /* EDIT */
 function edit(i){
+
 let jv=getJV();
 let entry=jv[i];
 
@@ -384,6 +334,8 @@ rows.innerHTML="";
 entry.forEach(e=>{
 addRow();
 let r=rows.lastElementChild;
+
+date.value=e.date;
 r.querySelector(".name").value=e.acc;
 r.querySelector(".client").value=e.client;
 r.querySelector(".nar").value=e.nar;
