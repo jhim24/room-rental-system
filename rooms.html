@@ -6,22 +6,23 @@
 <style>
 body {
   margin:0;
-  font-family: Arial;
+  font-family:Segoe UI;
   display:flex;
   height:100vh;
-  background: linear-gradient(135deg,#1d2b64,#f8cdda);
+  background: linear-gradient(135deg,#667eea,#764ba2);
 }
 
 /* SIDEBAR */
 .sidebar {
   width:230px;
-  background: rgba(0,0,0,0.75);
+  background: rgba(0,0,0,0.8);
   color:white;
   padding:20px;
 }
 
-.menu button {
+.menu button, .menu a {
   width:100%;
+  display:block;
   padding:12px;
   margin-bottom:10px;
   border:none;
@@ -29,39 +30,52 @@ body {
   background:rgba(255,255,255,0.1);
   color:white;
   cursor:pointer;
+  text-align:left;
+  text-decoration:none;
 }
 
-.menu button:hover { background:#3498db; }
+.menu button:hover, .menu a:hover {
+  background:#3498db;
+}
 
 /* MAIN */
 .main {
   flex:1;
   padding:20px;
+  overflow:auto;
 }
 
-/* BOX */
+/* CARD */
 .box {
   background:white;
   padding:20px;
   border-radius:12px;
   margin-bottom:20px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
 }
 
-/* INPUT */
+/* FORM */
+.form{
+  display:grid;
+  grid-template-columns: 200px 200px auto;
+  gap:10px;
+  align-items:end;
+}
+
 input {
   padding:10px;
-  margin:5px;
   border-radius:8px;
   border:1px solid #ccc;
+  width:100%;
 }
 
 /* BUTTON */
 button {
-  padding:8px 12px;
+  padding:10px;
   border:none;
-  border-radius:6px;
+  border-radius:8px;
   cursor:pointer;
-  margin:5px;
+  font-weight:bold;
 }
 
 .saveBtn { background:#2ecc71;color:white; }
@@ -73,69 +87,78 @@ button {
 table {
   width:100%;
   border-collapse:collapse;
+  margin-top:10px;
 }
 
 th, td {
-  border:1px solid #ccc;
-  padding:8px;
+  border:1px solid #999;
+  padding:10px;
   text-align:center;
 }
 
-th { background:#3498db;color:white; }
+th {
+  background:#2c3e50;
+  color:white;
+}
+
+/* STATUS COLORS */
+.full{
+  background:#ffcccc;
+  font-weight:bold;
+}
+
+.available{
+  background:#ccffcc;
+}
 </style>
 </head>
 
 <body>
 
+<!-- SIDEBAR -->
 <div class="sidebar">
 <h2>🏨 SYSTEM</h2>
 
 <div class="menu">
-
-<button onclick="location.href='index.html?v=12'">
-📊 Dashboard
-</button>
-
-<button onclick="location.href='rooms.html?v=12'">
-🏠 Rooms
-</button>
-
-<button onclick="location.href='clients.html?v=12'">
-👥 Clients
-</button>
-
-<button onclick="location.href='journal-voucher-entry.html?v=12'">
-📒 Journal
-</button>
-
-<button onclick="location.href='coa.html?v=12'">
-📚 Chart of Accounts
-</button>
-
-<button onclick="location.href='ledger.html?v=12'">
-📘 Client Ledger
-</button>
+<button onclick="location.href='index.html?v=12'">📊 Dashboard</button>
+<button onclick="location.href='rooms.html?v=12'">🏠 Rooms</button>
+<button onclick="location.href='clients.html?v=12'">👥 Clients</button>
+<button onclick="location.href='journal-voucher-entry.html?v=12'">📒 Journal</button>
+<button onclick="location.href='coa.html?v=12'">📚 Chart of Accounts</button>
+<button onclick="location.href='ledger.html?v=12'">📘 Client Ledger</button>
 <a href="general-ledger.html">📊 General Ledger</a>
-  <a href="tenant-ledger-table.html">📊 Tenant Ledger</a>
+<a href="tenant-ledger-table.html">📊 Tenant Ledger</a>
+<a href="report.html">📊 Reports</a>
 </div>
 </div>
 
+<!-- MAIN -->
 <div class="main">
 
 <div class="box">
-<h3>Add Room</h3>
+<h3>🏠 Room Management</h3>
 
-<input id="roomNo" placeholder="Room #">
-<input id="capacity" type="number" placeholder="Capacity">
+<div class="form">
+<div>
+Room #<br>
+<input id="roomNo">
+</div>
 
-<br>
+<div>
+Capacity<br>
+<input id="capacity" type="number">
+</div>
+
+<div>
 <button class="saveBtn" onclick="addRoom()">Save</button>
 <button class="updateBtn" onclick="updateRoom()">Update</button>
+</div>
+</div>
 
 </div>
 
 <div class="box">
-<h3>Room List</h3>
+<h3>📋 Room List</h3>
 
 <table>
 <thead>
@@ -145,6 +168,7 @@ th { background:#3498db;color:white; }
 <th>Capacity</th>
 <th>Occupied</th>
 <th>Available</th>
+<th>Status</th>
 <th>Action</th>
 </tr>
 </thead>
@@ -164,11 +188,11 @@ let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
 
 let editIndex = -1;
 
-// SAVE
+/* ADD */
 function addRoom(){
 
-let number = document.getElementById("roomNo").value;
-let cap = document.getElementById("capacity").value;
+let number = roomNo.value.trim();
+let cap = capacity.value;
 
 if(!number || !cap){
 alert("Fill all fields");
@@ -182,35 +206,31 @@ capacity:Number(cap)
 
 save();
 loadRooms();
-
 clearForm();
 }
 
-// EDIT
-function editRoom(index){
+/* EDIT */
+function editRoom(i){
 
-let r = rooms[index];
+let r = rooms[i];
 
-document.getElementById("roomNo").value = r.number;
-document.getElementById("capacity").value = r.capacity;
+roomNo.value = r.number;
+capacity.value = r.capacity;
 
-editIndex = index;
+editIndex = i;
 }
 
-// UPDATE
+/* UPDATE */
 function updateRoom(){
 
 if(editIndex === -1){
-alert("Select room to edit");
+alert("Select room first");
 return;
 }
 
-let number = document.getElementById("roomNo").value;
-let cap = document.getElementById("capacity").value;
-
 rooms[editIndex] = {
-number:number,
-capacity:Number(cap)
+number: roomNo.value,
+capacity: Number(capacity.value)
 };
 
 save();
@@ -220,7 +240,7 @@ clearForm();
 editIndex = -1;
 }
 
-// DELETE
+/* DELETE */
 function deleteRoom(i){
 if(confirm("Delete room?")){
 rooms.splice(i,1);
@@ -229,7 +249,7 @@ loadRooms();
 }
 }
 
-// LOAD TABLE
+/* LOAD */
 function loadRooms(){
 
 roomTable.innerHTML="";
@@ -239,13 +259,18 @@ rooms.forEach((r,i)=>{
 let occupied = tenants.filter(t=>t.room === r.number).length;
 let available = r.capacity - occupied;
 
+let status = available <= 0 ? "FULL" : "AVAILABLE";
+
+let rowClass = available <= 0 ? "full" : "available";
+
 roomTable.innerHTML += `
-<tr>
+<tr class="${rowClass}">
 <td>${i+1}</td>
 <td>${r.number}</td>
 <td>${r.capacity}</td>
 <td>${occupied}</td>
 <td>${available}</td>
+<td>${status}</td>
 <td>
 <button class="editBtn" onclick="editRoom(${i})">Edit</button>
 <button class="deleteBtn" onclick="deleteRoom(${i})">Delete</button>
@@ -255,18 +280,18 @@ roomTable.innerHTML += `
 });
 }
 
-// SAVE STORAGE
+/* SAVE */
 function save(){
 localStorage.setItem("rooms", JSON.stringify(rooms));
 }
 
-// CLEAR FORM
+/* CLEAR */
 function clearForm(){
-document.getElementById("roomNo").value="";
-document.getElementById("capacity").value="";
+roomNo.value="";
+capacity.value="";
 }
 
-// INIT
+/* INIT */
 loadRooms();
 
 </script>
