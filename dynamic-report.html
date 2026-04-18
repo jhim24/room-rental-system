@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dynamic Report</title>
+
+<style>
+body{
+  font-family:Segoe UI;
+  margin:0;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  padding:20px;
+}
+
+.box{
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:15px;
+}
+
+input, select{
+  padding:6px;
+  margin-right:10px;
+}
+
+button{
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+}
+
+th,td{
+  border:1px solid #ccc;
+  padding:6px;
+  text-align:center;
+  font-size:13px;
+}
+
+th{
+  background:#2c3e50;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h3>📊 Dynamic Monthly Report</h3>
+
+From: <input type="date" id="fromDate">
+To: <input type="date" id="toDate">
+
+Client:
+<select id="clientFilter">
+<option value="">All</option>
+</select>
+
+<button onclick="loadReport()">Filter</button>
+
+</div>
+
+<div class="box">
+
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th>
+<th>May</th><th>Jun</th><th>Jul</th><th>Aug</th>
+<th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+<th>Total</th>
+</tr>
+</thead>
+
+<tbody id="reportTable"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+function getJV(){
+return JSON.parse(localStorage.getItem("jv")) || [];
+}
+
+function getClients(){
+return JSON.parse(localStorage.getItem("tenants")) || [];
+}
+
+/* LOAD CLIENTS */
+function loadClients(){
+let clients = getClients();
+clientFilter.innerHTML='<option value="">All</option>';
+
+clients.forEach(c=>{
+clientFilter.innerHTML += `<option value="${c.name}">${c.name}</option>`;
+});
+}
+
+/* LOAD REPORT */
+function loadReport(){
+
+let jv = getJV();
+let from = fromDate.value;
+let to = toDate.value;
+let selectedClient = clientFilter.value;
+
+let map = {};
+
+jv.forEach(entry=>{
+
+entry.forEach(e=>{
+
+if(!e.date) return;
+
+let d = new Date(e.date);
+
+// DATE FILTER
+if(from && d < new Date(from)) return;
+if(to && d > new Date(to)) return;
+
+// CLIENT FILTER
+let name = e.client || "Unknown";
+if(selectedClient && name !== selectedClient) return;
+
+if(!map[name]){
+map[name] = Array(12).fill(0);
+}
+
+// MONTH INDEX
+let m = d.getMonth();
+
+// USE CREDIT (income)
+map[name][m] += Number(e.c) || 0;
+
+});
+
+});
+
+/* BUILD TABLE */
+let html="";
+
+Object.keys(map).forEach(name=>{
+
+let months = map[name];
+let total = months.reduce((a,b)=>a+b,0);
+
+html += "<tr>";
+html += `<td>${name}</td>`;
+
+months.forEach(val=>{
+html += `<td>${val.toFixed(2)}</td>`;
+});
+
+html += `<td><b>${total.toFixed(2)}</b></td>`;
+html += "</tr>";
+
+});
+
+reportTable.innerHTML = html || "<tr><td colspan='14'>No data</td></tr>";
+
+}
+
+/* INIT */
+loadClients();
+
+</script>
+
+</body>
+</html>
