@@ -19,7 +19,6 @@ body{
   background:white;
   border-radius:12px;
   padding:15px;
-  box-shadow:0 5px 15px rgba(0,0,0,0.2);
   margin-bottom:15px;
 }
 
@@ -30,7 +29,7 @@ body{
 }
 
 .btn{
-  padding:8px 14px;
+  padding:8px 12px;
   border:none;
   border-radius:6px;
   cursor:pointer;
@@ -42,7 +41,6 @@ body{
 .orange{background:#f39c12;color:white;}
 .red{background:#e74c3c;color:white;}
 
-/* FIXED FORM */
 .form{
   display:grid;
   grid-template-columns:180px 180px 1fr;
@@ -50,12 +48,7 @@ body{
   margin-top:15px;
 }
 
-.form div{
-  display:flex;
-  flex-direction:column;
-}
-
-input, textarea, select{
+input,textarea,select{
   padding:8px;
   border:1px solid #ccc;
   border-radius:6px;
@@ -63,15 +56,11 @@ input, textarea, select{
   box-sizing:border-box;
 }
 
-textarea{
-  height:60px;
-  resize:vertical;
-}
+textarea{height:60px;}
 
-/* GRID */
-.grid-header, .row{
+.grid-header,.row{
   display:grid;
-  grid-template-columns:40px 70px 120px 200px 160px 200px 120px 120px 60px;
+  grid-template-columns:40px 70px 120px 200px 150px 200px 120px 120px 60px;
 }
 
 .grid-header{
@@ -86,12 +75,11 @@ textarea{
   text-align:center;
 }
 
-.row input, .row select{
+.row input,.row select{
   padding:6px;
   border:1px solid #ccc;
 }
 
-/* TOTAL */
 .footer{
   display:flex;
   justify-content:flex-end;
@@ -103,10 +91,8 @@ textarea{
   background:#ecf0f1;
   padding:10px;
   border-radius:6px;
-  font-weight:bold;
 }
 
-/* TABLE */
 table{
   width:100%;
   border-collapse:collapse;
@@ -142,7 +128,6 @@ th{
 </div>
 
 <div class="form">
-
 <div>
 <label>Date</label>
 <input type="date" id="date">
@@ -157,19 +142,11 @@ th{
 <label>Remarks</label>
 <textarea id="remarks"></textarea>
 </div>
-
 </div>
 
 <div class="grid-header">
-<div>#</div>
-<div>D/C</div>
-<div>Code</div>
-<div>Account</div>
-<div>Client</div>
-<div>Narration</div>
-<div>Debit</div>
-<div>Credit</div>
-<div>X</div>
+<div>#</div><div>D/C</div><div>Code</div><div>Account</div>
+<div>Client</div><div>Narration</div><div>Debit</div><div>Credit</div><div>X</div>
 </div>
 
 <div id="rows"></div>
@@ -206,26 +183,32 @@ th{
 
 <script>
 
-/* DATA */
-function getAccounts(){
-return JSON.parse(localStorage.getItem("accounts")) || [];
+/* ===== AUTO DATA FIX ===== */
+if(!localStorage.getItem("accounts")){
+localStorage.setItem("accounts",JSON.stringify([
+{code:"1000",name:"Cash"},
+{code:"1100",name:"Accounts Receivable"},
+{code:"4000",name:"Rent Income"}
+]));
 }
 
-function getClients(){
-return JSON.parse(localStorage.getItem("tenants")) || [];
+if(!localStorage.getItem("tenants")){
+localStorage.setItem("tenants",JSON.stringify([
+{name:"Juan Dela Cruz"},
+{name:"Maria Santos"},
+{name:"Ali Khan"}
+]));
 }
 
-function getJV(){
-return JSON.parse(localStorage.getItem("jv")) || [];
-}
-
-function saveJV(d){
-localStorage.setItem("jv", JSON.stringify(d));
-}
+/* ===== FUNCTIONS ===== */
+function getAccounts(){return JSON.parse(localStorage.getItem("accounts"))||[];}
+function getClients(){return JSON.parse(localStorage.getItem("tenants"))||[];}
+function getJV(){return JSON.parse(localStorage.getItem("jv"))||[];}
+function saveJV(d){localStorage.setItem("jv",JSON.stringify(d));}
 
 let editIndex=null;
 
-/* ADD ROW */
+/* ===== ADD ROW ===== */
 function addRow(){
 
 let i=document.querySelectorAll(".row").length+1;
@@ -247,7 +230,7 @@ div.innerHTML=`
 
 rows.appendChild(div);
 
-/* LOAD ACCOUNTS */
+/* ACCOUNTS */
 let accSel=div.querySelector(".code");
 let nameInput=div.querySelector(".name");
 
@@ -259,36 +242,42 @@ ${a.code} - ${a.name}
 </option>`;
 });
 
-/* AUTO SYNC CODE + ACCOUNT */
-accSel.onchange=function(){
-let selected=this.options[this.selectedIndex];
-let name=selected.dataset.name || "";
-nameInput.value=name;
-
-/* CLIENT ENABLE ONLY IF AR */
-let clientSel=div.querySelector(".client");
-
-if(name.toLowerCase().includes("receivable")){
-clientSel.disabled=false;
-}else{
-clientSel.value="";
-clientSel.disabled=true;
-}
-};
-
-/* LOAD CLIENTS */
+/* CLIENTS */
 let cliSel=div.querySelector(".client");
 cliSel.innerHTML='<option value="">Select</option>';
 
-getClients().forEach(c=>{
+let clients=getClients();
+
+if(clients.length===0){
+cliSel.innerHTML='<option>No Clients</option>';
+}
+
+clients.forEach(c=>{
 cliSel.innerHTML+=`<option value="${c.name}">${c.name}</option>`;
 });
 
 cliSel.disabled=true;
 
+/* ON CHANGE */
+accSel.onchange=function(){
+
+let selected=this.options[this.selectedIndex];
+let name=selected.dataset.name||"";
+
+nameInput.value=name;
+
+if(name.toLowerCase().includes("receivable")){
+cliSel.disabled=false;
+}else{
+cliSel.value="";
+cliSel.disabled=true;
 }
 
-/* CALC */
+};
+
+}
+
+/* ===== CALC ===== */
 function calc(){
 let dr=0,cr=0;
 
@@ -301,14 +290,14 @@ totalDr.innerText=dr.toFixed(2);
 totalCr.innerText=cr.toFixed(2);
 }
 
-/* SAVE */
+/* ===== SAVE ===== */
 function saveJournal(){
 
 let jv=getJV();
 let entry=[];
 let dr=0,cr=0;
 
-let dateVal = date.value || new Date().toISOString().split("T")[0];
+let dateVal=date.value||new Date().toISOString().split("T")[0];
 
 document.querySelectorAll(".row").forEach(r=>{
 
@@ -322,7 +311,7 @@ if(!acc || (d==0 && c==0)) return;
 
 dr+=d; cr+=c;
 
-entry.push({date:dateVal, acc, client, nar, d, c});
+entry.push({date:dateVal,acc,client,nar,d,c});
 
 });
 
@@ -336,10 +325,9 @@ saveJV(jv);
 
 loadRecords();
 clearForm();
-
 }
 
-/* LOAD */
+/* ===== LOAD ===== */
 function loadRecords(){
 
 let jv=getJV();
@@ -366,7 +354,7 @@ html+=`
 recordTable.innerHTML=html;
 }
 
-/* EDIT */
+/* ===== EDIT ===== */
 function edit(i){
 
 let jv=getJV();
@@ -389,7 +377,7 @@ r.querySelector(".credit").value=e.c;
 editIndex=i;
 }
 
-/* UPDATE */
+/* ===== UPDATE ===== */
 function updateJournal(){
 
 if(editIndex===null){
@@ -405,7 +393,7 @@ editIndex=null;
 saveJournal();
 }
 
-/* DELETE */
+/* ===== DELETE ===== */
 function del(i){
 let jv=getJV();
 if(confirm("Delete?")){
@@ -415,7 +403,7 @@ loadRecords();
 }
 }
 
-/* CLEAR */
+/* ===== CLEAR ===== */
 function clearForm(){
 rows.innerHTML="";
 addRow();
