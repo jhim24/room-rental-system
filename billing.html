@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Billing System</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Segoe UI;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  padding:20px;
+}
+
+.box{
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:15px;
+}
+
+button{
+  padding:8px 14px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.genBtn{background:#2ecc71;color:white;}
+.backBtn{background:#e74c3c;color:white;}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
+}
+
+th{
+  background:#2980b9;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h3>📅 Monthly Billing</h3>
+
+<button class="genBtn" onclick="generateBilling()">Generate Billing</button>
+<button class="backBtn" onclick="goDashboard()">Dashboard</button>
+</div>
+
+<div class="box">
+
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Client</th>
+<th>Room</th>
+<th>Rent</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="billTable"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+function getRooms(){
+return JSON.parse(localStorage.getItem("rooms")) || [];
+}
+
+function getTenants(){
+return JSON.parse(localStorage.getItem("tenants")) || [];
+}
+
+function saveBills(data){
+localStorage.setItem("billing", JSON.stringify(data));
+}
+
+function getBills(){
+return JSON.parse(localStorage.getItem("billing")) || [];
+}
+
+/* GENERATE BILLING */
+function generateBilling(){
+
+let tenants = getTenants();
+let rooms = getRooms();
+
+let bills=[];
+
+tenants.forEach(t=>{
+
+let room = rooms.find(r=>r.number === t.room);
+
+let rent = room ? room.rent : 0;
+
+bills.push({
+client:t.name,
+room:t.room,
+rent:rent,
+status:"UNPAID"
+});
+
+});
+
+saveBills(bills);
+loadBills();
+
+alert("✅ Billing Generated");
+
+}
+
+/* LOAD */
+function loadBills(){
+
+let bills = getBills();
+let html="";
+
+bills.forEach((b,i)=>{
+
+html+=`
+<tr>
+<td>${i+1}</td>
+<td>${b.client}</td>
+<td>${b.room}</td>
+<td>${b.rent}</td>
+<td>${b.status}</td>
+</tr>
+`;
+
+});
+
+billTable.innerHTML = html;
+
+}
+
+/* NAV */
+function goDashboard(){
+location.href="index.html";
+}
+
+/* INIT */
+loadBills();
+
+</script>
+
+</body>
+</html>
