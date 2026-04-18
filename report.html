@@ -1,27 +1,52 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Business Report</title>
+<title>Reports</title>
 
 <style>
 body{
-  font-family:Arial;
-  background:#eef3ff;
+  margin:0;
+  font-family:Segoe UI;
+  background:linear-gradient(135deg,#667eea,#764ba2);
   padding:20px;
 }
 
 .box{
   background:white;
   padding:15px;
-  border-radius:10px;
+  border-radius:12px;
   margin-bottom:15px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.2);
 }
 
-h2{margin-bottom:10px;}
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+button{
+  padding:8px 14px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.btn{
+  background:#3498db;
+  color:white;
+}
+
+.backBtn{
+  background:#e74c3c;
+  color:white;
+}
 
 table{
   width:100%;
   border-collapse:collapse;
+  margin-top:10px;
 }
 
 th,td{
@@ -31,171 +56,151 @@ th,td{
 }
 
 th{
-  background:#3498db;
+  background:#2980b9;
   color:white;
 }
 
-.summary{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
+.total{
+  font-weight:bold;
+  background:#ecf0f1;
 }
-
-.card{
-  background:#2c3e50;
-  color:white;
-  padding:15px;
-  border-radius:10px;
-}
-
 </style>
 </head>
 
 <body>
 
-<div class="box">
-<h2>📊 Business Summary</h2>
+<div class="box header">
+<h3>📊 Financial Report</h3>
 
-<div class="summary">
-
-<div class="card">Total Tenant: <b id="tenantCount">0</b></div>
-<div class="card">Bed Spacer: <b id="bedspaceCount">0</b></div>
-<div class="card">Freelancer: <b id="freelancerCount">0</b></div>
-
-<div class="card">Staff: <b id="staffCount">0</b></div>
-<div class="card">Total Revenue: <b id="totalRevenue">0</b></div>
-<div class="card">Total Payment: <b id="totalPayment">0</b></div>
-
-<div class="card">Receivable: <b id="receivable">0</b></div>
-<div class="card">Electricity: <b id="electricity">0</b></div>
-<div class="card">Profit/Loss: <b id="profit">0</b></div>
-
+<div>
+<button class="btn" onclick="loadReport()">Refresh</button>
+<button class="backBtn" onclick="goDashboard()">🏠 Dashboard</button>
 </div>
 </div>
 
 <div class="box">
 
-<h2>📅 Monthly Report</h2>
+<h4>📘 Income Statement</h4>
 
 <table>
 <thead>
 <tr>
-<th>Month</th>
-<th>Revenue</th>
-<th>Payment</th>
-<th>Receivable</th>
+<th>Account</th>
+<th>Debit</th>
+<th>Credit</th>
+<th>Balance</th>
 </tr>
 </thead>
 
 <tbody id="reportTable"></tbody>
 
+<tfoot>
+<tr class="total">
+<td>NET INCOME</td>
+<td id="totalDr">0</td>
+<td id="totalCr">0</td>
+<td id="netIncome">0</td>
+</tr>
+</tfoot>
+
 </table>
+
+</div>
+
+<div class="box">
+
+<h4>📊 Summary</h4>
+
+<p>Total Clients: <b id="totalClients">0</b></p>
+<p>Total Journal Entries: <b id="totalJV">0</b></p>
 
 </div>
 
 <script>
 
-// DATA
-let jv = JSON.parse(localStorage.getItem("jv")) || [];
-let tenants = JSON.parse(localStorage.getItem("tenants")) || [];
-
-// FORMAT MONTH
-function getMonth(date){
-let d = new Date(date);
-return d.toLocaleString('default',{month:'short'}) + " " + d.getFullYear();
+/* ===== GET DATA ===== */
+function getJV(){
+return JSON.parse(localStorage.getItem("jv")) || [];
 }
 
-// GROUP DATA
-let monthly = {};
+function getClients(){
+return JSON.parse(localStorage.getItem("tenants")) || [];
+}
 
-let totalRevenue=0;
-let totalPayment=0;
-let receivable=0;
-let electricity=0;
+/* ===== LOAD REPORT ===== */
+function loadReport(){
 
-// LOOP JOURNAL
+let jv = getJV();
+let map = {};
+
+let totalDr = 0;
+let totalCr = 0;
+
+/* LOOP JOURNAL */
 jv.forEach(entry=>{
 
 entry.forEach(e=>{
 
-let month = getMonth(new Date());
+let acc = e.acc || "Unknown";
 
-if(!monthly[month]){
-monthly[month]={rev:0,pay:0,rec:0};
-}
-
-// RENT INCOME
-if(e.acc.toLowerCase().includes("income") && e.dc==="C"){
-monthly[month].rev += e.amt;
-totalRevenue += e.amt;
+if(!map[acc]){
+map[acc] = {dr:0, cr:0};
 }
 
-// PAYMENT (CASH)
-if(e.acc.toLowerCase().includes("cash") && e.dc==="D"){
-monthly[month].pay += e.amt;
-totalPayment += e.amt;
-}
+let d = Number(e.d) || 0;
+let c = Number(e.c) || 0;
 
-// RECEIVABLE
-if(e.acc.toLowerCase().includes("receivable")){
-if(e.dc==="D"){
-receivable += e.amt;
-}else{
-receivable -= e.amt;
-}
-}
+map[acc].dr += d;
+map[acc].cr += c;
 
-// ELECTRICITY
-if(e.acc.toLowerCase().includes("electric")){
-electricity += e.amt;
-}
+totalDr += d;
+totalCr += c;
 
 });
 
 });
 
-// BUILD TABLE
+/* BUILD TABLE */
 let html="";
 
-Object.keys(monthly).forEach(m=>{
+Object.keys(map).forEach(acc=>{
 
-let r = monthly[m];
+let dr = map[acc].dr;
+let cr = map[acc].cr;
+let bal = cr - dr; // income style
 
-html+=`
+html += `
 <tr>
-<td>${m}</td>
-<td>${r.rev}</td>
-<td>${r.pay}</td>
-<td>${r.rec}</td>
+<td>${acc}</td>
+<td>${dr.toFixed(2)}</td>
+<td>${cr.toFixed(2)}</td>
+<td><b>${bal.toFixed(2)}</b></td>
 </tr>
 `;
 
 });
 
-document.getElementById("reportTable").innerHTML = html;
+reportTable.innerHTML = html || "<tr><td colspan='4'>No data</td></tr>";
 
-// COUNTS
-document.getElementById("tenantCount").innerText = tenants.length;
+/* TOTALS */
+document.getElementById("totalDr").innerText = totalDr.toFixed(2);
+document.getElementById("totalCr").innerText = totalCr.toFixed(2);
+document.getElementById("netIncome").innerText = (totalCr - totalDr).toFixed(2);
 
-// CATEGORY SAMPLE (optional)
-document.getElementById("bedspaceCount").innerText =
-tenants.filter(t=>t.category==="Bed space").length;
+/* SUMMARY */
+let clients = getClients();
+document.getElementById("totalClients").innerText = clients.length;
+document.getElementById("totalJV").innerText = jv.length;
 
-document.getElementById("freelancerCount").innerText =
-tenants.filter(t=>t.category==="Freelancer").length;
+}
 
-document.getElementById("staffCount").innerText =
-tenants.filter(t=>t.category==="Staff").length;
+/* NAV */
+function goDashboard(){
+location.href = "index.html?v=12";
+}
 
-// TOTALS
-document.getElementById("totalRevenue").innerText = totalRevenue;
-document.getElementById("totalPayment").innerText = totalPayment;
-document.getElementById("receivable").innerText = receivable;
-document.getElementById("electricity").innerText = electricity;
-
-// PROFIT
-let profit = totalRevenue - electricity;
-document.getElementById("profit").innerText = profit;
+/* INIT */
+loadReport();
 
 </script>
 
