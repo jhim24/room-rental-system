@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Monthly Summary</title>
+
+<style>
+body{
+  font-family:Segoe UI;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  padding:20px;
+  margin:0;
+}
+
+.box{
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:15px;
+}
+
+h3{margin-top:0;}
+
+input{
+  padding:8px;
+  margin-right:10px;
+}
+
+button{
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.loadBtn{background:#2ecc71;color:white;}
+.backBtn{background:#e74c3c;color:white;}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
+}
+
+th{
+  background:#2c3e50;
+  color:white;
+}
+
+.profit{
+  color:green;
+  font-weight:bold;
+}
+
+.loss{
+  color:red;
+  font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h3>📅 Monthly Summary</h3>
+
+Month:
+<input type="month" id="month">
+
+<button class="loadBtn" onclick="loadSummary()">Load</button>
+<button class="backBtn" onclick="goDash()">Dashboard</button>
+</div>
+
+<div class="box">
+
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Amount</th>
+</tr>
+</thead>
+
+<tbody id="summaryTable"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+/* DATA */
+function getJV(){
+return JSON.parse(localStorage.getItem("jv")) || [];
+}
+
+function getTenants(){
+return JSON.parse(localStorage.getItem("tenants")) || [];
+}
+
+/* LOAD SUMMARY */
+function loadSummary(){
+
+let jv = getJV();
+let tenants = getTenants();
+
+let selectedMonth = document.getElementById("month").value;
+
+if(!selectedMonth){
+alert("Select month");
+return;
+}
+
+let [year,month] = selectedMonth.split("-");
+
+/* VARIABLES */
+let receivable = 0;
+let cash = 0;
+
+let tenantRent = 0;
+let bed = 0;
+let free = 0;
+
+let kahramaa = 0;
+let rentExp = 0;
+
+/* LOOP */
+jv.forEach(entry=>{
+entry.forEach(e=>{
+
+if(!e.date) return;
+
+let d = new Date(e.date);
+
+if(d.getFullYear()!=year || (d.getMonth()+1)!=month) return;
+
+let acc = (e.acc||"").toLowerCase();
+let dAmt = Number(e.d)||0;
+let cAmt = Number(e.c)||0;
+
+/* RECEIVABLE */
+if(acc.includes("receivable")){
+receivable += dAmt - cAmt;
+}
+
+/* CASH */
+if(acc.includes("cash")){
+cash += dAmt - cAmt;
+}
+
+/* RENT INCOME */
+if(acc.includes("rent income")){
+let tenant = tenants.find(t=>t.name===e.client);
+
+if(tenant){
+if(tenant.category==="Bed Space") bed += cAmt;
+else if(tenant.category==="Freelancer") free += cAmt;
+else tenantRent += cAmt;
+}
+}
+
+/* EXPENSES */
+if(acc.includes("kahramaa")) kahramaa += dAmt;
+if(acc.includes("rent expense")) rentExp += dAmt;
+
+});
+});
+
+/* CALCULATIONS */
+let remaining = receivable - cash;
+
+let totalIncome = tenantRent + bed + free;
+let totalExpense = kahramaa + rentExp;
+
+let profit = totalIncome - totalExpense;
+
+/* 🔥 STAFF COST */
+let staffCount = tenants.filter(t => 
+t.category === "Company Staff" || 
+t.category === "Office Staff"
+).length;
+
+let costPerHead = staffCount > 0 ? totalExpense / staffCount : 0;
+
+/* PROFIT COLOR */
+let profitClass = profit >= 0 ? "profit" : "loss";
+
+/* DISPLAY */
+summaryTable.innerHTML = `
+<tr><td>Total Receivable</td><td>${receivable.toFixed(2)}</td></tr>
+<tr><td>Cash Collected</td><td>${cash.toFixed(2)}</td></tr>
+<tr><td><b>Remaining Balance</b></td><td><b>${remaining.toFixed(2)}</b></td></tr>
+
+<tr><td colspan="2"><b>--- RENT ---</b></td></tr>
+
+<tr><td>Tenant Rent</td><td>${tenantRent.toFixed(2)}</td></tr>
+<tr><td>Bed Space</td><td>${bed.toFixed(2)}</td></tr>
+<tr><td>Freelancer</td><td>${free.toFixed(2)}</td></tr>
+
+<tr><td colspan="2"><b>--- EXPENSE ---</b></td></tr>
+
+<tr><td>Kahramaa</td><td>${kahramaa.toFixed(2)}</td></tr>
+<tr><td>Rent Expense</td><td>${rentExp.toFixed(2)}</td></tr>
+
+<tr><td colspan="2"><b>--- STAFF COST ---</b></td></tr>
+
+<tr><td>Total Staff</td><td>${staffCount}</td></tr>
+<tr><td>Cost per Staff</td><td>${costPerHead.toFixed(2)}</td></tr>
+
+<tr><td colspan="2"><b>--- RESULT ---</b></td></tr>
+
+<tr>
+<td><b>Profit / Loss</b></td>
+<td class="${profitClass}">${profit.toFixed(2)}</td>
+</tr>
+`;
+
+}
+
+/* NAV */
+function goDash(){
+location.href="index.html";
+}
+
+</script>
+
+</body>
+</html>
