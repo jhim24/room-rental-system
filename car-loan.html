@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Car Loan System</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Segoe UI;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  padding:20px;
+}
+
+.box{
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:15px;
+}
+
+input{
+  padding:8px;
+  margin:5px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+
+button{
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.addBtn{background:#2ecc71;color:white;}
+.payBtn{background:#3498db;color:white;}
+.deleteBtn{background:red;color:white;}
+.backBtn{background:#e74c3c;color:white;}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
+}
+
+th{
+  background:#2c3e50;
+  color:white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h3>🚗 Car Loan System</h3>
+
+<input id="name" placeholder="Customer Name">
+<input id="car" placeholder="Car Model">
+<input id="price" type="number" placeholder="Total Price">
+<input id="down" type="number" placeholder="Downpayment">
+<input id="monthly" type="number" placeholder="Monthly Payment">
+
+<br>
+
+<button class="addBtn" onclick="addLoan()">Add Loan</button>
+<button class="backBtn" onclick="goDash()">Dashboard</button>
+
+</div>
+
+<div class="box">
+
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Name</th>
+<th>Car</th>
+<th>Total</th>
+<th>Paid</th>
+<th>Balance</th>
+<th>Monthly</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody id="loanTable"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+function getLoans(){
+return JSON.parse(localStorage.getItem("carLoans")) || [];
+}
+
+function saveLoans(data){
+localStorage.setItem("carLoans", JSON.stringify(data));
+}
+
+/* ADD */
+function addLoan(){
+
+let nameVal = name.value;
+let carVal = car.value;
+let priceVal = Number(price.value);
+let downVal = Number(down.value);
+let monthlyVal = Number(monthly.value);
+
+if(!nameVal || !priceVal){
+alert("Fill required fields");
+return;
+}
+
+let data = getLoans();
+
+data.push({
+name:nameVal,
+car:carVal,
+price:priceVal,
+paid:downVal || 0,
+monthly:monthlyVal
+});
+
+saveLoans(data);
+
+clearForm();
+loadLoans();
+}
+
+/* LOAD */
+function loadLoans(){
+
+let data = getLoans();
+let html="";
+
+data.forEach((d,i)=>{
+
+let balance = d.price - d.paid;
+
+html+=`
+<tr>
+<td>${i+1}</td>
+<td>${d.name}</td>
+<td>${d.car}</td>
+<td>${d.price}</td>
+<td>${d.paid}</td>
+<td>${balance}</td>
+<td>${d.monthly}</td>
+<td>
+<button class="payBtn" onclick="pay(${i})">Pay</button>
+<button class="deleteBtn" onclick="del(${i})">Delete</button>
+</td>
+</tr>
+`;
+
+});
+
+loanTable.innerHTML = html;
+}
+
+/* PAYMENT */
+function pay(i){
+
+let data = getLoans();
+let amount = prompt("Enter payment:");
+
+if(!amount) return;
+
+data[i].paid += Number(amount);
+
+saveLoans(data);
+loadLoans();
+}
+
+/* DELETE */
+function del(i){
+let data = getLoans();
+if(confirm("Delete loan?")){
+data.splice(i,1);
+saveLoans(data);
+loadLoans();
+}
+}
+
+/* CLEAR */
+function clearForm(){
+name.value="";
+car.value="";
+price.value="";
+down.value="";
+monthly.value="";
+}
+
+/* NAV */
+function goDash(){
+location.href="index.html";
+}
+
+/* INIT */
+loadLoans();
+
+</script>
+
+</body>
+</html>
